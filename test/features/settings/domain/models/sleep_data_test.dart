@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sleepbalance/features/dashboard/domain/models/sleep_data.dart';
+import 'package:sleepbalance/core/wearables/domain/models/sleep_data.dart';
 
 void main() {
   group('SleepData', () {

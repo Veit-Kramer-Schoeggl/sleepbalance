@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'shared/screens/splash_screen.dart';
+import 'shared/screens/app/splash_screen.dart';
 
 void main() {
   runApp(const SleepBalanceApp());
