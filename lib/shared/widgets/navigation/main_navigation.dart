@@ -14,14 +14,14 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 3; // Default to Action tab (index 3)
+  int _currentIndex = 2; // Default to Action tab (index 2)
 
   // List of screens corresponding to navigation items
   final List<Widget> _screens = const [
     SettingsScreen(),
     NightScreen(),
-    HabitsScreen(),
     ActionScreen(),
+    HabitsScreen(),
   ];
 
   @override
@@ -51,12 +51,12 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Night',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.science),
-            label: 'Habits',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.task_alt),
             label: 'Action',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.science),
+            label: 'Habits',
           ),
         ],
       ),

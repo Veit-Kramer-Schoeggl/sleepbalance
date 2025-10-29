@@ -163,3 +163,8 @@ flutter test # Run tests
 ```
 
 **Debug flag**: Set `FORCE_ONBOARDING = true` in `preferences_service.dart` to always show questionnaire.
+
+
+AFter that we need a standard butt for accepting things that just holds a string and we need second
+button/ box that contains a checkbox at the right corner, an icon at the left corner and a text within
+the center. both elements should have some kind of floating effect.
