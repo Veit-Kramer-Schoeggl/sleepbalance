@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
+import '../../../../shared/widgets/ui/expandable_calendar.dart';
 
 /// Night Review screen for reviewing previous night's sleep data
 class NightScreen extends StatefulWidget {
@@ -12,6 +13,7 @@ class NightScreen extends StatefulWidget {
 
 class _NightScreenState extends State<NightScreen> {
   DateTime _currentDate = DateTime.now();
+  bool _isCalendarExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +23,10 @@ class _NightScreenState extends State<NightScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Night Review'),
+          title: const Text('Night Review', style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.transparent,
           elevation: 0,
+          centerTitle: true,
         ),
         body: Column(
           children: [
@@ -37,6 +40,25 @@ class _NightScreenState extends State<NightScreen> {
               onNextDay: () {
                 setState(() {
                   _currentDate = _currentDate.add(const Duration(days: 1));
+                });
+              },
+              onDateTap: () {
+                setState(() {
+                  _isCalendarExpanded = !_isCalendarExpanded;
+                });
+              },
+            ),
+            ExpandableCalendar(
+              selectedDate: _currentDate,
+              isExpanded: _isCalendarExpanded,
+              onDateSelected: (date) {
+                setState(() {
+                  _currentDate = date;
+                });
+              },
+              onToggleExpansion: () {
+                setState(() {
+                  _isCalendarExpanded = !_isCalendarExpanded;
                 });
               },
             ),
