@@ -35,10 +35,11 @@ Users can select, combine, and customize individual modules:
 - Data-driven recommendation engine
 
 ### Main Navigation
-- **Action Center** (default tab): Actionable sleep recommendations
-- **Night Review**: Review previous night's sleep data
-- **Habits Lab**: Track and experiment with sleep habits
-- **Settings**: Configure app preferences and modules
+Bottom navigation with 4 tabs (indexed 0-3):
+1. **Settings** (index 0): Configure app preferences and modules
+2. **Night Review** (index 1): Review previous night's sleep data with date navigation and expandable calendar
+3. **Action Center** (index 2, default on launch): Actionable sleep recommendations with checkboxes
+4. **Habits Lab** (index 3): Track and experiment with sleep habits
 
 ## Architecture
 
@@ -62,12 +63,16 @@ lib/
 │   ├── wearables/                 # Wearable integration (CRITICAL)
 │   │   ├── data/                  # Wearable data sources & repositories
 │   │   ├── domain/                # Sleep data models & services
+│   │   │   └── models/sleep_data.dart  # ✅ Implemented
 │   │   └── presentation/          # Wearable connection & sync UI
 │   │
-│   └── recommendations/           # Recommendation engine
-│       ├── data/                  # Recommendation data repositories
-│       ├── domain/                # Analysis algorithms & use cases
-│       └── presentation/          # Recommendation widgets
+│   ├── recommendations/           # Recommendation engine (structure only)
+│   │   ├── data/                  # Recommendation data repositories
+│   │   ├── domain/                # Analysis algorithms & use cases
+│   │   └── presentation/          # Recommendation widgets
+│   │
+│   └── utils/                     # ✅ Core utilities
+│       └── date_formatter.dart    # Localized date formatting (DE/EN)
 │
 ├── modules/                       # Intervention modules (pluggable)
 │   ├── shared/                    # Shared module infrastructure
@@ -112,16 +117,24 @@ lib/
 │       └── presentation/
 │
 └── shared/                        # Shared utilities & components
-    ├── services/                  # Cross-cutting services
+    ├── services/                  # ✅ Cross-cutting services
     │   └── storage/               # Persistent storage services
-    ├── widgets/                   # Reusable widgets
-    │   ├── ui/                    # UI components (backgrounds, etc.)
+    │       └── preferences_service.dart  # SharedPreferences wrapper
+    ├── widgets/                   # ✅ Reusable widgets
+    │   ├── ui/                    # UI components
+    │   │   ├── background_wrapper.dart
+    │   │   ├── date_navigation_header.dart
+    │   │   ├── expandable_calendar.dart
+    │   │   ├── checkbox_button.dart
+    │   │   └── acceptance_button.dart
     │   └── navigation/            # Navigation components
-    ├── screens/                   # Shared screens
-    │   └── app/                   # App-level screens (splash, etc.)
-    ├── theme/                     # Theme configuration
-    ├── constants/                 # App constants
-    └── utils/                     # Helper functions
+    │       └── main_navigation.dart  # Bottom tab navigation
+    ├── screens/                   # ✅ Shared screens
+    │   └── app/                   # App-level screens
+    │       └── splash_screen.dart # Launch screen with moon icon
+    ├── theme/                     # Theme configuration (planned)
+    ├── constants/                 # App constants (planned)
+    └── utils/                     # Helper functions (planned)
 ```
 
 ### Architecture Principles
@@ -138,10 +151,15 @@ lib/
 - `presentation/` - UI screens, widgets, and view logic
 
 **Module System:**
-- Each intervention module is self-contained
+- Each intervention module is self-contained (directory structure defined, implementation pending)
 - Modules share common infrastructure via `modules/shared/`
 - Users can select, combine, and customize individual modules
 - Easy to add new modules without affecting existing code
+
+**Implementation Status:**
+- ✅ **Fully Implemented**: Main navigation, splash screen, onboarding questionnaire (3 questions), night review screen with calendar, action center with checkboxes, shared UI widgets (6 components), date formatter utility, preferences service
+- 🚧 **Partially Implemented**: Core wearables (SleepData model only)
+- 📋 **Planned**: Auth system, recommendation engine, all 9 intervention modules, data/domain layers for all features
 
 ## Assets
 
@@ -162,9 +180,4 @@ flutter run  # Run the app
 flutter test # Run tests
 ```
 
-**Debug flag**: Set `FORCE_ONBOARDING = true` in `preferences_service.dart` to always show questionnaire.
-
-
-AFter that we need a standard butt for accepting things that just holds a string and we need second
-button/ box that contains a checkbox at the right corner, an icon at the left corner and a text within
-the center. both elements should have some kind of floating effect.
+**Debug flag**: Set `FORCE_ONBOARDING = true` in `preferences_service.dart` to always show questionnaire. 
