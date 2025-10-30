@@ -14,9 +14,9 @@ class ActionScreen extends StatefulWidget {
 
 class _ActionScreenState extends State<ActionScreen> {
   DateTime _currentDate = DateTime.now();
-  
+
   // List of action items with checkbox states
-  List<Map<String, dynamic>> _actionItems = [
+  final List<Map<String, dynamic>> _actionItems = [
     {
       'text': 'Drink a glass of water',
       'icon': Icons.local_drink,

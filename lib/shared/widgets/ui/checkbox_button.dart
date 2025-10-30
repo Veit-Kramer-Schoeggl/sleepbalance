@@ -41,12 +41,12 @@ class CheckboxButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -64,18 +64,18 @@ class CheckboxButton extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: enabled
                     ? [
-                        backgroundColor ?? Colors.white.withOpacity(0.1),
-                        (backgroundColor ?? Colors.white.withOpacity(0.1))
-                            .withOpacity(0.05),
+                        backgroundColor ?? Colors.white.withValues(alpha: 0.1),
+                        (backgroundColor ?? Colors.white.withValues(alpha: 0.1))
+                            .withValues(alpha: 0.05),
                       ]
                     : [
-                        Colors.grey.withOpacity(0.1),
-                        Colors.grey.withOpacity(0.05),
+                        Colors.grey.withValues(alpha: 0.1),
+                        Colors.grey.withValues(alpha: 0.05),
                       ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -85,9 +85,9 @@ class CheckboxButton extends StatelessWidget {
                 // Left icon
                 Icon(
                   icon,
-                  color: enabled 
+                  color: enabled
                       ? (iconColor ?? Colors.white)
-                      : Colors.white.withOpacity(0.5),
+                      : Colors.white.withValues(alpha: 0.5),
                   size: 24,
                 ),
                 
@@ -98,9 +98,9 @@ class CheckboxButton extends StatelessWidget {
                   child: Text(
                     text,
                     style: TextStyle(
-                      color: enabled 
+                      color: enabled
                           ? (textColor ?? Colors.white)
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -119,9 +119,9 @@ class CheckboxButton extends StatelessWidget {
                     activeColor: checkboxColor ?? Theme.of(context).colorScheme.primary,
                     checkColor: Colors.white,
                     side: BorderSide(
-                      color: enabled 
-                          ? Colors.white.withOpacity(0.7)
-                          : Colors.white.withOpacity(0.3),
+                      color: enabled
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : Colors.white.withValues(alpha: 0.3),
                       width: 2,
                     ),
                     shape: RoundedRectangleBorder(

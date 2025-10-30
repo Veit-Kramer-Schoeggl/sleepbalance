@@ -397,4 +397,4 @@ json_serializable: ^6.7.1
 
 ### Documentation
 
-- [DATABASE.md](DATABASE.md) - Complete database schema, design decisions, and migration strategy 
+- [DATABASE.md](DATABASE.md) - Complete database schema, design decisions, and migration strategy

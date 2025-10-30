@@ -69,7 +69,7 @@ class QuestionnaireScreen extends StatelessWidget {
                   text: 'Skip',
                   onPressed: () => _completeSetup(context),
                   width: double.infinity,
-                  backgroundColor: Colors.grey.withOpacity(0.6),
+                  backgroundColor: Colors.grey.withValues(alpha: 0.6),
                 ),
               ],
             ),

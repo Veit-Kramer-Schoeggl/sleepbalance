@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 import '../../../shared/constants/database_constants.dart';
 
 /// Migration V1: Initial Database Schema

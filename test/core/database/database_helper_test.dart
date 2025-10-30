@@ -17,13 +17,16 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
 
     // Setup method channel mock for path_provider
-    const MethodChannel('plugins.flutter.io/path_provider')
-        .setMockMethodCallHandler((MethodCall methodCall) async {
-      if (methodCall.method == 'getApplicationDocumentsDirectory') {
-        return '/tmp/test_db';
-      }
-      return null;
-    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (MethodCall? methodCall) async {
+        if (methodCall?.method == 'getApplicationDocumentsDirectory') {
+          return '/tmp/test_db';
+        }
+        return null;
+      },
+    );
 
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;

@@ -33,12 +33,12 @@ class AcceptanceButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -58,16 +58,16 @@ class AcceptanceButton extends StatelessWidget {
                     ? [
                         backgroundColor ?? Theme.of(context).colorScheme.primary,
                         (backgroundColor ?? Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.8),
+                            .withValues(alpha: 0.8),
                       ]
                     : [
-                        Colors.grey.withOpacity(0.5),
-                        Colors.grey.withOpacity(0.3),
+                        Colors.grey.withValues(alpha: 0.5),
+                        Colors.grey.withValues(alpha: 0.3),
                       ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -76,9 +76,9 @@ class AcceptanceButton extends StatelessWidget {
               child: Text(
                 text,
                 style: TextStyle(
-                  color: enabled 
+                  color: enabled
                       ? (textColor ?? Colors.white)
-                      : Colors.white.withOpacity(0.5),
+                      : Colors.white.withValues(alpha: 0.5),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),

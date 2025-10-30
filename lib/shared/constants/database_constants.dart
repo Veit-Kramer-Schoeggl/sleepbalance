@@ -1,7 +1,10 @@
+// ignore_for_file: constant_identifier_names
+
 /// Database Constants
 ///
 /// Centralized definition of all database table and column names.
 /// Prevents typos and enables safe refactoring across the codebase.
+library;
 
 // ============================================================================
 // Database Configuration

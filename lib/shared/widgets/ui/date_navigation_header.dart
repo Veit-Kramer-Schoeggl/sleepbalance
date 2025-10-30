@@ -47,7 +47,7 @@ class DateNavigationHeader extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: onDateTap != null ? BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                   ) : null,
                   child: Text(
                     DateFormatter.formatForHeader(currentDate),
