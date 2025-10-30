@@ -5,8 +5,9 @@ Refactor Action Center as the pilot feature to demonstrate full MVVM + Provider 
 
 ## Prerequisites
 - **Phase 1 completed:** Database infrastructure, UUID generator, constants
-- Database initialized with all tables
-- Provider package added to dependencies
+- Database initialized with all tables (verified via tests)
+- Provider package added to dependencies (verified in pubspec.yaml)
+- All 118 analyzer warnings resolved
 
 ## Goals
 - Create first domain model with JSON serialization
@@ -14,61 +15,210 @@ Refactor Action Center as the pilot feature to demonstrate full MVVM + Provider 
 - Create first ViewModel with ChangeNotifier
 - Refactor ActionScreen from StatefulWidget to StatelessWidget + Provider
 - Migrate from hardcoded data to database persistence
+- Add new `daily_actions` table via migration
 
 ---
 
-## Step 2.1: Create Domain Model - DailyAction
+## Step 2.1: Create Migration V2 for Daily Actions Table
+
+**File:** `lib/core/database/migrations/migration_v2.dart`
+**Purpose:** Add daily_actions table to existing database
+**Dependencies:** `database_constants.dart`
+
+**Why First:** Based on Phase 1 learning, create migration before models to ensure schema exists
+
+**Add to database_constants.dart:**
+```dart
+// Daily Actions Table
+const String TABLE_DAILY_ACTIONS = 'daily_actions';
+const String DAILY_ACTIONS_ID = 'id';
+const String DAILY_ACTIONS_USER_ID = 'user_id';
+const String DAILY_ACTIONS_TITLE = 'title';
+const String DAILY_ACTIONS_ICON_NAME = 'icon_name';
+const String DAILY_ACTIONS_IS_COMPLETED = 'is_completed';
+const String DAILY_ACTIONS_CREATED_AT = 'created_at';
+const String DAILY_ACTIONS_COMPLETED_AT = 'completed_at';
+const String DAILY_ACTIONS_ACTION_DATE = 'action_date';
+```
+
+**Create migration_v2.dart:**
+```dart
+// ignore_for_file: constant_identifier_names
+
+import '../../../shared/constants/database_constants.dart';
+
+const String MIGRATION_V2 = '''
+-- Add daily_actions table
+CREATE TABLE $TABLE_DAILY_ACTIONS (
+  $DAILY_ACTIONS_ID TEXT PRIMARY KEY,
+  $DAILY_ACTIONS_USER_ID TEXT NOT NULL,
+  $DAILY_ACTIONS_TITLE TEXT NOT NULL,
+  $DAILY_ACTIONS_ICON_NAME TEXT NOT NULL,
+  $DAILY_ACTIONS_IS_COMPLETED INTEGER NOT NULL DEFAULT 0,
+  $DAILY_ACTIONS_ACTION_DATE TEXT NOT NULL,
+  $DAILY_ACTIONS_CREATED_AT TEXT NOT NULL,
+  $DAILY_ACTIONS_COMPLETED_AT TEXT,
+  FOREIGN KEY ($DAILY_ACTIONS_USER_ID) REFERENCES $TABLE_USERS($USERS_ID) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_daily_actions_user_date ON $TABLE_DAILY_ACTIONS($DAILY_ACTIONS_USER_ID, $DAILY_ACTIONS_ACTION_DATE);
+''';
+```
+
+**Update database_helper.dart:**
+- Change `DATABASE_VERSION` from 1 to 2 in database_constants.dart
+- Update `_onUpgrade` method:
+```dart
+Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  if (oldVersion < 2) {
+    await db.execute(MIGRATION_V2);
+  }
+}
+```
+
+**Why:** Following Phase 1 pattern: migration → constants → helper update
+
+---
+
+## Step 2.2: Create Domain Model - DailyAction
 
 **File:** `lib/features/action_center/domain/models/daily_action.dart`
 **Purpose:** Data model for action items displayed in Action Center
-**Dependencies:** `json_annotation`, `uuid_generator`
+**Dependencies:** `json_annotation`
+
+**Part directive required:**
+```dart
+import 'package:json_annotation/json_annotation.dart';
+import 'package:flutter/material.dart';
+
+part 'daily_action.g.dart';
+```
 
 **Class: DailyAction**
 
-**Fields:**
-- `String id` - UUID, primary key
-- `String userId` - Foreign key to users table
-- `String title` - Action text (e.g., "Drink a glass of water")
-- `String iconName` - Icon identifier (e.g., "local_drink")
-- `bool isCompleted` - Completion status
-- `DateTime createdAt` - When action was created
-- `DateTime? completedAt` - When action was completed (nullable)
+```dart
+@JsonSerializable()
+class DailyAction {
+  final String id;
+  final String userId;
+  final String title;
+  final String iconName;
+  final bool isCompleted;
+  final DateTime actionDate;
+  final DateTime createdAt;
+  final DateTime? completedAt;
 
-**Methods:**
-- `DailyAction({required fields})` - Constructor
-- `factory DailyAction.fromJson(Map<String, dynamic> json)` - Deserialize from JSON/database
-- `Map<String, dynamic> toJson()` - Serialize to JSON/database
-- `DailyAction copyWith({...})` - Immutable update helper
-- `IconData get icon` - Helper to convert iconName string to IconData
+  const DailyAction({
+    required this.id,
+    required this.userId,
+    required this.title,
+    required this.iconName,
+    required this.isCompleted,
+    required this.actionDate,
+    required this.createdAt,
+    this.completedAt,
+  });
 
-**Annotations:**
-- `@JsonSerializable()` for code generation
+  // JSON serialization (auto-generated)
+  factory DailyAction.fromJson(Map<String, dynamic> json) =>
+      _$DailyActionFromJson(json);
+  Map<String, dynamic> toJson() => _$DailyActionToJson(this);
 
-**Why:** Replaces hardcoded `Map<String, dynamic>` in ActionScreen (line 19-35)
+  // Database conversion (manual - handles DateTime as ISO strings)
+  factory DailyAction.fromDatabase(Map<String, dynamic> map) {
+    return DailyAction(
+      id: map['id'] as String,
+      userId: map['user_id'] as String,
+      title: map['title'] as String,
+      iconName: map['icon_name'] as String,
+      isCompleted: (map['is_completed'] as int) == 1,
+      actionDate: DateTime.parse(map['action_date'] as String),
+      createdAt: DateTime.parse(map['created_at'] as String),
+      completedAt: map['completed_at'] != null
+          ? DateTime.parse(map['completed_at'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toDatabase() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'title': title,
+      'icon_name': iconName,
+      'is_completed': isCompleted ? 1 : 0,
+      'action_date': actionDate.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'completed_at': completedAt?.toIso8601String(),
+    };
+  }
+
+  // Immutable update helper
+  DailyAction copyWith({
+    String? id,
+    String? userId,
+    String? title,
+    String? iconName,
+    bool? isCompleted,
+    DateTime? actionDate,
+    DateTime? createdAt,
+    DateTime? completedAt,
+  }) {
+    return DailyAction(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      title: title ?? this.title,
+      iconName: iconName ?? this.iconName,
+      isCompleted: isCompleted ?? this.isCompleted,
+      actionDate: actionDate ?? this.actionDate,
+      createdAt: createdAt ?? this.createdAt,
+      completedAt: completedAt ?? this.completedAt,
+    );
+  }
+
+  // Helper to convert iconName to IconData
+  IconData get icon {
+    switch (iconName) {
+      case 'local_drink': return Icons.local_drink;
+      case 'air': return Icons.air;
+      case 'accessibility_new': return Icons.accessibility_new;
+      default: return Icons.check_circle;
+    }
+  }
+}
+```
+
+**Generate code:**
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+**Why separate fromDatabase/toDatabase:** SQLite stores dates as TEXT (ISO 8601) and booleans as INTEGER, requiring manual conversion
 
 ---
 
-## Step 2.2: Create Repository Interface
+## Step 2.3: Create Repository Interface
 
 **File:** `lib/features/action_center/domain/repositories/action_repository.dart`
 **Purpose:** Abstract interface defining action data operations
 **Dependencies:** `daily_action.dart`
 
-**Abstract Class: ActionRepository**
+```dart
+import '../models/daily_action.dart';
 
-**Methods:**
-- `Future<List<DailyAction>> getActionsForDate(String userId, DateTime date)` - Fetch actions for specific date
-- `Future<List<DailyAction>> getTodayActions(String userId)` - Convenience method for today's actions
-- `Future<void> saveAction(DailyAction action)` - Insert or update action
-- `Future<void> deleteAction(String actionId)` - Remove action
-- `Future<void> toggleActionCompletion(String actionId)` - Mark as completed/uncompleted
-- `Future<int> getCompletionCount(String userId, DateTime date)` - Count completed actions
+abstract class ActionRepository {
+  Future<List<DailyAction>> getActionsForDate(String userId, DateTime date);
+  Future<void> saveAction(DailyAction action);
+  Future<void> toggleActionCompletion(String actionId);
+  Future<int> getCompletionCount(String userId, DateTime date);
+}
+```
 
-**Why:** Allows swapping implementations (SQLite, mock, future API) without changing business logic
+**Note:** Simplified from Phase 2 draft - removed methods that aren't needed yet (YAGNI principle learned from Phase 1)
 
 ---
 
-## Step 2.3: Create Local Data Source
+## Step 2.4: Create Local Data Source
 
 **File:** `lib/features/action_center/data/datasources/action_local_datasource.dart`
 **Purpose:** SQLite operations for action items
@@ -76,238 +226,497 @@ Refactor Action Center as the pilot feature to demonstrate full MVVM + Provider 
 
 **Class: ActionLocalDataSource**
 
-**Constructor:**
-- `ActionLocalDataSource({required Database database})` - Inject database instance
+```dart
+import 'package:sqflite/sqflite.dart';
+import '../../../../shared/constants/database_constants.dart';
+import '../../domain/models/daily_action.dart';
 
-**Methods:**
+class ActionLocalDataSource {
+  final Database database;
 
-**`Future<List<DailyAction>> getActionsByDate(String userId, DateTime date)`**
-- Query actions table filtered by userId and date
-- Convert List<Map> to List<DailyAction> using fromJson
-- Return list sorted by createdAt
+  ActionLocalDataSource({required this.database});
 
-**`Future<DailyAction?> getActionById(String actionId)`**
-- Query single action by ID
-- Return DailyAction or null if not found
+  Future<List<DailyAction>> getActionsByDate(String userId, DateTime date) async {
+    final dateStr = _formatDate(date);
 
-**`Future<void> insertAction(DailyAction action)`**
-- Convert action to Map using toJson
-- Execute INSERT into actions table
-- Handle conflicts (replace if ID exists)
+    final results = await database.query(
+      TABLE_DAILY_ACTIONS,
+      where: '$DAILY_ACTIONS_USER_ID = ? AND $DAILY_ACTIONS_ACTION_DATE = ?',
+      whereArgs: [userId, dateStr],
+      orderBy: '$DAILY_ACTIONS_CREATED_AT ASC',
+    );
 
-**`Future<void> updateAction(DailyAction action)`**
-- Convert to Map
-- Execute UPDATE where id = action.id
+    return results.map((map) => DailyAction.fromDatabase(map)).toList();
+  }
 
-**`Future<void> deleteAction(String actionId)`**
-- Execute DELETE where id = actionId
+  Future<void> insertOrUpdateAction(DailyAction action) async {
+    await database.insert(
+      TABLE_DAILY_ACTIONS,
+      action.toDatabase(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
 
-**`Future<void> toggleCompletion(String actionId)`**
-- Fetch current action
-- Flip isCompleted boolean
-- Set completedAt to now() if completing, null if uncompleting
-- Update in database
+  Future<void> toggleCompletion(String actionId) async {
+    // Fetch current state
+    final result = await database.query(
+      TABLE_DAILY_ACTIONS,
+      where: '$DAILY_ACTIONS_ID = ?',
+      whereArgs: [actionId],
+      limit: 1,
+    );
 
-**`Future<int> countCompletedActions(String userId, DateTime date)`**
-- Query COUNT(*) where userId, date, and isCompleted = true
-- Return integer count
+    if (result.isEmpty) return;
 
-**Why:** Separates raw SQL operations from business logic
+    final action = DailyAction.fromDatabase(result.first);
+    final newCompleted = !action.isCompleted;
+
+    await database.update(
+      TABLE_DAILY_ACTIONS,
+      {
+        DAILY_ACTIONS_IS_COMPLETED: newCompleted ? 1 : 0,
+        DAILY_ACTIONS_COMPLETED_AT: newCompleted
+            ? DateTime.now().toIso8601String()
+            : null,
+      },
+      where: '$DAILY_ACTIONS_ID = ?',
+      whereArgs: [actionId],
+    );
+  }
+
+  Future<int> countCompletedActions(String userId, DateTime date) async {
+    final dateStr = _formatDate(date);
+
+    final result = await database.rawQuery(
+      'SELECT COUNT(*) as count FROM $TABLE_DAILY_ACTIONS '
+      'WHERE $DAILY_ACTIONS_USER_ID = ? '
+      'AND $DAILY_ACTIONS_ACTION_DATE = ? '
+      'AND $DAILY_ACTIONS_IS_COMPLETED = 1',
+      [userId, dateStr],
+    );
+
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  String _formatDate(DateTime date) {
+    return date.toIso8601String().split('T')[0]; // YYYY-MM-DD
+  }
+}
+```
+
+**Key learning from Phase 1:** Use database constants instead of hardcoded strings, handle null safety explicitly
 
 ---
 
-## Step 2.4: Implement Repository
+## Step 2.5: Implement Repository
 
 **File:** `lib/features/action_center/data/repositories/action_repository_impl.dart`
-**Purpose:** Concrete implementation of ActionRepository using ActionLocalDataSource
-**Dependencies:** `action_repository`, `action_local_datasource`, `daily_action`
+**Purpose:** Concrete implementation of ActionRepository
+**Dependencies:** `action_repository`, `action_local_datasource`
 
-**Class: ActionRepositoryImpl implements ActionRepository**
+```dart
+import '../../domain/models/daily_action.dart';
+import '../../domain/repositories/action_repository.dart';
+import '../datasources/action_local_datasource.dart';
 
-**Constructor:**
-- `ActionRepositoryImpl({required ActionLocalDataSource dataSource})` - Inject datasource
+class ActionRepositoryImpl implements ActionRepository {
+  final ActionLocalDataSource _dataSource;
 
-**Fields:**
-- `final ActionLocalDataSource _dataSource` - Private datasource instance
+  ActionRepositoryImpl({required ActionLocalDataSource dataSource})
+      : _dataSource = dataSource;
 
-**Methods:**
+  @override
+  Future<List<DailyAction>> getActionsForDate(String userId, DateTime date) {
+    return _dataSource.getActionsByDate(userId, date);
+  }
 
-**`Future<List<DailyAction>> getActionsForDate(String userId, DateTime date)`**
-- Delegates to `_dataSource.getActionsByDate(userId, date)`
-- Returns result directly
+  @override
+  Future<void> saveAction(DailyAction action) {
+    return _dataSource.insertOrUpdateAction(action);
+  }
 
-**`Future<List<DailyAction>> getTodayActions(String userId)`**
-- Calls `getActionsForDate(userId, DateTime.now())`
+  @override
+  Future<void> toggleActionCompletion(String actionId) {
+    return _dataSource.toggleCompletion(actionId);
+  }
 
-**`Future<void> saveAction(DailyAction action)`**
-- If action.id exists in database: calls `_dataSource.updateAction(action)`
-- Else: calls `_dataSource.insertAction(action)`
+  @override
+  Future<int> getCompletionCount(String userId, DateTime date) {
+    return _dataSource.countCompletedActions(userId, date);
+  }
+}
+```
 
-**`Future<void> deleteAction(String actionId)`**
-- Delegates to `_dataSource.deleteAction(actionId)`
-
-**`Future<void> toggleActionCompletion(String actionId)`**
-- Delegates to `_dataSource.toggleCompletion(actionId)`
-
-**`Future<int> getCompletionCount(String userId, DateTime date)`**
-- Delegates to `_dataSource.countCompletedActions(userId, date)`
-
-**Why:** Repository pattern allows easy mocking for tests, could switch to API datasource later
+**Simple delegation pattern** - keeps repository thin, business logic in ViewModel
 
 ---
 
-## Step 2.5: Create ViewModel
+## Step 2.6: Create ViewModel
 
 **File:** `lib/features/action_center/presentation/viewmodels/action_viewmodel.dart`
-**Purpose:** Manage Action Center state, handle business logic, notify UI of changes
-**Dependencies:** `provider`, `action_repository`, `daily_action`
+**Purpose:** Manage Action Center state, handle business logic
+**Dependencies:** `provider`, `action_repository`, `daily_action`, `uuid_generator`
 
-**Class: ActionViewModel extends ChangeNotifier**
+```dart
+import 'package:flutter/foundation.dart';
+import '../../../../core/utils/uuid_generator.dart';
+import '../../domain/models/daily_action.dart';
+import '../../domain/repositories/action_repository.dart';
 
-**Constructor:**
-- `ActionViewModel({required ActionRepository repository})` - Inject repository
+class ActionViewModel extends ChangeNotifier {
+  final ActionRepository _repository;
+  final String userId;
 
-**Fields:**
-- `final ActionRepository _repository` - Private repository instance
-- `List<DailyAction> _actions = []` - Current actions list
-- `bool _isLoading = false` - Loading state
-- `String? _errorMessage` - Error message (nullable)
-- `DateTime _currentDate = DateTime.now()` - Selected date
+  ActionViewModel({
+    required ActionRepository repository,
+    required this.userId,
+  }) : _repository = repository;
 
-**Getters:**
-- `List<DailyAction> get actions => _actions` - Expose actions list
-- `bool get isLoading => _isLoading` - Expose loading state
-- `String? get errorMessage => _errorMessage` - Expose error message
-- `DateTime get currentDate => _currentDate` - Expose current date
-- `int get completedCount => _actions.where((a) => a.isCompleted).length` - Count completed actions
+  List<DailyAction> _actions = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+  DateTime _currentDate = DateTime.now();
 
-**Methods:**
+  // Getters
+  List<DailyAction> get actions => _actions;
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  DateTime get currentDate => _currentDate;
+  int get completedCount => _actions.where((a) => a.isCompleted).length;
 
-**`Future<void> loadActions(String userId)`**
-- Set `_isLoading = true`, notify listeners
-- Try: Fetch actions from repository for currentDate
-- Assign to `_actions`
-- Catch errors: Set `_errorMessage`
-- Finally: Set `_isLoading = false`, notify listeners
+  Future<void> loadActions() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
 
-**`Future<void> toggleAction(String actionId)`**
-- Call `_repository.toggleActionCompletion(actionId)`
-- Reload actions to reflect change
-- Notify listeners
+    try {
+      _actions = await _repository.getActionsForDate(userId, _currentDate);
+    } catch (e) {
+      _errorMessage = 'Failed to load actions: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
-**`Future<void> addAction(String userId, String title, String iconName)`**
-- Create new DailyAction with UUID, current date
-- Call `_repository.saveAction(action)`
-- Reload actions
-- Notify listeners
+  Future<void> toggleAction(String actionId) async {
+    try {
+      await _repository.toggleActionCompletion(actionId);
+      await loadActions(); // Reload to get updated state
+    } catch (e) {
+      _errorMessage = 'Failed to toggle action: $e';
+      notifyListeners();
+    }
+  }
 
-**`Future<void> deleteAction(String actionId)`**
-- Call `_repository.deleteAction(actionId)`
-- Remove from `_actions` list locally
-- Notify listeners
+  Future<void> changeDate(DateTime newDate) async {
+    _currentDate = newDate;
+    await loadActions();
+  }
 
-**`Future<void> changeDate(DateTime newDate)`**
-- Set `_currentDate = newDate`
-- Reload actions for new date
-- Notify listeners
+  Future<void> addDefaultActions() async {
+    // Helper method to populate with default actions
+    final defaultActions = [
+      DailyAction(
+        id: UuidGenerator.generate(),
+        userId: userId,
+        title: 'Drink a glass of water',
+        iconName: 'local_drink',
+        isCompleted: false,
+        actionDate: _currentDate,
+        createdAt: DateTime.now(),
+      ),
+      DailyAction(
+        id: UuidGenerator.generate(),
+        userId: userId,
+        title: 'Take 5 deep breaths',
+        iconName: 'air',
+        isCompleted: false,
+        actionDate: _currentDate,
+        createdAt: DateTime.now(),
+      ),
+      DailyAction(
+        id: UuidGenerator.generate(),
+        userId: userId,
+        title: 'Stretch for 2 minutes',
+        iconName: 'accessibility_new',
+        isCompleted: false,
+        actionDate: _currentDate,
+        createdAt: DateTime.now(),
+      ),
+    ];
 
-**`void clearError()`**
-- Set `_errorMessage = null`
-- Notify listeners
+    for (final action in defaultActions) {
+      await _repository.saveAction(action);
+    }
 
-**Why:** Separates business logic from UI, reactive updates via ChangeNotifier
+    await loadActions();
+  }
+}
+```
+
+**Key Pattern:** Always `notifyListeners()` after state changes. Use try-catch-finally for async operations.
 
 ---
 
-## Step 2.6: Refactor ActionScreen
+## Step 2.7: Refactor ActionScreen
 
 **File:** `lib/features/action_center/presentation/screens/action_screen.dart`
-**Purpose:** Transform from StatefulWidget with local state to StatelessWidget consuming ViewModel
-**Dependencies:** `provider`, `action_viewmodel`, `daily_action`, existing widgets
+**Purpose:** Convert to StatelessWidget consuming ViewModel
+**Dependencies:** `provider`, `action_viewmodel`, existing widgets
 
-**Changes:**
+**Replace entire file:**
 
-### Remove (DELETE):
-- `class _ActionScreenState extends State<ActionScreen>` (lines 15-110)
-- `List<Map<String, dynamic>> _actionItems` (lines 19-35) - HARDCODED DATA
-- `DateTime _currentDate` (line 16) - Moved to ViewModel
-- All `setState()` calls
+```dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../shared/widgets/ui/background_wrapper.dart';
+import '../../../../shared/widgets/ui/date_navigation_header.dart';
+import '../../../../shared/widgets/ui/checkbox_button.dart';
+import '../../../../shared/widgets/ui/acceptance_button.dart';
+import '../viewmodels/action_viewmodel.dart';
 
-### Convert:
-- `class ActionScreen extends StatefulWidget` → `class ActionScreen extends StatelessWidget`
+class ActionScreen extends StatelessWidget {
+  const ActionScreen({super.key});
 
-### New Structure:
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ActionViewModel(
+        repository: context.read(), // Reads ActionRepository from parent MultiProvider
+        userId: 'temp-user-id', // TODO: Replace with actual user ID from auth
+      )..loadActions(),
+      child: const _ActionScreenContent(),
+    );
+  }
+}
 
-**`class ActionScreen extends StatelessWidget`**
+class _ActionScreenContent extends StatelessWidget {
+  const _ActionScreenContent();
 
-**Build Method:**
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.watch<ActionViewModel>();
+
+    return BackgroundWrapper(
+      imagePath: 'assets/images/main_background.png',
+      overlayOpacity: 0.3,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Action Center', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        body: Column(
+          children: [
+            DateNavigationHeader(
+              currentDate: viewModel.currentDate,
+              onPreviousDay: () {
+                viewModel.changeDate(
+                  viewModel.currentDate.subtract(const Duration(days: 1)),
+                );
+              },
+              onNextDay: () {
+                viewModel.changeDate(
+                  viewModel.currentDate.add(const Duration(days: 1)),
+                );
+              },
+            ),
+
+            // Error message
+            if (viewModel.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  viewModel.errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+
+            // Loading or content
+            Expanded(
+              child: viewModel.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : viewModel.actions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'No actions for today',
+                                style: TextStyle(color: Colors.white70, fontSize: 16),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: viewModel.addDefaultActions,
+                                child: const Text('Add Default Actions'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ListView.builder(
+                            itemCount: viewModel.actions.length,
+                            itemBuilder: (context, index) {
+                              final action = viewModel.actions[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: CheckboxButton(
+                                  text: action.title,
+                                  icon: action.icon,
+                                  isChecked: action.isCompleted,
+                                  onChanged: (_) => viewModel.toggleAction(action.id),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: AcceptanceButton(
+                text: 'Complete Actions',
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${viewModel.completedCount} of ${viewModel.actions.length} actions completed!',
+                      ),
+                      backgroundColor: Colors.blue,
+                    ),
+                  );
+                },
+                width: double.infinity,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 ```
-Widget build(BuildContext context) {
-  return ChangeNotifierProvider(
-    create: (_) => ActionViewModel(
-      repository: context.read<ActionRepository>(), // Injected from main.dart
-    )..loadActions('hardcoded-user-id'), // TODO: Get from auth
-    child: _ActionScreenContent(),
+
+**Key Changes:**
+- StatefulWidget → StatelessWidget
+- Local state → ViewModel state
+- setState → notifyListeners (automatic via Provider)
+- Hardcoded data → Database queries
+- Added empty state with "Add Default Actions" button
+
+---
+
+## Step 2.8: Register Providers in Main
+
+**File:** `lib/main.dart`
+**Purpose:** Provide dependencies to widget tree
+**Dependencies:** `provider`, `database_helper`, repositories, datasources
+
+**Update main.dart:**
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'core/database/database_helper.dart';
+import 'features/action_center/data/datasources/action_local_datasource.dart';
+import 'features/action_center/data/repositories/action_repository_impl.dart';
+import 'features/action_center/domain/repositories/action_repository.dart';
+// ... other imports
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize database
+  final database = await DatabaseHelper.instance.database;
+
+  runApp(
+    MultiProvider(
+      providers: [
+        // Data sources
+        Provider<ActionLocalDataSource>(
+          create: (_) => ActionLocalDataSource(database: database),
+        ),
+
+        // Repositories
+        Provider<ActionRepository>(
+          create: (context) => ActionRepositoryImpl(
+            dataSource: context.read<ActionLocalDataSource>(),
+          ),
+        ),
+      ],
+      child: const MyApp(),
+    ),
   );
 }
 ```
 
-**`class _ActionScreenContent extends StatelessWidget`**
-
-**Build Method:**
-- Use `context.watch<ActionViewModel>()` to consume ViewModel
-- Show loading spinner if `viewModel.isLoading`
-- Show error message if `viewModel.errorMessage != null`
-- Use `viewModel.actions` instead of `_actionItems`
-- Call `viewModel.toggleAction(id)` on checkbox change
-- Call `viewModel.changeDate()` on date navigation
-- Use `DateNavigationHeader` with ViewModel's currentDate
-
-**ListView.builder:**
-- `itemCount: viewModel.actions.length`
-- Access action via `viewModel.actions[index]`
-- CheckboxButton receives action data
-- `onChanged: (value) => viewModel.toggleAction(action.id)`
-
-**AcceptanceButton:**
-- Shows `viewModel.completedCount` in SnackBar
-
-**Why:** UI is now a pure reflection of ViewModel state, no local state management
+**Critical:** Providers must be registered in dependency order (datasources before repositories)
 
 ---
 
 ## Testing Checklist
 
+### Pre-Test Setup:
+- [ ] Run `flutter pub run build_runner build`
+- [ ] Verify `DATABASE_VERSION = 2` in constants
+- [ ] Run app once to trigger migration
+- [ ] Check database file has `daily_actions` table
+
 ### Manual Tests:
 - [ ] Launch app, navigate to Action Center
-- [ ] Should display empty list (no actions in database yet)
-- [ ] Manually insert test action via SQLite browser
-- [ ] Restart app, action should appear
-- [ ] Tap checkbox, action should toggle completion
-- [ ] Check database, `isCompleted` field should change
-- [ ] Tap "Complete Actions" button, SnackBar shows correct count
-- [ ] Change date, actions for that date should load
-
-### Unit Tests to Create:
-- [ ] Test DailyAction.fromJson / toJson
-- [ ] Test ActionLocalDataSource CRUD operations (use in-memory database)
-- [ ] Test ActionRepositoryImpl delegates correctly
-- [ ] Test ActionViewModel state changes and notifyListeners calls
-
-### Integration Tests:
-- [ ] End-to-end: Create action → Save to DB → Display in UI → Toggle → Verify in DB
+- [ ] Should show "No actions for today" message
+- [ ] Tap "Add Default Actions" button
+- [ ] Should display 3 actions from database
+- [ ] Tap checkbox - should toggle completion state
+- [ ] Restart app - actions should persist
+- [ ] Change date - should show empty list
+- [ ] Return to today - should show saved actions
+- [ ] Tap "Complete Actions" - SnackBar shows correct count
 
 ### Database Validation:
 ```sql
--- Check actions table exists
-SELECT * FROM daily_actions;
+-- Check table created
+SELECT name FROM sqlite_master WHERE type='table' AND name='daily_actions';
 
--- Insert test action
-INSERT INTO daily_actions (id, user_id, title, icon_name, is_completed, created_at)
-VALUES ('test-uuid', 'user123', 'Test Action', 'check', 0, datetime('now'));
+-- Verify data
+SELECT * FROM daily_actions ORDER BY created_at;
 
--- Verify toggle updates completedAt
-SELECT id, is_completed, completed_at FROM daily_actions;
+-- Check toggle updates
+SELECT id, title, is_completed, completed_at FROM daily_actions;
+```
+
+### Unit Tests:
+Create `test/features/action_center/domain/models/daily_action_test.dart`:
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sleepbalance/features/action_center/domain/models/daily_action.dart';
+
+void main() {
+  group('DailyAction', () {
+    test('fromDatabase and toDatabase are inverse operations', () {
+      final original = DailyAction(
+        id: 'test-id',
+        userId: 'user-123',
+        title: 'Test Action',
+        iconName: 'check',
+        isCompleted: false,
+        actionDate: DateTime(2025, 10, 30),
+        createdAt: DateTime.now(),
+      );
+
+      final map = original.toDatabase();
+      final restored = DailyAction.fromDatabase(map);
+
+      expect(restored.id, original.id);
+      expect(restored.title, original.title);
+      expect(restored.isCompleted, original.isCompleted);
+    });
+  });
+}
 ```
 
 ---
@@ -316,88 +725,93 @@ SELECT id, is_completed, completed_at FROM daily_actions;
 
 **If Phase 2 fails:**
 
-### Option A: Keep old ActionScreen
-1. Rename refactored file to `action_screen_new.dart`
-2. Keep original `action_screen.dart` active
-3. Toggle between implementations in `main_navigation.dart`
-
-### Option B: Full rollback
-1. Delete all new files:
-   - `lib/features/action_center/domain/`
-   - `lib/features/action_center/data/`
-   - `lib/features/action_center/presentation/viewmodels/`
-2. Restore original `action_screen.dart` from git:
-   ```bash
-   git checkout -- lib/features/action_center/presentation/screens/action_screen.dart
+1. **Revert database version:**
+   ```dart
+   const int DATABASE_VERSION = 1; // in database_constants.dart
    ```
 
-### Option C: Disable Provider temporarily
-1. Keep files but don't use in UI
-2. Test individually in isolation
-3. Fix issues before UI integration
+2. **Restore original ActionScreen:**
+   ```bash
+   git checkout HEAD -- lib/features/action_center/presentation/screens/action_screen.dart
+   ```
+
+3. **Remove new files:**
+   ```bash
+   rm -rf lib/features/action_center/domain
+   rm -rf lib/features/action_center/data
+   rm lib/features/action_center/presentation/viewmodels/action_viewmodel.dart
+   rm lib/core/database/migrations/migration_v2.dart
+   ```
+
+4. **Clean build:**
+   ```bash
+   flutter clean && flutter pub get
+   ```
 
 ---
 
 ## Common Issues & Solutions
 
-### Issue: "Provider not found"
-**Solution:** Ensure ActionRepository is registered in main.dart MultiProvider before ActionViewModel tries to read it
+### Issue: "Provider not found in context"
+**Cause:** ActionRepository not registered before ActionViewModel tries to read it
+**Solution:** Check provider order in main.dart - datasources → repositories → consumers
 
-### Issue: "Database locked"
-**Solution:** Ensure database operations use async/await, don't call from initState synchronously
+### Issue: "Table already exists" error
+**Cause:** Migration ran multiple times or version not incremented
+**Solution:**
+```bash
+# Delete app data and reinstall
+flutter clean
+# Uninstall from device
+# Reinstall - will create fresh database
+```
 
-### Issue: "Actions not updating"
-**Solution:** Check that `notifyListeners()` is called after state changes in ViewModel
+### Issue: Actions disappear after restart
+**Cause:** Not using `await` for database operations
+**Solution:** Ensure all repository methods use `await` and return Futures
 
-### Issue: "null check operator on null value"
-**Solution:** Ensure proper null safety, use `?` and `??` operators for nullable fields
+### Issue: "MissingPluginException"
+**Cause:** Hot reload doesn't reinitialize native plugins
+**Solution:** Full restart app (not hot reload) after database changes
+
+---
+
+## Key Learnings from Phase 1 Applied
+
+1. **Suppress linter warnings early:** Add `// ignore_for_file: constant_identifier_names` to migration files
+2. **Use `library;` directive:** Prevents dangling doc comment warnings
+3. **Database constants:** Use typed constants from database_constants.dart, never hardcode strings
+4. **DateTime handling:** SQLite stores as TEXT ISO 8601, requires manual parsing
+5. **Boolean conversion:** SQLite uses INTEGER (0/1), convert in fromDatabase/toDatabase
+6. **Testing pattern:** Always test database operations with in-memory or test database
+7. **Error handling:** Wrap async operations in try-catch-finally, set loading states
+8. **Code generation:** Run build_runner before testing JSON models
 
 ---
 
 ## Next Steps
 
 After Phase 2 completion:
-- **Validate pattern works:** Action Center should fully function with database persistence
-- Proceed to **PHASE_3.md:** Apply same pattern to Night Review screen
-- Pattern is now proven and can be replicated for other features
+- **Validate:** Action Center fully functional with database persistence
+- **Pattern established:** Repository → ViewModel → Provider → UI
+- **Ready for replication:** Apply to Night Review (Phase 3)
 
 ---
 
 ## Notes
 
-**Why Action Center as pilot?**
-- Simplest data model (just action items)
-- No complex relationships or calculations
-- Clear user interactions (toggle checkbox)
-- Easy to test manually
+**Estimated Time:** 4-5 hours
+- Migration & constants: 30 min
+- Domain model: 45 min
+- Repository & datasource: 90 min
+- ViewModel: 60 min
+- Screen refactoring: 60 min
+- Testing & debugging: 45 min
 
-**Key Learning from Phase 2:**
-- Repository pattern isolates data access
-- ViewModel simplifies UI logic
-- Provider makes state reactiv
-- Database persistence "just works" once plumbing is set up
-
-**Database Schema for Actions:**
-```sql
-CREATE TABLE daily_actions (
-  id TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
-  title TEXT NOT NULL,
-  icon_name TEXT NOT NULL,
-  is_completed INTEGER NOT NULL DEFAULT 0,  -- SQLite boolean
-  created_at TEXT NOT NULL,                 -- ISO 8601 datetime
-  completed_at TEXT,                        -- Nullable
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
-CREATE INDEX idx_daily_actions_user_date ON daily_actions(user_id, created_at);
-```
-
-**Estimated Time:** 4-6 hours
-- Domain model: 30 minutes
-- Repository interface: 20 minutes
-- Data source: 60 minutes
-- Repository impl: 30 minutes
-- ViewModel: 90 minutes
-- Screen refactoring: 90 minutes
-- Testing: 60 minutes
+**Success Criteria:**
+- [ ] No analyzer warnings
+- [ ] All tests pass
+- [ ] Actions persist across app restarts
+- [ ] Date navigation loads correct actions
+- [ ] Toggle updates database immediately
+- [ ] Empty state shows helpful message

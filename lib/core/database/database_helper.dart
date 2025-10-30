@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 import '../../shared/constants/database_constants.dart';
 import 'migrations/migration_v1.dart';
+import 'migrations/migration_v2.dart';
 
 /// Database Helper - Singleton for managing SQLite database lifecycle
 ///
@@ -54,17 +55,23 @@ class DatabaseHelper {
   /// Create database callback
   ///
   /// Called when database is created for the first time.
-  /// Executes the appropriate migration based on version number.
+  /// Executes all migrations up to the current version.
   ///
-  /// For version 1: Executes MIGRATION_V1 which creates:
-  /// - 6 core tables (users, sleep_records, modules, etc.)
-  /// - 6 performance indexes
-  /// - Pre-populates 9 intervention modules
+  /// For fresh installs at V2:
+  /// - Executes MIGRATION_V1 (base schema)
+  /// - Executes MIGRATION_V2 (daily_actions table)
   Future<void> _onCreate(Database db, int version) async {
-    // Execute initial schema creation
-    if (version == 1) {
-      await db.execute(MIGRATION_V1);
+    // Always execute V1 first (base schema)
+    await db.execute(MIGRATION_V1);
+
+    // Execute subsequent migrations to reach target version
+    if (version >= 2) {
+      await db.execute(MIGRATION_V2);
     }
+    // Future migrations:
+    // if (version >= 3) {
+    //   await db.execute(MIGRATION_V3);
+    // }
   }
 
   /// Upgrade database callback
@@ -75,14 +82,12 @@ class DatabaseHelper {
   /// Example: If user has v1 and app requires v3:
   /// - Execute migration v1→v2
   /// - Then execute migration v2→v3
-  ///
-  /// Currently placeholder for future migrations (v2, v3, etc.)
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // Execute migrations sequentially
-    // Example:
-    // if (oldVersion < 2) {
-    //   await db.execute(MIGRATION_V2);
-    // }
+    if (oldVersion < 2) {
+      await db.execute(MIGRATION_V2);
+    }
+    // Future migrations:
     // if (oldVersion < 3) {
     //   await db.execute(MIGRATION_V3);
     // }

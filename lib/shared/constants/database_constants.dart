@@ -11,7 +11,7 @@ library;
 // ============================================================================
 
 const String DATABASE_NAME = 'sleepbalance.db';
-const int DATABASE_VERSION = 1;
+const int DATABASE_VERSION = 2;
 
 // ============================================================================
 // Table Names
@@ -134,3 +134,17 @@ const String USER_SLEEP_BASELINES_METRIC_VALUE = 'metric_value';
 const String USER_SLEEP_BASELINES_DATA_RANGE_START = 'data_range_start';
 const String USER_SLEEP_BASELINES_DATA_RANGE_END = 'data_range_end';
 const String USER_SLEEP_BASELINES_COMPUTED_AT = 'computed_at';
+
+// ============================================================================
+// Daily Actions Table
+// ============================================================================
+
+const String TABLE_DAILY_ACTIONS = 'daily_actions';
+const String DAILY_ACTIONS_ID = 'id';
+const String DAILY_ACTIONS_USER_ID = 'user_id';
+const String DAILY_ACTIONS_TITLE = 'title';
+const String DAILY_ACTIONS_ICON_NAME = 'icon_name';
+const String DAILY_ACTIONS_IS_COMPLETED = 'is_completed';
+const String DAILY_ACTIONS_ACTION_DATE = 'action_date';
+const String DAILY_ACTIONS_CREATED_AT = 'created_at';
+const String DAILY_ACTIONS_COMPLETED_AT = 'completed_at';
