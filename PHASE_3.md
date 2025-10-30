@@ -4,18 +4,60 @@
 Refactor Night Review screen to use MVVM + Provider pattern, integrate with sleep_records database table, add subjective quality rating, and implement baseline comparisons.
 
 ## Prerequisites
-- **Phase 1 completed:** Database infrastructure
+- **Phase 1 completed:** Database infrastructure with constants
 - **Phase 2 completed:** MVVM pattern validated with Action Center
 - Understanding of repository pattern and ViewModel
+- **IMPORTANT:** Review Action Center implementation as reference
 
 ## Goals
-- Create SleepRecord model for nightly sleep data
-- Create SleepBaseline model for personal averages
-- Implement repository pattern for sleep records
-- Create NightReviewViewModel with date navigation
+- Create database migrations FIRST (migration_v3.dart)
+- Create SleepRecord and SleepBaseline models with proper date handling
+- Implement repository pattern following Action Center example
+- Create NightReviewViewModel with comprehensive error handling
 - Add quality rating widget (3-point scale: bad/average/good)
-- Refactor NightScreen to consume ViewModel
+- Refactor NightScreen to StatelessWidget consuming ViewModel
 - Display "today vs your average" comparisons
+- **Expected outcome:** 0 analyzer warnings, all tests passing
+
+---
+
+## Step 3.0: Create Database Migration (DO THIS FIRST!)
+
+**File:** `lib/core/database/migrations/migration_v3.dart`
+**Purpose:** Define sleep_records and user_sleep_baselines tables
+**Dependencies:** None
+
+**CRITICAL:** Create this migration BEFORE creating models! This establishes the database schema.
+
+**Add to file header:**
+```dart
+// ignore_for_file: constant_identifier_names
+/// Migration V3: Sleep records and baselines tables
+///
+/// Creates tables for storing nightly sleep data from wearables
+/// and computed personal baseline averages.
+library;
+```
+
+**Class: MigrationV3**
+
+**Static constant: MIGRATION_V3**
+- SQL string creating `sleep_records` table with all fields
+- SQL string creating `user_sleep_baselines` table
+- Add indexes for frequently queried columns: (user_id, sleep_date)
+
+**Next Steps:**
+1. Update `lib/shared/constants/database_constants.dart`:
+   - Add `TABLE_SLEEP_RECORDS = 'sleep_records'`
+   - Add `TABLE_USER_SLEEP_BASELINES = 'user_sleep_baselines'`
+   - Add all column name constants
+2. Update `lib/core/database/database_helper.dart`:
+   - Increment `DATABASE_VERSION` to 3
+   - Add MIGRATION_V3 to `_onCreate` method
+   - Add version 3 case to `_onUpgrade` switch statement
+3. **Uninstall app before testing** to force database recreation (existing V2 won't auto-migrate)
+
+**Why:** Following Phase 1/2 pattern - migrations first, then models, prevents SQL string hardcoding
 
 ---
 
@@ -24,6 +66,10 @@ Refactor Night Review screen to use MVVM + Provider pattern, integrate with slee
 **File:** `lib/features/night_review/domain/models/sleep_record.dart`
 **Purpose:** Model for nightly sleep data from wearables (aggregated metrics)
 **Dependencies:** `json_annotation`
+
+**CRITICAL - Two Conversion Methods Required:**
+- **fromJson/toJson:** For API communication (if future backend integration)
+- **fromDatabase/toDatabase:** For SQLite operations (must handle DateTime conversion)
 
 **Class: SleepRecord**
 
@@ -53,8 +99,14 @@ Refactor Night Review screen to use MVVM + Provider pattern, integrate with slee
 
 **Methods:**
 - `SleepRecord({required fields})` - Constructor
-- `factory SleepRecord.fromJson(Map<String, dynamic> json)` - Deserialize
-- `Map<String, dynamic> toJson()` - Serialize
+- `factory SleepRecord.fromJson(Map<String, dynamic> json)` - Deserialize (API)
+- `Map<String, dynamic> toJson()` - Serialize (API)
+- **`factory SleepRecord.fromDatabase(Map<String, dynamic> map)`** - Deserialize from SQLite
+  - Use `DatabaseDateUtils.parseDateTime()` for all DateTime fields
+  - Use `DatabaseDateUtils.parseDateTimeNullable()` for nullable DateTime fields
+- **`Map<String, dynamic> toDatabase()`** - Serialize to SQLite
+  - Use `DatabaseDateUtils.toIso8601String()` for all DateTime fields
+  - Use `DatabaseDateUtils.toIso8601StringNullable()` for nullable DateTime fields
 - `SleepRecord copyWith({...})` - Immutable update
 - `int? get sleepEfficiency` - Calculated: (totalSleepTime / timeInBed) * 100
 - `Duration? get timeInBed` - bedTime to wakeTime duration
@@ -62,7 +114,12 @@ Refactor Night Review screen to use MVVM + Provider pattern, integrate with slee
 **Annotations:**
 - `@JsonSerializable()`
 
-**Why:** Replaces unused existing `SleepData` model, aligns with database schema
+**After Creating Model:**
+1. Run `dart run build_runner build` to generate `sleep_record.g.dart`
+2. Verify no analyzer warnings
+3. Reference Action Center's `DailyAction` model for pattern
+
+**Why:** Replaces unused existing `SleepData` model, aligns with database schema. Proper DateTime handling critical for SQLite storage (ISO 8601 TEXT format).
 
 ---
 
@@ -86,6 +143,12 @@ Refactor Night Review screen to use MVVM + Provider pattern, integrate with slee
 
 **Methods:**
 - Constructor, fromJson, toJson, copyWith
+- **`factory SleepBaseline.fromDatabase(Map<String, dynamic> map)`** - Use DatabaseDateUtils
+- **`Map<String, dynamic> toDatabase()`** - Use DatabaseDateUtils
+
+**After Creating Model:**
+1. Run `dart run build_runner build` to generate `sleep_baseline.g.dart`
+2. Verify no analyzer warnings
 
 **Why:** Enables "You slept better than your 7-day average" comparisons
 
@@ -150,36 +213,42 @@ Refactor Night Review screen to use MVVM + Provider pattern, integrate with slee
 **Methods:**
 
 **`Future<SleepRecord?> getRecordByDate(String userId, DateTime date)`**
-- Query sleep_records WHERE user_id AND sleep_date
-- Convert Map to SleepRecord using fromJson
-- Return record or null
+- Convert date to ISO 8601 string for query: `DatabaseDateUtils.toIso8601String(date)`
+- Query: `SELECT * FROM ${DatabaseConstants.TABLE_SLEEP_RECORDS} WHERE user_id = ? AND sleep_date = ?`
+- **IMPORTANT:** Convert Map to SleepRecord using **`fromDatabase`** (NOT fromJson!)
+- Return record or null if empty
 
 **`Future<List<SleepRecord>> getRecordsByDateRange(String userId, DateTime start, DateTime end)`**
+- Convert start/end dates to ISO 8601 strings
 - Query WHERE sleep_date BETWEEN start AND end
-- Convert List<Map> to List<SleepRecord>
+- **IMPORTANT:** Convert List<Map> to List<SleepRecord> using **`fromDatabase`**
 - Order by sleep_date DESC
 
 **`Future<void> insertRecord(SleepRecord record)`**
-- Convert to Map
+- Convert to Map using **`toDatabase()`** (NOT toJson!)
 - INSERT OR REPLACE into sleep_records
 
 **`Future<void> updateRecord(SleepRecord record)`**
-- Convert to Map
+- Convert to Map using **`toDatabase()`**
 - UPDATE where id = record.id
 
 **`Future<void> deleteRecord(String recordId)`**
-- DELETE from sleep_records WHERE id
+- DELETE from sleep_records WHERE id = ?
+- Use parameterized queries to prevent SQL injection
 
 **`Future<void> updateQualityFields(String recordId, String rating, String? notes)`**
-- UPDATE sleep_records SET quality_rating, quality_notes WHERE id
+- UPDATE sleep_records SET quality_rating = ?, quality_notes = ?, updated_at = ? WHERE id = ?
+- Updated_at should be DateTime.now() converted to ISO 8601
 
 **`Future<List<SleepBaseline>> getBaselinesByType(String userId, String baselineType)`**
-- Query user_sleep_baselines WHERE user_id AND baseline_type
-- Convert to List<SleepBaseline>
+- Query user_sleep_baselines WHERE user_id = ? AND baseline_type = ?
+- Convert to List<SleepBaseline> using **`fromDatabase`**
 
 **`Future<double?> getSpecificBaseline(String userId, String baselineType, String metricName)`**
 - Query for single metric_value
 - Return double or null
+
+**Pattern Reference:** See `ActionLocalDataSource` for database query patterns with constants
 
 ---
 
@@ -203,173 +272,48 @@ Refactor Night Review screen to use MVVM + Provider pattern, integrate with slee
 
 ---
 
-## Step 3.7: Create ViewModel
+## Step 3.7: Wire Up Providers in main.dart
 
-**File:** `lib/features/night_review/presentation/viewmodels/night_review_viewmodel.dart`
-**Purpose:** Manage Night Review state, date navigation, sleep data loading
-**Dependencies:** `provider`, repository, models
+**File:** `lib/main.dart`
+**Purpose:** Register Night Review data layer components with Provider
+**Dependencies:** DataSource and Repository
 
-**Class: NightReviewViewModel extends ChangeNotifier**
+**CRITICAL - Provider Dependency Order (from Phase 2):**
+Datasources MUST be registered BEFORE repositories!
 
-**Constructor:**
-- `NightReviewViewModel({required SleepRecordRepository repository})`
+**Add to MultiProvider:**
+```dart
+// Night Review - Sleep Records DataSource
+Provider<SleepRecordLocalDataSource>(
+  create: (context) => SleepRecordLocalDataSource(
+    database: context.read<DatabaseHelper>().database,
+  ),
+),
 
-**Fields:**
-- `final SleepRecordRepository _repository`
-- `DateTime _currentDate = DateTime.now()`
-- `SleepRecord? _sleepRecord` - Current night's data (nullable)
-- `SleepComparison? _comparison` - Comparison with baseline (nullable)
-- `bool _isLoading = false`
-- `bool _isCalendarExpanded = false` - Migrated from NightScreen state
-- `String? _errorMessage`
-
-**Getters:**
-- `DateTime get currentDate`
-- `SleepRecord? get sleepRecord`
-- `SleepComparison? get comparison`
-- `bool get isLoading`
-- `bool get isCalendarExpanded`
-- `String? get errorMessage`
-- `bool get hasData => sleepRecord != null`
-
-**Methods:**
-
-**`Future<void> loadSleepData(String userId)`**
-- Set loading true
-- Fetch sleep record for currentDate
-- Fetch baselines (7-day)
-- If record exists: Calculate comparison
-- Handle errors
-- Set loading false, notify listeners
-
-**`Future<void> changeDate(DateTime newDate)`**
-- Set _currentDate = newDate
-- Reload sleep data
-- Notify listeners
-
-**`Future<void> goToPreviousDay()`**
-- changeDate(currentDate.subtract(1 day))
-
-**`Future<void> goToNextDay()`**
-- changeDate(currentDate.add(1 day))
-
-**`void toggleCalendarExpansion()`**
-- Flip _isCalendarExpanded
-- Notify listeners
-
-**`Future<void> saveQualityRating(String rating, String? notes)`**
-- If no record exists: Show error
-- Call repository.updateQualityRating
-- Reload data
-- Notify listeners
-
-**`void clearError()`**
-- Set errorMessage null, notify
-
----
-
-## Step 3.8: Create Quality Rating Widget
-
-**File:** `lib/features/night_review/presentation/widgets/quality_rating_widget.dart`
-**Purpose:** 3-point scale input for subjective sleep quality
-**Dependencies:** `flutter/material.dart`
-
-**Class: QualityRatingWidget extends StatelessWidget**
-
-**Constructor:**
-- `QualityRatingWidget({required String? currentRating, required Function(String) onRatingSelected})`
-
-**Build Method:**
-- Display 3 buttons horizontally: "Bad" | "Average" | "Good"
-- Highlight selected rating
-- Call onRatingSelected callback when tapped
-
-**Styling:**
-- Bad: Red background when selected
-- Average: Yellow background when selected
-- Good: Green background when selected
-
-**Why:** User provides subjective input to complement objective wearable data
-
----
-
-## Step 3.9: Refactor NightScreen
-
-**File:** `lib/features/night_review/presentation/screens/night_screen.dart`
-**Purpose:** Transform to StatelessWidget consuming NightReviewViewModel
-**Dependencies:** `provider`, viewmodel, widgets
-
-**Changes:**
-
-### Remove (DELETE):
-- `_NightScreenState` class (lines 14-94)
-- `_currentDate` and `_isCalendarExpanded` state (lines 15-16) - Moved to ViewModel
-- All setState() calls
-
-### Convert:
-- `NightScreen extends StatefulWidget` → `NightScreen extends StatelessWidget`
-
-### New Structure:
-
-**`class NightScreen extends StatelessWidget`**
-
-**Build Method:**
-```
-ChangeNotifierProvider(
-  create: (_) => NightReviewViewModel(
-    repository: context.read<SleepRecordRepository>(),
-  )..loadSleepData('hardcoded-user-id'),
-  child: _NightScreenContent(),
-)
+// Night Review - Sleep Records Repository
+Provider<SleepRecordRepository>(
+  create: (context) => SleepRecordRepositoryImpl(
+    dataSource: context.read<SleepRecordLocalDataSource>(),
+  ),
+),
 ```
 
-**`class _NightScreenContent extends StatelessWidget`**
+**Note:** This only registers the data layer. ViewModel and Screen refactoring will be handled separately.
 
-**Build Method:**
-- `final viewModel = context.watch<NightReviewViewModel>()`
-- Show loading spinner if `viewModel.isLoading`
-- Show error if `viewModel.errorMessage != null`
-- **DateNavigationHeader:**
-  - currentDate: `viewModel.currentDate`
-  - onPreviousDay: `viewModel.goToPreviousDay`
-  - onNextDay: `viewModel.goToNextDay`
-  - onDateTap: `viewModel.toggleCalendarExpansion`
-- **ExpandableCalendar:**
-  - selectedDate: `viewModel.currentDate`
-  - isExpanded: `viewModel.isCalendarExpanded`
-  - onDateSelected: `viewModel.changeDate`
-- **Content Area:**
-  - If `viewModel.hasData`:
-    - Display sleep phases breakdown
-    - Display biometric data (heart rate, HRV, breathing rate)
-    - Display comparison: "Your 7-day average: X min. Tonight: Y min (+Z)"
-    - Show QualityRatingWidget
-  - Else: Show "No sleep data for this night"
+**Pattern:** Same as ActionLocalDataSource and ActionRepository registration
 
 ---
 
 ## Testing Checklist
 
-### Manual Tests:
-- [ ] Launch app, navigate to Night Review
-- [ ] Should show "No sleep data" (database empty)
-- [ ] Manually insert test sleep record via SQLite
-- [ ] Restart app, sleep data should display
-- [ ] Tap date arrows, should navigate dates
-- [ ] Tap date header, calendar should expand/collapse
-- [ ] Select date in calendar, data for that date should load
-- [ ] Tap quality rating button, should save to database
-- [ ] Check database, quality_rating field should update
-
-### Unit Tests:
-- [ ] Test SleepRecord fromJson/toJson with all nullable fields
+### Unit Tests (Data Layer Only):
+- [ ] Test SleepRecord fromJson/toJson with all fields
+- [ ] Test SleepRecord fromDatabase/toDatabase with DateTime conversion
 - [ ] Test sleepEfficiency calculation
 - [ ] Test SleepComparison.calculate with mock data
-- [ ] Test ViewModel date navigation methods
-- [ ] Test ViewModel loadSleepData handles null records
-
-### Integration Tests:
-- [ ] Insert sleep record → Display in UI → Update quality → Verify in DB
+- [ ] Test SleepBaseline fromDatabase/toDatabase with DatabaseDateUtils
+- [ ] Test Repository methods delegate correctly to DataSource
+- [ ] Test DataSource with mock Database
 
 ### Database Validation:
 ```sql
@@ -420,10 +364,14 @@ After Phase 3:
 - For now, sleep records are manually inserted
 - Future: Add actual Apple Health / Google Fit sync in core/wearables/
 
-**Estimated Time:** 5-7 hours
+**UI Implementation:**
+- ViewModel and Screen refactoring will be done separately
+- See `NIGHT_REVIEW_IMPLEMENTATION_PLAN.md` for UI layer details
+- This phase focuses on data layer only
+
+**Estimated Time:** 3-4 hours (Data Layer Only)
+- Migration and constants: 30 minutes
 - Models: 90 minutes
-- Repository: 90 minutes
-- ViewModel: 90 minutes
-- Quality rating widget: 30 minutes
-- Screen refactoring: 90 minutes
-- Testing: 60 minutes
+- DataSource: 60 minutes
+- Repository: 30 minutes
+- Testing: 30 minutes

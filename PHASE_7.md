@@ -1,20 +1,21 @@
-# PHASE 7: Habits Lab & Onboarding (Final Cleanup)
+# PHASE 7: Habits Lab & Onboarding - Data Layer
 
 ## Overview
-Complete the refactoring by migrating the remaining screens (Habits Lab, Onboarding Questionnaire) to MVVM + Provider pattern. Extract hardcoded questionnaire data to models, polish UI, add final touches.
+Create the data layer foundation for Habits Lab and Onboarding features. This phase focuses exclusively on repositories, models, and data structures. No UI or ViewModel implementation.
+
+**Note:** UI Implementation will be done separately. See HABITS_LAB_IMPLEMENTATION_PLAN.md for UI details.
 
 ## Prerequisites
 - **Phase 1-6 completed:** Full MVVM architecture working, Light module functional
-- Only Habits Lab and Onboarding remain as StatefulWidget with local state
-- App is fully functional, this phase is cleanup and polish
+- Database infrastructure in place
+- Shared repository patterns established
 
 ## Goals
-- Refactor Habits Lab screen (currently placeholder)
+- Define Habits Lab scope and data requirements
+- Create shared intervention repository for cross-module queries
 - Extract hardcoded questionnaire questions to data models
-- Create Onboarding ViewModel for questionnaire flow
-- Refactor QuestionnaireScreen to use ViewModel
-- Polish navigation and UX
-- Final testing and cleanup
+- Define questionnaire data structure
+- Prepare data layer for future UI implementation
 
 ---
 
@@ -41,90 +42,7 @@ Complete the refactoring by migrating the remaining screens (Habits Lab, Onboard
 
 ---
 
-## Step 7.2: Create Habits Lab ViewModel (Option A)
-
-**File:** `lib/features/habits_lab/presentation/viewmodels/habits_viewmodel.dart`
-**Purpose:** Aggregate and display intervention activity history
-**Dependencies:** `provider`, `intervention_repository` (create shared repo)
-
-**Class: HabitsViewModel extends ChangeNotifier**
-
-**Constructor:**
-- `HabitsViewModel({required InterventionRepository repository})`
-
-**Fields:**
-- `final InterventionRepository _repository`
-- `List<InterventionActivity> _allActivities = []`
-- `Map<String, int> _moduleCompletionCounts = {}` - Module ID → count
-- `DateTime _startDate = DateTime.now().subtract(Duration(days: 30))`
-- `DateTime _endDate = DateTime.now()`
-- `bool _isLoading = false`
-
-**Getters:**
-- `List<InterventionActivity> get activities`
-- `Map<String, int> get completionCounts`
-- `double getCompletionRate(String moduleId)` - % of days completed
-
-**Methods:**
-
-**`Future<void> loadActivities(String userId)`**
-- Fetch all activities between startDate and endDate
-- Group by module ID, calculate counts
-- Notify listeners
-
-**`Future<void> changeDateRange(DateTime start, DateTime end)`**
-- Update date range
-- Reload activities
-
-**`List<InterventionActivity> getActivitiesForModule(String moduleId)`**
-- Filter _allActivities by moduleId
-
----
-
-## Step 7.3: Refactor Habits Lab Screen (Option A)
-
-**File:** `lib/features/habits_lab/presentation/screens/habits_screen.dart`
-**Purpose:** Display module activity history and stats
-**Dependencies:** `provider`, `habits_viewmodel`, widgets
-
-**Changes:**
-
-### Remove:
-- Placeholder UI (lines 24-64)
-
-### Add:
-
-**Build Method:**
-```
-ChangeNotifierProvider(
-  create: (_) => HabitsViewModel(
-    repository: context.read<InterventionRepository>(),
-  )..loadActivities(userId),
-  child: _HabitsScreenContent(),
-)
-```
-
-**`class _HabitsScreenContent`**
-
-**Build:**
-- `final viewModel = context.watch<HabitsViewModel>()`
-- Show loading spinner if loading
-- **Module Cards:**
-  - For each enabled module (Light, Sport, etc.)
-  - Show completion count: "15/30 days"
-  - Show completion rate: "50%"
-  - Tap to see details
-- **Activity Timeline:**
-  - List of recent activities
-  - Date, module, completed status
-- **Date Range Selector:**
-  - Last 7 days, 30 days, custom range
-
-**Why:** Provides insights into module adherence
-
----
-
-## Step 7.4: Create Shared Intervention Repository (if needed)
+## Step 7.2: Create Shared Intervention Repository
 
 **File:** `lib/modules/shared/domain/repositories/intervention_repository.dart`
 **Purpose:** Query all intervention activities across modules
@@ -143,7 +61,7 @@ ChangeNotifierProvider(
 
 ---
 
-## Step 7.5: Create Onboarding Models - Question
+## Step 7.3: Create Onboarding Models - Question
 
 **File:** `lib/features/onboarding/domain/models/question.dart`
 **Purpose:** Model for questionnaire questions
@@ -169,7 +87,7 @@ ChangeNotifierProvider(
 
 ---
 
-## Step 7.6: Create Questionnaire Data
+## Step 7.4: Create Questionnaire Data
 
 **File:** `lib/features/onboarding/data/questionnaire_data.dart`
 **Purpose:** Define actual questionnaire questions
@@ -220,255 +138,91 @@ final List<Question> questionnaireQuestions = [
 
 ---
 
-## Step 7.7: Create Onboarding ViewModel
-
-**File:** `lib/features/onboarding/presentation/viewmodels/questionnaire_viewmodel.dart`
-**Purpose:** Manage questionnaire flow state
-**Dependencies:** `provider`, `question`, `questionnaire_data`, `user_repository`
-
-**Class: QuestionnaireViewModel extends ChangeNotifier**
-
-**Constructor:**
-- `QuestionnaireViewModel({required UserRepository userRepository})`
-
-**Fields:**
-- `final UserRepository _userRepository`
-- `final List<Question> _questions = questionnaireQuestions`
-- `int _currentQuestionIndex = 0`
-- `Map<String, dynamic> _answers = {}` - Question ID → Answer
-- `bool _isComplete = false`
-
-**Getters:**
-- `Question get currentQuestion => _questions[_currentQuestionIndex]`
-- `int get currentIndex => _currentQuestionIndex`
-- `int get totalQuestions => _questions.length`
-- `double get progress => (_currentQuestionIndex + 1) / _questions.length`
-- `bool get isComplete => _isComplete`
-- `bool get canGoNext => _answers.containsKey(currentQuestion.id)`
-
-**Methods:**
-
-**`void answerQuestion(String questionId, dynamic answer)`**
-- Store answer in _answers map
-- Notify listeners
-
-**`void nextQuestion()`**
-- If currentIndex < totalQuestions - 1: increment index
-- Else: set isComplete = true
-- Notify listeners
-
-**`void previousQuestion()`**
-- If currentIndex > 0: decrement index
-- Notify listeners
-
-**`Future<void> submitAnswers(String userId)`**
-- Process answers (e.g., pre-enable modules based on Q4 answer)
-- Create/update user profile based on answers
-- Mark onboarding as complete in SharedPreferences
-- Notify listeners
-
-**`void reset()`**
-- Reset to first question, clear answers
-
----
-
-## Step 7.8: Refactor Questionnaire Screen
-
-**File:** `lib/features/onboarding/presentation/screens/questionnaire_screen.dart`
-**Purpose:** Transform to ViewModel-driven flow
-**Dependencies:** `provider`, `questionnaire_viewmodel`, widgets
-
-**Changes:**
-
-### Remove:
-- All 4 screen classes (QuestionnaireScreen, SleepDifficultiesScreen, ExampleQuestion1Screen, etc.)
-- Hardcoded question text
-- Manual navigation between screens
-
-### Create Single Screen:
-
-**`class QuestionnaireScreen extends StatelessWidget`**
-
-**Build Method:**
-```
-ChangeNotifierProvider(
-  create: (_) => QuestionnaireViewModel(
-    userRepository: context.read<UserRepository>(),
-  ),
-  child: _QuestionnaireContent(),
-)
-```
-
-**`class _QuestionnaireContent extends StatelessWidget`**
-
-**Build:**
-- `final viewModel = context.watch<QuestionnaireViewModel>()`
-- **Progress Indicator:** LinearProgressIndicator(value: viewModel.progress)
-- **Question Display:**
-  - Show `viewModel.currentQuestion.text`
-  - Render answer UI based on question type:
-    - `single_choice`: Radio buttons
-    - `multiple_choice`: Checkboxes
-    - `scale`: Slider
-    - `text_input`: TextField
-- **Navigation Buttons:**
-  - Previous (if not first question)
-  - Next / Submit (if answer provided)
-- **On Submit:**
-  - Call `viewModel.submitAnswers(userId)`
-  - Navigate to MainNavigation
-
-**Why:** Single screen with dynamic content, data-driven questions
-
----
-
-## Step 7.9: Update Splash Screen Navigation
-
-**File:** `lib/shared/screens/app/splash_screen.dart` (modify)
-**Purpose:** Navigate to refactored QuestionnaireScreen
-**Action:** Already navigates correctly, no changes needed
-
----
-
-## Step 7.10: Polish and Final Touches
-
-### Add Missing Widgets:
-- `lib/shared/widgets/ui/time_picker_field.dart` - Time selection widget
-- `lib/shared/widgets/ui/duration_picker_field.dart` - Duration selection widget
-
-**TimePicker Widget:**
-- Displays formatted time (HH:mm)
-- Taps to show time picker dialog
-- Callback with selected time
-
-**Duration Picker Widget:**
-- Slider for duration (15-120 minutes)
-- Shows formatted duration ("30 minutes")
-
-### Update App Theme (Optional):
-- `lib/shared/theme/app_theme.dart` - Centralize colors, text styles
-- Apply consistent styling across all screens
-
-### Add Loading States:
-- Ensure all screens show loading indicators during async operations
-- Consistent error handling with SnackBars
-
----
-
 ## Testing Checklist
 
-### Manual Tests - Habits Lab:
-- [ ] Navigate to Habits Lab
-- [ ] Should show message if no activities yet
-- [ ] After logging light activity, should display in Habits Lab
-- [ ] Show completion counts and rates
-- [ ] Date range selector works
+### Data Layer Tests:
 
-### Manual Tests - Onboarding:
-- [ ] Clear app data, relaunch
-- [ ] Should show splash → questionnaire
-- [ ] Answer all questions, can navigate back/forward
-- [ ] Submit answers, should navigate to main app
-- [ ] Restart app, should skip questionnaire (not first launch)
-- [ ] Check database, user preferences should reflect answers
+**Intervention Repository Tests:**
+- [ ] Test `getAllActivitiesBetween()` returns correct activities for date range
+- [ ] Test `getActivitiesForModule()` filters by module ID correctly
+- [ ] Test `getCompletionCountsByModule()` calculates counts correctly
+- [ ] Test edge cases: empty results, invalid date ranges
 
-### Unit Tests:
-- [ ] Test QuestionnaireViewModel state transitions
-- [ ] Test answer storage and validation
-- [ ] Test HabitsViewModel completion rate calculations
+**Question Model Tests:**
+- [ ] Test Question model creation with all question types
+- [ ] Test copyWith method preserves/updates fields correctly
+- [ ] Test nullable fields (minValue, maxValue) behavior
 
-### Integration Tests:
-- [ ] Full onboarding flow → main app → no errors
+**Questionnaire Data Tests:**
+- [ ] Verify all questions have valid IDs
+- [ ] Verify question types match their option structures
+- [ ] Verify scale questions have valid min/max values
+- [ ] Verify choice questions have at least 2 options
 
 ---
 
 ## Rollback Strategy
 
-- Phase 7 is final polish, doesn't break existing features
-- Can keep old screens if needed
-- Habits Lab can stay as placeholder if Option A is too complex
+- Phase 7 data layer is additive - doesn't modify existing features
+- Repository can be added without breaking current code
+- Models can coexist with current hardcoded implementations
+- Safe to implement incrementally
 
 ---
 
-## Final Cleanup Tasks
+## Data Layer Completion Checklist
 
 ### Code Quality:
-- [ ] Remove unused imports
-- [ ] Run `flutter analyze` - Fix all warnings
-- [ ] Run `dart format .` - Format all code
-- [ ] Add documentation comments to public APIs
+- [ ] Remove unused imports from new files
+- [ ] Run `flutter analyze` on new files - Fix all warnings
+- [ ] Run `dart format .` on new files
+- [ ] Add documentation comments to all public APIs
 
-### Performance:
-- [ ] Profile app startup time
-- [ ] Check for memory leaks (use DevTools)
-- [ ] Optimize database queries (add missing indexes)
-
-### Documentation:
-- [ ] Update README.md if needed
-- [ ] Document any environment setup required
-- [ ] Create CONTRIBUTING.md if planning to open-source
+### Database:
+- [ ] Verify intervention_activities table has necessary indexes
+- [ ] Test repository queries with sample data
+- [ ] Verify query performance with larger datasets
 
 ---
 
-## Project Complete!
+## After Phase 7 Data Layer Complete
 
-After Phase 7:
-- ✅ Full MVVM + Provider architecture
-- ✅ Database persistence with SQLite
-- ✅ Action Center with database integration
-- ✅ Night Review with sleep tracking
-- ✅ Settings with user profile management
-- ✅ Light module (first intervention) fully functional
-- ✅ Habits Lab showing activity history
-- ✅ Onboarding questionnaire refactored
+**Data Foundation Ready:**
+- ✅ Shared intervention repository for cross-module queries
+- ✅ Question model for dynamic questionnaire system
+- ✅ Questionnaire data extracted from hardcoded screens
+- ✅ Data layer ready for UI implementation
 
 **Next Steps:**
-1. **Add more modules:** Sport, Meditation, Temperature, etc. (follow Light pattern)
-2. **Wearable integration:** Connect to Apple Health / Google Fit
-3. **Baseline calculation:** Automated calculation of personal averages
-4. **Correlation analysis:** UI to show which interventions improve sleep
-5. **Notifications:** Expand notification system with more triggers
-6. **Authentication:** Add proper login/signup (currently single user)
-7. **PostgreSQL sync:** Implement server sync for cloud backup
-8. **Charts & Visualizations:** Add charts to Night Review and Habits Lab
-9. **Recommendation engine:** AI-powered sleep improvement suggestions
-10. **Testing:** Comprehensive unit and integration tests
+1. **UI Implementation:** See HABITS_LAB_IMPLEMENTATION_PLAN.md
+2. **ViewModels:** Create ViewModels once UI requirements are clear
+3. **Screen Refactoring:** Refactor screens to use new data models
+4. **Integration:** Connect UI to data layer through ViewModels
 
 ---
 
 ## Notes
 
-**Why Habits Lab last?**
-- Depends on intervention data existing
-- Less critical than core features
-- Can be placeholder until modules are used
+**Why Data Layer First?**
+- Establishes clear contracts before UI implementation
+- Allows parallel work on data access and UI design
+- Data models can be tested independently
+- Reduces rework if UI requirements change
 
-**Questionnaire Refactoring:**
+**Questionnaire Data Structure:**
 - Data-driven approach allows easy question changes
 - Can add/remove questions without code changes
 - Could even load questions from server in future
+- Type-safe with enums for question types
 
-**Technical Debt Addressed:**
-- All hardcoded data moved to models/database
-- All screens using MVVM + Provider
-- Consistent architecture across features
+**Intervention Repository Benefits:**
+- Centralized access to all intervention data
+- Enables cross-module analytics
+- Foundation for Habits Lab feature
+- Reusable for future correlation analysis
 
-**Estimated Time:** 4-5 hours
-- Habits Lab: 120 minutes
-- Onboarding models: 45 minutes
-- Questionnaire ViewModel: 60 minutes
-- Screen refactoring: 60 minutes
-- Testing & polish: 60 minutes
-
----
-
-## Congratulations!
-
-You've successfully migrated your Flutter app to a professional MVVM + Provider architecture with:
-- Clean separation of concerns
-- Testable business logic
-- Scalable module system
-- Offline-first data persistence
-- Reactive UI updates
-
-The codebase is now ready for feature expansion, team collaboration, and long-term maintenance.
+**Estimated Time:** 2-3 hours (Data Layer Only)
+- Intervention repository: 60 minutes
+- Question model: 30 minutes
+- Questionnaire data: 30 minutes
+- Testing & documentation: 30 minutes
