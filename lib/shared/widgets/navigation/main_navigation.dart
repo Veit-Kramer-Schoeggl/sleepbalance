@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sleepbalance/features/settings/presentation/screens/settings_screen.dart';
 import 'package:sleepbalance/features/night_review/presentation/screens/night_screen.dart';
 import 'package:sleepbalance/features/habits_lab/presentation/screens/habits_screen.dart';
 import 'package:sleepbalance/features/action_center/presentation/screens/action_screen.dart';
+import 'package:sleepbalance/features/settings/presentation/settings_navigator.dart';
 
 /// Main navigation wrapper with bottom navigation bar
 /// Uses IndexedStack to preserve state across tab switches
@@ -18,7 +18,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // List of screens corresponding to navigation items
   final List<Widget> _screens = const [
-    SettingsScreen(),
+    SettingsNavigator(),
     NightScreen(),
     ActionScreen(),
     HabitsScreen(),
