@@ -35,4 +35,5 @@ birth_date DATE NOT NULL,
 );
 
 
-
+I want to remove the default user that is beeing created here database_helper.dart and use a different
+way of prepopulating the database pls give me some options on how we can do this.
