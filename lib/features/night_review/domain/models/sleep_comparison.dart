@@ -112,10 +112,15 @@ class SleepComparison {
     final diff = differences[metricName];
     if (diff == null) return '';
 
-    final sign = diff >= 0 ? '+' : '';
-    final value = diff.abs().toStringAsFixed(
-          diff.abs() >= 10 ? 0 : 1,
-        ); // Show decimal for small values
+    final sign = diff >= 0 ? '+' : '-';
+    final absValue = diff.abs();
+
+    // Show decimal only for non-whole numbers (e.g., 2.5, 1.3)
+    // Whole numbers (e.g., 5.0, 10.0) display without decimal
+    final isWholeNumber = absValue == absValue.roundToDouble();
+    final value = isWholeNumber
+        ? absValue.toInt().toString()
+        : absValue.toStringAsFixed(1);
 
     return '$sign$value $unit';
   }
