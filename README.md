@@ -19,15 +19,26 @@ SleepBalance helps people fall and stay asleep through data-driven, personalized
 
 ### Modular Intervention System
 Users can select, combine, and customize individual modules:
-- **Light Module**: Morning/evening light exposure settings
-- **Sport Module**: Morning movement and exercise routines
-- **Temperature Module**: Sauna, heat and cold exposure protocols
-- **Nutrition Module**: Information about sleep-promoting foods
-- **Meal-time Module**: Eating schedule optimization (when to eat/avoid eating)
-- **Sleep Hygiene Module**: Bedtime routine optimization
-- **Meditation Module**: Calming and relaxation techniques
-- **Journaling Module**: Progress tracking and reflection exercises
-- **Medication Module**: Track medication intake and effects on sleep
+
+- **[Light Module](lib/modules/light/LIGHT_README.md)**: Bright light therapy timing and type selection for circadian rhythm optimization. Morning exposure promotes alertness; evening red light supports melatonin production.
+
+- **[Mealtime Module](lib/modules/mealtime/MEALTIME_README.md)**: Eating schedule optimization with visual time slider. Default 3-meal pattern or customizable eating windows for intermittent fasting, automatically adjusted to user's sleep schedule.
+
+- **[Temperature Module](lib/modules/temperature/TEMPERATURE_README.md)**: Cold and heat exposure protocols for sleep enhancement. Morning cold showers boost alertness; evening saunas facilitate sleep onset through subsequent body cooling.
+
+- **[Sport Module](lib/modules/sport/SPORT_README.md)**: Exercise timing and intensity guidance with wearable integration. Morning HIIT for optimal sleep benefit; intensity-based scheduling prevents evening exercise sleep disruption.
+
+- **[Meditation Module](lib/modules/meditation/MEDITATION_README.md)**: Guided relaxation and breathwork library. Evening pre-sleep sessions reduce anxiety and racing thoughts; diverse techniques from multiple teachers and traditions.
+
+- **[Journaling Module](lib/modules/journaling/JOURNALING_README.md)**: Reflective writing with multiple input methods (typing, voice-to-text, handwritten OCR). ML-based pattern recognition identifies factors affecting sleep and provides personalized insights.
+
+- **[Nutrition Module](lib/modules/nutrition/NUTRITION_README.md)**: Evidence-based education on sleep-promoting foods and nutrients. Daily tips, comprehensive food database, and personalized recommendations based on dietary preferences.
+
+- **Sleep Hygiene Module** *(planned)*: Comprehensive bedtime routine optimization and sleep environment setup guidance.
+
+- **Medication Module** *(planned)*: Track medication intake timing and correlate with sleep effects for informed health discussions.
+
+**[Shared Module Infrastructure](lib/modules/shared/SHARED_README.md)**: Common patterns, base classes, and utilities used across all intervention modules.
 
 ### Wearable Integration
 - Core feature: sync sleep data from watches
