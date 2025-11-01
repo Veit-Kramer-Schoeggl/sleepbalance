@@ -20,7 +20,7 @@ const String MIGRATION_V4 = '''
 -- ============================================================================
 -- Users Table
 -- ============================================================================
-CREATE TABLE $TABLE_USERS (
+CREATE TABLE IF NOT EXISTS $TABLE_USERS (
   $USERS_ID TEXT PRIMARY KEY,
   $USERS_EMAIL TEXT NOT NULL UNIQUE,
   $USERS_PASSWORD_HASH TEXT,
@@ -42,5 +42,5 @@ CREATE TABLE $TABLE_USERS (
   $USERS_IS_DELETED INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_users_email ON $TABLE_USERS($USERS_EMAIL);
+CREATE INDEX IF NOT EXISTS idx_users_email ON $TABLE_USERS($USERS_EMAIL);
 ''';

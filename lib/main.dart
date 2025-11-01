@@ -11,6 +11,7 @@ import 'features/night_review/domain/repositories/sleep_record_repository.dart';
 import 'features/settings/data/datasources/user_local_datasource.dart';
 import 'features/settings/data/repositories/user_repository_impl.dart';
 import 'features/settings/domain/repositories/user_repository.dart';
+import 'features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import 'shared/constants/database_constants.dart';
 import 'shared/screens/app/splash_screen.dart';
 
@@ -91,6 +92,18 @@ void main() async {
           create: (context) => UserRepositoryImpl(
             dataSource: context.read<UserLocalDataSource>(),
             prefs: context.read<SharedPreferences>(),
+          ),
+        ),
+
+        // ============================================================================
+        // ViewModels
+        // ============================================================================
+
+        // Settings ViewModel - manages current user and settings state
+        // Important: Registered AFTER UserRepository (its dependency)
+        ChangeNotifierProvider<SettingsViewModel>(
+          create: (context) => SettingsViewModel(
+            repository: context.read<UserRepository>(),
           ),
         ),
       ],

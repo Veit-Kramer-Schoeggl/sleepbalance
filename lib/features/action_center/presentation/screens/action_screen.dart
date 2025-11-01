@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/checkbox_button.dart';
@@ -10,15 +11,45 @@ import '../viewmodels/action_viewmodel.dart';
 ///
 /// Refactored to use MVVM + Provider pattern.
 /// StatelessWidget that creates and provides ActionViewModel to child widgets.
+/// Uses current user from SettingsViewModel for data operations.
 class ActionScreen extends StatelessWidget {
   const ActionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Get current user from SettingsViewModel
+    final settingsViewModel = context.read<SettingsViewModel>();
+    final currentUserId = settingsViewModel.currentUser?.id;
+
+    // Handle case where user is not loaded
+    if (currentUserId == null) {
+      return BackgroundWrapper(
+        imagePath: 'assets/images/main_background.png',
+        overlayOpacity: 0.3,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('Action Center',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          body: const Center(
+            child: Text(
+              'No user logged in',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Create ActionViewModel with current user ID
     return ChangeNotifierProvider(
       create: (_) => ActionViewModel(
         repository: context.read(), // Reads ActionRepository from parent MultiProvider
-        userId: 'temp-user-id', // TODO: Replace with actual user ID from auth
+        userId: currentUserId, // Use actual user ID from SettingsViewModel
       )..loadActions(),
       child: const _ActionScreenContent(),
     );

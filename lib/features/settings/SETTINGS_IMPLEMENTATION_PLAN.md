@@ -1,8 +1,8 @@
 # Settings & User Profile MVVM Implementierungsplan
 
-## ⚠️ WICHTIG: Daten-Layer ist bereits fertig!
+## ⚠️ WICHTIG: Daten-Layer UND ViewModel sind bereits fertig!
 
-**Phase 4 ist abgeschlossen** - Die komplette Daten-Schicht (Data Layer) ist bereits implementiert:
+**Phase 4 & Phase 5 sind abgeschlossen** - Die komplette Daten-Schicht (Data Layer) UND das ViewModel sind bereits implementiert:
 
 ✅ **Fertig implementiert (in Phase 4):**
 - Database Migration V4 (`migration_v4.dart`)
@@ -15,13 +15,18 @@
 - Provider Registrierung in `main.dart`
 - Current User ID Setup in SharedPreferences
 
-📋 **Was du implementierst (UI Layer):**
-- `SettingsViewModel` - Verwaltet User-Zustand und Einstellungen
+✅ **Fertig implementiert (in Phase 5):**
+- `SettingsViewModel` - Verwaltet User-Zustand und Einstellungen (BEREITS FERTIG!)
+  - Methoden: `loadCurrentUser()`, `updateUserProfile()`, `updateLanguage()`, `updateUnitSystem()`, `logout()`
+  - Provider-Registrierung in `main.dart`
+  - Wird bereits von SplashScreen und ActionScreen genutzt
+
+📋 **Was du implementierst (UI Layer ONLY):**
 - `SettingsScreen` - Übersicht mit User-Info und Einstellungen
 - `UserProfileScreen` - Vollständiger Editor für alle User-Felder
-- UI-Verbindungen zu den fertigen Repositories
+- UI-Verbindungen zum fertigen SettingsViewModel
 
-**Du musst KEINE Datenbank-Operationen oder Models erstellen!** Die Daten-Schicht existiert bereits und ist getestet.
+**Du musst KEINE Datenbank-Operationen, Models oder ViewModels erstellen!** Die komplette Infrastruktur existiert bereits und ist getestet.
 
 ## Was du bauen wirst
 
@@ -36,9 +41,10 @@ Die Settings-Funktion zeigt dem Benutzer sein Profil und Einstellungen. Der Benu
 ## Voraussetzungen
 
 - ✅ **Phase 4 (Settings Data Layer) abgeschlossen** - Repository und Models sind fertig!
+- ✅ **Phase 5 (SettingsViewModel) abgeschlossen** - ViewModel ist fertig und registriert!
 - ✅ Phase 2 & 3 (Action Center, Night Review) abgeschlossen - wir folgen dem gleichen Muster!
 - ✅ Du verstehst das MVVM-Muster aus den vorherigen Features
-- ✅ Du weißt, dass die Repositories bereits in `main.dart` registriert sind
+- ✅ Du weißt, dass Repositories UND ViewModel bereits in `main.dart` registriert sind
 
 ## Das Muster verstehen (Kein Code!)
 
@@ -111,143 +117,66 @@ Provider ist wie ein **Lieferservice** in Flutter:
 ```
 Benutzer öffnet Settings
          ↓
-    SettingsScreen (View)
+    SettingsScreen (View) ← DU IMPLEMENTIERST DIES
          ↓ nutzt
     Consumer<SettingsViewModel>
          ↓ fragt
-    SettingsViewModel
+    SettingsViewModel ✅ FERTIG (Phase 5)
          ↓ lädt User-ID von
-    UserRepository.getCurrentUserId() ✅ FERTIG
+    UserRepository.getCurrentUserId() ✅ FERTIG (Phase 4)
          ↓ liest aus
-    SharedPreferences ('current_user_id') ✅ FERTIG
+    SharedPreferences ('current_user_id') ✅ FERTIG (Phase 4)
          ↓ dann
-    UserRepository.getUserById(userId) ✅ FERTIG
+    UserRepository.getUserById(userId) ✅ FERTIG (Phase 4)
          ↓ liest aus
-    SQLite Datenbank (users Tabelle) ✅ FERTIG
+    SQLite Datenbank (users Tabelle) ✅ FERTIG (Phase 4)
          ↓ gibt zurück
-    User Objekt ✅ FERTIG
+    User Objekt ✅ FERTIG (Phase 4)
          ↓ angezeigt in
-    SettingsScreen
+    SettingsScreen ← DU IMPLEMENTIERST DIES
 
 Benutzer bearbeitet Profil:
-    UserProfileScreen
+    UserProfileScreen ← DU IMPLEMENTIERST DIES
          ↓ sendet Änderungen
-    SettingsViewModel.updateUserProfile(updatedUser)
+    SettingsViewModel.updateUserProfile(updatedUser) ✅ FERTIG (Phase 5)
          ↓ speichert in
-    UserRepository.updateUser(user) ✅ FERTIG
+    UserRepository.updateUser(user) ✅ FERTIG (Phase 4)
          ↓ schreibt in
-    SQLite Datenbank ✅ FERTIG
+    SQLite Datenbank ✅ FERTIG (Phase 4)
          ↓ notifyListeners()
     Settings Screen aktualisiert sich automatisch!
 ```
 
 ## Schritt-für-Schritt Implementierung
 
-### Schritt 1: Das ViewModel erstellen
+### ✅ Schritt 1 & 2: ViewModel bereits fertig! (Phase 5)
 
-**Was macht ein ViewModel?**
+**Das SettingsViewModel ist bereits vollständig implementiert:**
 
-Ein ViewModel ist wie ein **Manager**, der:
-1. Den aktuellen Zustand speichert (welcher User, lädt es gerade?)
-2. Daten vom Repository holt
-3. Der View sagt, wenn sich etwas ändert
+**Datei:** `lib/features/settings/presentation/viewmodels/settings_viewmodel.dart`
 
-**Was benennen wir es:** `SettingsViewModel`
+**Bereits vorhanden:**
+- ✅ Alle Felder: `_repository`, `_currentUser`, `_isLoading`, `_errorMessage`
+- ✅ Alle Methoden:
+  - `loadCurrentUser()` - Lädt aktuellen User
+  - `updateUserProfile(updatedUser)` - Speichert User-Änderungen
+  - `updateLanguage(language)` - Ändert nur Sprache
+  - `updateUnitSystem(unitSystem)` - Ändert nur Einheiten
+  - `updateSleepTargets()` - Ändert Schlafziele
+  - `logout()` - Loggt User aus
+  - `clearError()` - Löscht Fehlermeldung
+- ✅ Alle Getter: `currentUser`, `isLoading`, `errorMessage`, `isLoggedIn`
+- ✅ Komplette Fehlerbehandlung mit try-catch-finally
+- ✅ Provider bereits in `main.dart` registriert
 
-**Wo kommt es hin:** `lib/features/settings/presentation/viewmodels/settings_viewmodel.dart`
+**Du musst nichts am ViewModel ändern!** Es ist fertig und wird bereits von SplashScreen und ActionScreen genutzt.
 
-**Was braucht es:**
+**Wenn du verstehen willst, wie es funktioniert:**
+- Öffne die Datei: `lib/features/settings/presentation/viewmodels/settings_viewmodel.dart`
+- Vergleiche mit `ActionViewModel` - sehr ähnliche Struktur!
+- Siehe auch: Action Center Screen als Referenz für Consumer-Usage
 
-**Felder (Variablen zum Speichern):**
-- `_repository`: Verbindung zum Repository - Typ: `UserRepository` ✅ **Existiert bereits!**
-- `_currentUser`: Der aktuell eingeloggte User (kann null sein!) - Typ: `User?` ✅ **Model bereits fertig!**
-- `_isLoading`: Lädt es gerade? - Typ: `bool`
-- `_errorMessage`: Fehlermeldung - Typ: `String?`
-
-**✅ Wichtig:** `User` ist ein fertiges Model aus Phase 4! Du musst es nur importieren:
-```dart
-import '../../domain/models/user.dart';
-import '../../domain/repositories/user_repository.dart';
-```
-
-**Methoden (Funktionen):**
-
-1. **`loadCurrentUser()`** - Lädt den aktuell eingeloggten User
-   - Setzt `_isLoading = true`
-   - Fragt Repository: "Welcher User ist eingeloggt?"
-   - Verwendet: `_repository.getCurrentUserId()` ✅ **Fertige Methode!**
-   - Wenn User-ID da: Lade User mit `_repository.getUserById(userId)` ✅ **Fertige Methode!**
-   - Speichert in `_currentUser`
-   - Wenn Fehler: Speichere in `_errorMessage`
-   - Setzt `_isLoading = false`, ruft `notifyListeners()`
-
-   **✅ Tipp:** Das Repository ist schon fertig, du musst nur die Methoden aufrufen!
-
-2. **`updateUserProfile(updatedUser)`** - Speichert geänderten User
-   - Setzt `_isLoading = true`
-   - Ruft Repository: `_repository.updateUser(updatedUser)` ✅ **Fertige Methode!**
-   - Aktualisiert `_currentUser = updatedUser`
-   - Setzt `_isLoading = false`, ruft `notifyListeners()`
-
-3. **`updateLanguage(language)`** - Schnellmethode: Nur Sprache ändern
-   - Erstellt neuen User mit `_currentUser.copyWith(language: language, updatedAt: DateTime.now())` ✅ **copyWith bereits fertig!**
-   - Ruft `updateUserProfile()` auf
-
-4. **`updateUnitSystem(unitSystem)`** - Schnellmethode: Nur Einheiten ändern
-   - Wie `updateLanguage()`, nur für `preferredUnitSystem` Feld
-
-5. **`logout()`** - Loggt User aus
-   - Ruft `_repository.setCurrentUserId('')` (löscht User-ID) ✅ **Fertige Methode!**
-   - Setzt `_currentUser = null`
-   - Ruft `notifyListeners()`
-
-**Getter:**
-- `currentUser` → gibt `_currentUser` zurück
-- `isLoading` → gibt `_isLoading` zurück
-- `errorMessage` → gibt `_errorMessage` zurück
-- `isLoggedIn` → gibt `true` wenn `_currentUser != null`
-
-**WICHTIG - Fehlerbehandlung (wie immer):**
-- try-catch-finally in jeder async Methode
-- `_isLoading` setzen vor/nach Operationen
-- `_errorMessage` bei Fehlern setzen
-- `notifyListeners()` im finally Block
-
-**Referenz:** Schau dir `ActionViewModel` oder `NightReviewViewModel` an - identische Struktur!
-
-### Schritt 2: SettingsViewModel in main.dart registrieren
-
-**Wo:** `lib/main.dart` im providers Array (NACH UserRepository)
-
-**Import hinzufügen:**
-```dart
-import 'features/settings/presentation/viewmodels/settings_viewmodel.dart';
-```
-
-**Provider hinzufügen:**
-```dart
-// ============================================================================
-// ViewModels
-// ============================================================================
-
-// Settings ViewModel
-ChangeNotifierProvider<SettingsViewModel>(
-  create: (context) => SettingsViewModel(
-    repository: context.read<UserRepository>(),
-  ),
-),
-```
-
-**Warum ChangeNotifierProvider?**
-- Speziell für ChangeNotifier (ViewModel)
-- Automatische Disposal
-- Hört auf `notifyListeners()` Aufrufe
-
-**Warum NACH UserRepository?**
-- SettingsViewModel braucht UserRepository
-- Provider-Reihenfolge ist wichtig!
-
-### Schritt 3: Settings Screen erstellen
+### Schritt 3: Settings Screen erstellen (DU MACHST DIES!)
 
 **Was benennen wir es:** `SettingsScreen`
 
@@ -265,9 +194,14 @@ ChangeNotifierProvider<SettingsViewModel>(
 void initState() {
   super.initState();
 
-  // Lade User beim ersten Öffnen
+  // OPTIONAL: User erneut laden
+  // Normalerweise ist der User bereits von SplashScreen geladen!
+  // Nur nötig, wenn User sich ausgeloggt hat
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    context.read<SettingsViewModel>().loadCurrentUser();
+    final viewModel = context.read<SettingsViewModel>();
+    if (viewModel.currentUser == null) {
+      viewModel.loadCurrentUser();
+    }
   });
 }
 ```
@@ -345,7 +279,7 @@ Widget build(BuildContext context) {
 - IMMER `??` für Fallback-Werte
 - User kann theoretisch null sein!
 
-### Schritt 4: User Profile Screen erstellen
+### Schritt 4: User Profile Screen erstellen (DU MACHST DIES!)
 
 **Was benennen wir es:** `UserProfileScreen`
 
@@ -498,17 +432,17 @@ void _saveProfile() {
 - copyWith erstellt neue Instanz (User ist immutable)
 - Controller MÜSSEN disposed werden
 
-### Schritt 5: Hardcoded User-IDs ersetzen (Optional)
+### Schritt 5: Hardcoded User-IDs ersetzen (Optional - später)
 
-**Nach Settings-Implementierung:**
+**✅ Bereits erledigt in Phase 5:**
+- SplashScreen lädt User beim App-Start
+- ActionScreen nutzt `SettingsViewModel.currentUser?.id`
+- User ist app-weit verfügbar
 
-In Action Center und Night Review kannst du jetzt die echte User-ID nutzen:
+**Für Night Review und Habits Lab (wenn du sie implementierst):**
 
 ```dart
-// Alt:
-viewModel.loadData('user123');
-
-// Neu:
+// Nutze die echte User-ID:
 final userId = context.read<SettingsViewModel>().currentUser?.id;
 if (userId != null) {
   viewModel.loadData(userId);
@@ -571,15 +505,17 @@ Später mit Backend:
 
 ### Häufige Fehler vermeiden
 
-**✅ Gut zu wissen: Repository bereits fertig!**
+**✅ Gut zu wissen: Repository UND ViewModel bereits fertig!**
 - UserRepository ist bereits in main.dart registriert (Phase 4)
-- Du musst nur das ViewModel registrieren
+- SettingsViewModel ist bereits in main.dart registriert (Phase 5)
+- Du musst KEINE Provider mehr registrieren!
 - Alle Repository-Methoden existieren schon!
+- Alle ViewModel-Methoden existieren schon!
 
-**❌ Fehler 1: Provider nicht gefunden**
+**❌ Fehler 1: ViewModel nicht gefunden (sollte nicht passieren)**
 - Symptom: "Could not find SettingsViewModel"
-- Lösung: ChangeNotifierProvider in main.dart registrieren
-- Wichtig: NACH UserRepository!
+- Lösung: Prüfe ob Phase 5 korrekt abgeschlossen wurde
+- SettingsViewModel sollte bereits in main.dart registriert sein!
 
 **❌ Fehler 2: Null-Check vergessen**
 - Symptom: "Null check operator used on null value"
@@ -600,29 +536,32 @@ Später mit Backend:
 
 ## Benötigst du Hilfe?
 
-- **Vergleiche mit Action Center:** Gleiche ViewModel-Struktur!
+- **Vergleiche mit Action Center:** Identisches Consumer-Pattern für ViewModel-Nutzung!
+- **Prüfe SettingsViewModel:** `settings_viewmodel.dart` zeigt alle verfügbaren Methoden
 - **Prüfe PHASE_4.md:** Technische Details zur Daten-Schicht
-- **Prüfe User Model:** `user.dart` zeigt alle verfügbaren Felder
+- **Prüfe PHASE_5.md:** Details zum SettingsViewModel und App-Integration
+- **Prüfe User Model:** `user.dart` zeigt alle verfügbaren Felder (fullName, age, etc.)
 - **Form-Validierung:** Standard Flutter Pattern
 
 ## Was haben wir erreicht?
 
 Nach dieser Implementierung hast du:
 
-✅ SettingsViewModel mit User-State-Management
-✅ Settings Screen mit User-Übersicht
-✅ User Profile Screen mit vollständigem Editor
-✅ Basis für hardcoded User-IDs Ersetzung
+✅ Settings Screen mit User-Übersicht (NEU!)
+✅ User Profile Screen mit vollständigem Editor (NEU!)
 ✅ Vollständiges Verständnis von MVVM und Provider!
+✅ Praktische Erfahrung mit Consumer und ViewModel-Nutzung!
 
-**Kombiniert mit Phase 4:**
+**Kombiniert mit Phase 4 & 5 (bereits fertig):**
 
 ✅ User-Management mit Datenbank + SharedPreferences
+✅ SettingsViewModel mit User-State-Management
 ✅ Session-Management (eingeloggt bleiben)
 ✅ Default User beim ersten Start
+✅ App-weite User-Verfügbarkeit (SplashScreen, ActionScreen)
 ✅ Grundlage für späteres Login/Registrierung
 
-**Jetzt können alle anderen Features den ECHTEN User nutzen!**
+**Jetzt haben alle Features Zugriff auf den ECHTEN User UND eine UI zum Bearbeiten!**
 
 ## Zusammenfassung: Was ist schon fertig vs. was musst du machen?
 
@@ -660,29 +599,43 @@ Nach dieser Implementierung hast du:
 - ✅ `deleteUser(userId)`
 - ✅ `getAllUsers()`
 
-### 📋 Was DU noch implementieren musst (UI Layer):
+### ✅ Bereits in Phase 5 implementiert (FERTIG!):
 
-**Presentation Layer:**
-- ❌ `SettingsViewModel` erstellen
-  - State-Management
-  - User laden via Repository
-  - User aktualisieren
-  - Logout
+**ViewModel & App Integration:**
+- ✅ `SettingsViewModel` komplett fertig
+  - ✅ State-Management (currentUser, isLoading, errorMessage)
+  - ✅ User laden via Repository (`loadCurrentUser()`)
+  - ✅ User aktualisieren (`updateUserProfile()`)
+  - ✅ Convenience-Methoden (`updateLanguage()`, `updateUnitSystem()`, `updateSleepTargets()`)
+  - ✅ Logout (`logout()`)
+  - ✅ Fehlerbehandlung komplett
+- ✅ ChangeNotifierProvider in main.dart registriert
+- ✅ SplashScreen lädt User beim App-Start
+- ✅ ActionScreen nutzt currentUser?.id
+
+### 📋 Was DU noch implementieren musst (UI Layer ONLY):
+
+**Presentation Layer - Screens:**
 - ❌ `SettingsScreen` erstellen
-  - User-Info Anzeige
-  - Einstellungen-Liste
-  - Provider-Integration
+  - User-Info Anzeige (Name, Email, Avatar)
+  - Einstellungen-Liste (Schlafziel, Sprache, Einheiten)
+  - Logout-Button
+  - Consumer<SettingsViewModel> für UI-Updates
 - ❌ `UserProfileScreen` erstellen
-  - Formular mit allen Feldern
+  - Formular mit allen User-Feldern
+  - TextFields, DatePicker, Slider, Switches
   - Validierung
-  - Speichern via ViewModel
+  - Speichern via SettingsViewModel.updateUserProfile()
 
 **UI-Verbindungen:**
 - ❌ Consumer/watch für automatische Updates
 - ❌ Navigation zwischen Settings und Profile
 - ❌ Sprach- und Einheiten-Dialoge
 
-**Wichtig:** Du musst KEINE Datenbank-Queries schreiben! Nutze einfach die fertigen Repository-Methoden.
+**Wichtig:**
+- ✅ ViewModel ist FERTIG - du rufst nur dessen Methoden auf!
+- ✅ Repository ist FERTIG - ViewModel kümmert sich darum!
+- ❌ Du baust NUR die UI-Screens!
 
 ## Nächste Schritte
 

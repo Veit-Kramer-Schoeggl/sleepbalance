@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../features/onboarding/presentation/screens/questionnaire_screen.dart';
+import '../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../services/storage/preferences_service.dart';
 import '../../widgets/navigation/main_navigation.dart';
 import '../../widgets/ui/background_wrapper.dart';
@@ -15,25 +17,41 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkFirstLaunch();
+    // Use addPostFrameCallback to ensure widget tree is fully built
+    // before accessing context and calling Provider methods
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkFirstLaunch();
+    });
   }
 
   Future<void> _checkFirstLaunch() async {
-    // Add a small delay to show the splash briefly
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Get SettingsViewModel from Provider
+    final settingsViewModel = context.read<SettingsViewModel>();
 
+    // Load current user FIRST - this ensures user data is available
+    // immediately when the app opens
+    await settingsViewModel.loadCurrentUser();
+
+    // Add a delay to show the splash screen briefly (improve UX)
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Check if widget is still mounted before navigation
+    if (!mounted) return;
+
+    // Check if this is the first launch
+    // Uses PreferencesService which respects the forceOnboarding debug flag
     final isFirstLaunch = await PreferencesService.isFirstLaunch();
 
-    if (mounted) {
-      if (isFirstLaunch) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const QuestionnaireScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
-        );
-      }
+    if (isFirstLaunch) {
+      // Navigate to onboarding questionnaire
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const QuestionnaireScreen()),
+      );
+    } else {
+      // Navigate to main app (user already loaded)
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
     }
   }
 
