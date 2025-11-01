@@ -1,333 +1,451 @@
 # PHASE 5: App Entry & Provider Setup
 
 ## Overview
-Wire up all components app-wide: configure MultiProvider in main.dart, initialize database on startup, inject dependencies throughout app, refactor SplashScreen for Provider.
+Wire up remaining components app-wide: register ViewModels in main.dart, refactor SplashScreen to use Provider, replace hardcoded user IDs with actual current user.
+
+**IMPORTANT UPDATE:** Phase 4 already completed the data layer setup! This includes:
+- ✅ SharedPreferences initialization in main.dart
+- ✅ Database initialization with migration V4
+- ✅ Default user creation in database_helper.dart
+- ✅ Provider registration for UserLocalDataSource and UserRepository
+- ✅ Current user ID set in SharedPreferences on first launch
+
+**What's left for Phase 5:** ViewModels, UI refactoring, and wiring up existing screens.
 
 ## Prerequisites
-- **Phase 1-4 completed:** All infrastructure, repositories, ViewModels exist
-- Currently: Components work in isolation but not connected
-- Need: Global Provider setup to make everything work together
+- **Phase 1-4 completed:** All infrastructure, repositories exist
+- **Phase 4 specifically:**
+  - UserLocalDataSource created
+  - UserRepository implemented with SharedPreferences
+  - Default user created automatically on first launch
+  - Providers already registered in main.dart
+- Currently: Data layer works, but UI screens don't use it yet
+- Need: ViewModel layer and screen refactoring
 
 ## Goals
-- Set up MultiProvider at app root
-- Initialize database on app startup
-- Register all repositories and services as providers
-- Register all ViewModels
-- Refactor SplashScreen to use injected dependencies
-- Remove hardcoded 'user123' strings, use actual current user
-- Ensure proper Provider disposal
+- Create SettingsViewModel for user management
+- Create/update ViewModels for Action Center and Night Review (if needed)
+- Refactor SplashScreen to load current user via Provider
+- Replace hardcoded 'user123' strings with actual current user ID
+- Ensure proper ViewModel disposal
 
 ---
 
-## Step 5.1: Modify main.dart - Add Provider Initialization
+## Step 5.1: Review Current Provider Setup (Already Done!)
 
 **File:** `lib/main.dart`
-**Purpose:** Set up MultiProvider, initialize database, register all dependencies
-**Dependencies:** `provider`, all repositories, all ViewModels, `database_helper`, `shared_preferences`
+**Status:** ✅ Already completed in Phase 4
 
-**Changes:**
+**What's already in place:**
 
-### Add Imports:
+### Current main() function:
 ```dart
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'core/database/database_helper.dart';
-// Import all repositories
-// Import all ViewModels
-// Import all services
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Database initialized
+  final database = await DatabaseHelper.instance.database;
+
+  // ✅ SharedPreferences initialized
+  final prefs = await SharedPreferences.getInstance();
+
+  // ✅ Default user ID set automatically
+  if (prefs.getString('current_user_id') == null) {
+    final users = await database.query(TABLE_USERS, limit: 1);
+    if (users.isNotEmpty) {
+      await prefs.setString('current_user_id', users.first[USERS_ID] as String);
+    }
+  }
+
+  runApp(/* ... */);
+}
 ```
 
-### Modify main() function:
+### Current Provider registrations:
+```dart
+MultiProvider(
+  providers: [
+    // ✅ Action Center providers
+    Provider<ActionLocalDataSource>(...),
+    Provider<ActionRepository>(...),
 
-**`Future<void> main() async`**
-- Add `WidgetsFlutterBinding.ensureInitialized()`
-- Initialize database: `await DatabaseHelper.instance.database`
-- Initialize SharedPreferences: `final prefs = await SharedPreferences.getInstance()`
-- Run app: `runApp(MyApp(prefs: prefs))`
+    // ✅ Night Review providers
+    Provider<SleepRecordLocalDataSource>(...),
+    Provider<SleepRecordRepository>(...),
 
-**Why async main:**
-- Database must be initialized before app starts
-- SharedPreferences needed for dependency injection
+    // ✅ Settings providers (from Phase 4)
+    Provider<SharedPreferences>(...),
+    Provider<UserLocalDataSource>(...),
+    Provider<UserRepository>(...),
+  ],
+)
+```
+
+**What this means:**
+- All data layer providers are ready
+- We only need to add ViewModel providers
+- No need to modify database or SharedPreferences initialization
 
 ---
 
-## Step 5.2: Create Providers Setup Function
+## Step 5.2: Create SettingsViewModel
 
-**File:** `lib/main.dart` (continued)
-**Purpose:** Factory function to create all Provider instances
+**File:** `lib/features/settings/presentation/viewmodels/settings_viewmodel.dart`
+**Purpose:** Manage user state and settings operations
+**Dependencies:** `UserRepository`, `ChangeNotifier`
 
-**Function: `List<SingleChildWidget> _createProviders(SharedPreferences prefs, Database database)`**
+**Class: SettingsViewModel extends ChangeNotifier**
 
-**Returns list of providers in order:**
-
-### 1. Services & Utilities (no dependencies):
-```dart
-Provider<SharedPreferences>.value(value: prefs),
-Provider<Database>.value(value: database),
-```
-
-### 2. Data Sources (depend on Database):
-```dart
-Provider<ActionLocalDataSource>(
-  create: (_) => ActionLocalDataSource(database: database),
-),
-Provider<SleepRecordLocalDataSource>(
-  create: (_) => SleepRecordLocalDataSource(database: database),
-),
-Provider<UserLocalDataSource>(
-  create: (_) => UserLocalDataSource(database: database),
-),
-```
-
-### 3. Repositories (depend on DataSources):
-```dart
-ProxyProvider<ActionLocalDataSource, ActionRepository>(
-  update: (_, dataSource, __) => ActionRepositoryImpl(dataSource: dataSource),
-),
-ProxyProvider2<SleepRecordLocalDataSource, SharedPreferences, SleepRecordRepository>(
-  update: (_, dataSource, prefs, __) => SleepRecordRepositoryImpl(dataSource: dataSource),
-),
-ProxyProvider2<UserLocalDataSource, SharedPreferences, UserRepository>(
-  update: (_, dataSource, prefs, __) => UserRepositoryImpl(dataSource: dataSource, prefs: prefs),
-),
-```
-
-### 4. ViewModels (depend on Repositories):
-```dart
-ChangeNotifierProxyProvider<ActionRepository, ActionViewModel>(
-  create: (_) => ActionViewModel(repository: /* temporary placeholder */),
-  update: (_, repository, previous) => ActionViewModel(repository: repository),
-),
-ChangeNotifierProxyProvider<SleepRecordRepository, NightReviewViewModel>(
-  create: (_) => NightReviewViewModel(repository: /* placeholder */),
-  update: (_, repository, previous) => NightReviewViewModel(repository: repository),
-),
-ChangeNotifierProxyProvider<UserRepository, SettingsViewModel>(
-  create: (_) => SettingsViewModel(repository: /* placeholder */),
-  update: (_, repository, previous) => SettingsViewModel(repository: repository),
-),
-```
-
-**Why ProxyProvider:**
-- Automatically rebuilds ViewModels when dependencies change
-- Handles disposal correctly
-
-**Why this order:**
-- Services → DataSources → Repositories → ViewModels
-- Each layer depends on previous layer
-
----
-
-## Step 5.3: Modify MyApp class
-
-**File:** `lib/main.dart` (continued)
-**Purpose:** Wrap MaterialApp with MultiProvider
-
-**Class: MyApp extends StatelessWidget**
+**Fields:**
+- `final UserRepository _repository` - Repository for user operations
+- `User? _currentUser` - Currently logged-in user (nullable)
+- `bool _isLoading = false` - Loading state
+- `String? _errorMessage` - Error message if operation fails
 
 **Constructor:**
 ```dart
-const MyApp({super.key, required this.prefs});
-
-final SharedPreferences prefs;
+SettingsViewModel({required UserRepository repository})
+    : _repository = repository;
 ```
 
-**Build Method:**
+**Methods:**
+
+### `Future<void> loadCurrentUser()`
+Loads the current user from the repository.
+
+**Steps:**
+1. Set `_isLoading = true`, call `notifyListeners()`
+2. Get current user ID from repository: `await _repository.getCurrentUserId()`
+3. If user ID exists, load user: `await _repository.getUserById(userId)`
+4. Set `_currentUser` with result
+5. Handle errors in try-catch, set `_errorMessage` if failed
+6. Set `_isLoading = false` in finally block, call `notifyListeners()`
+
+**Example:**
 ```dart
-@override
-Widget build(BuildContext context) {
-  return FutureBuilder<Database>(
-    future: DatabaseHelper.instance.database,
-    builder: (context, snapshot) {
-      if (snapshot.connectionState != ConnectionState.done) {
-        return MaterialApp(
-          home: Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          ),
-        );
-      }
+Future<void> loadCurrentUser() async {
+  try {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
 
-      if (snapshot.hasError) {
-        return MaterialApp(
-          home: Scaffold(
-            body: Center(child: Text('Database initialization failed')),
-          ),
-        );
-      }
-
-      final database = snapshot.data!;
-
-      return MultiProvider(
-        providers: _createProviders(prefs, database),
-        child: MaterialApp(
-          title: 'SleepBalance',
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-            useMaterial3: true,
-          ),
-          home: SplashScreen(), // Will use Provider internally
-        ),
-      );
-    },
-  );
+    final userId = await _repository.getCurrentUserId();
+    if (userId != null) {
+      _currentUser = await _repository.getUserById(userId);
+    }
+  } catch (e) {
+    _errorMessage = 'Failed to load user: $e';
+  } finally {
+    _isLoading = false;
+    notifyListeners();
+  }
 }
 ```
 
-**Why FutureBuilder:**
-- Ensures database is ready before providers are created
-- Shows loading while initializing
+### `Future<void> updateUserProfile(User updatedUser)`
+Updates user profile in database.
+
+**Steps:**
+1. Set `_isLoading = true`, call `notifyListeners()`
+2. Call `await _repository.updateUser(updatedUser)`
+3. Update `_currentUser = updatedUser`
+4. Handle errors in try-catch
+5. Set `_isLoading = false` in finally block, call `notifyListeners()`
+
+### `Future<void> updateLanguage(String language)`
+Quick method to update only language.
+
+**Steps:**
+1. If `_currentUser == null`, return
+2. Create updated user: `_currentUser!.copyWith(language: language)`
+3. Call `updateUserProfile(updatedUser)`
+
+### `Future<void> updateUnitSystem(String unitSystem)`
+Quick method to update only unit system.
+
+**Similar to updateLanguage**
+
+### `Future<void> logout()`
+Logs out current user.
+
+**Steps:**
+1. Call `await _repository.setCurrentUserId('')` (clear current user ID)
+2. Set `_currentUser = null`
+3. Call `notifyListeners()`
+
+**Getters:**
+- `User? get currentUser => _currentUser`
+- `bool get isLoading => _isLoading`
+- `String? get errorMessage => _errorMessage`
+- `bool get isLoggedIn => _currentUser != null`
+
+**Pattern Reference:** Same structure as ActionViewModel and NightReviewViewModel!
 
 ---
 
-## Step 5.4: Refactor SplashScreen
+## Step 5.3: Register SettingsViewModel in main.dart
+
+**File:** `lib/main.dart`
+**Action:** Add SettingsViewModel to providers list
+
+**Import:**
+```dart
+import 'features/settings/presentation/viewmodels/settings_viewmodel.dart';
+```
+
+**Add to providers (AFTER UserRepository):**
+```dart
+// ============================================================================
+// ViewModels
+// ============================================================================
+
+// Settings ViewModel
+ChangeNotifierProvider<SettingsViewModel>(
+  create: (context) => SettingsViewModel(
+    repository: context.read<UserRepository>(),
+  ),
+),
+```
+
+**Why ChangeNotifierProvider:**
+- ViewModels extend ChangeNotifier
+- ChangeNotifierProvider automatically handles disposal
+- UI rebuilds when `notifyListeners()` is called
+
+**Why AFTER UserRepository:**
+- SettingsViewModel depends on UserRepository
+- Providers must be registered in dependency order
+
+---
+
+## Step 5.4: Refactor SplashScreen to Load Current User
 
 **File:** `lib/shared/screens/app/splash_screen.dart`
-**Purpose:** Use Provider to inject PreferencesService, use UserRepository for current user
-**Dependencies:** `provider`, `preferences_service`, `user_repository`, `settings_viewmodel`
+**Purpose:** Load current user on app startup before navigating to main screen
+**Dependencies:** `SettingsViewModel`, `Provider`
+
+**Current issue:** SplashScreen doesn't load user data before navigation
 
 **Changes:**
 
-### Remove Direct Instantiation:
-- Delete `final prefsService = PreferencesService();` (line creating instance)
+### Update _checkFirstLaunch method:
 
-### Use Provider Instead:
+**Replace any direct SharedPreferences access with:**
+```dart
+Future<void> _checkFirstLaunch(BuildContext context) async {
+  // Get SettingsViewModel from Provider
+  final settingsViewModel = context.read<SettingsViewModel>();
+  final prefs = context.read<SharedPreferences>();
 
-**Build Method:**
+  // Load current user first!
+  await settingsViewModel.loadCurrentUser();
+
+  // Check if first launch
+  final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
+
+  // Add delay for splash screen visibility
+  await Future.delayed(Duration(seconds: 2));
+
+  if (!context.mounted) return;
+
+  if (isFirstLaunch) {
+    // Navigate to onboarding
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => QuestionnaireScreen()),
+    );
+  } else {
+    // Navigate to main app (user already loaded)
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => MainNavigation()),
+    );
+  }
+}
+```
+
+**Why load user in SplashScreen:**
+- User data available immediately when app opens
+- No delay in Action Center or Night Review screens
+- Centralized user loading logic
+
+**Critical:** Always check `context.mounted` before navigation in async methods!
+
+---
+
+## Step 5.5: Update Action Center to Use Current User
+
+**File:** `lib/features/action_center/presentation/screens/action_screen.dart`
+**Purpose:** Replace hardcoded user ID with actual current user ID
+
+**Current issue (example):**
+```dart
+// Old - hardcoded
+viewModel.loadActions('user123');
+```
+
+**New implementation:**
+
+### Add SettingsViewModel access:
+
+**In build method or initState:**
 ```dart
 @override
-Widget build(BuildContext context) {
-  return FutureBuilder<void>(
-    future: _checkFirstLaunch(context),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.done) {
-        return Container(); // Will navigate away
-      }
-      return BackgroundWrapper(
-        imagePath: 'assets/images/main_background.png',
-        overlayOpacity: 0.3,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/moon_star.png', width: 150, height: 150),
-                SizedBox(height: 20),
-                CircularProgressIndicator(color: Colors.white),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
+void initState() {
+  super.initState();
+
+  // Load actions for current user
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final settingsViewModel = context.read<SettingsViewModel>();
+    final actionViewModel = context.read<ActionViewModel>();
+
+    final userId = settingsViewModel.currentUser?.id;
+    if (userId != null) {
+      actionViewModel.loadActions(userId, DateTime.now());
+    } else {
+      // Handle no user case - should not happen if SplashScreen loaded user
+      debugPrint('Warning: No current user found in Action Center');
+    }
+  });
 }
 ```
 
-**`Future<void> _checkFirstLaunch(BuildContext context) async`**
+**Alternative using Consumer:**
 ```dart
-// Get services from Provider
-final prefs = context.read<SharedPreferences>();
-final userRepository = context.read<UserRepository>();
+Consumer<SettingsViewModel>(
+  builder: (context, settingsVM, _) {
+    final userId = settingsVM.currentUser?.id;
 
-// Check first launch
-final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
+    if (userId == null) {
+      return Center(child: Text('No user logged in'));
+    }
 
-// Load current user (will be default user created in Phase 4)
-final userId = await userRepository.getCurrentUserId();
+    return Consumer<ActionViewModel>(
+      builder: (context, actionVM, _) {
+        // Use userId here
+        // ...
+      },
+    );
+  },
+)
+```
 
-if (isFirstLaunch || userId == null) {
-  // Navigate to onboarding
-  await Future.delayed(Duration(seconds: 2));
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => QuestionnaireScreen()),
-  );
-} else {
-  // Load user into SettingsViewModel
-  final settingsVM = context.read<SettingsViewModel>();
-  await settingsVM.loadCurrentUser();
+**Choose based on your current screen structure.**
 
-  // Navigate to main app
-  await Future.delayed(Duration(seconds: 2));
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => MainNavigation()),
-  );
+---
+
+## Step 5.6: Update Night Review to Use Current User
+
+**File:** `lib/features/night_review/presentation/screens/night_screen.dart`
+**Purpose:** Replace hardcoded user ID with actual current user ID
+
+**Same pattern as Action Center:**
+
+```dart
+@override
+void initState() {
+  super.initState();
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final settingsViewModel = context.read<SettingsViewModel>();
+    final nightViewModel = context.read<NightReviewViewModel>();
+
+    final userId = settingsViewModel.currentUser?.id;
+    if (userId != null) {
+      nightViewModel.loadSleepRecord(userId, DateTime.now());
+    }
+  });
 }
 ```
 
-**Why:**
-- Removes direct service instantiation
-- Uses Provider for dependency injection
-- Loads current user on startup
+**Important:** If NightReviewViewModel doesn't exist yet, this step may need to wait until it's created.
 
 ---
 
-## Step 5.5: Update All Screens to Use Current User
+## Step 5.7: Optional - Create ActionViewModel (If Not Exists)
 
-**Files to Modify:**
-- `action_screen.dart`
-- `night_screen.dart`
+**Status:** Check if ActionViewModel already exists.
 
-**Changes in ActionScreen:**
+**If it doesn't exist:**
+
+**File:** `lib/features/action_center/presentation/viewmodels/action_viewmodel.dart`
+
+**Follow same pattern as SettingsViewModel:**
+- Extend ChangeNotifier
+- Accept ActionRepository in constructor
+- Methods: `loadActions()`, `toggleAction()`, etc.
+- Use try-catch-finally pattern
+- Call `notifyListeners()` after state changes
+
+**Register in main.dart:**
 ```dart
-// Old: hardcoded user ID
-..loadActions('hardcoded-user-id')
-
-// New: get from SettingsViewModel
-final userId = context.read<SettingsViewModel>().currentUser?.id ?? '';
-..loadActions(userId)
+ChangeNotifierProvider<ActionViewModel>(
+  create: (context) => ActionViewModel(
+    repository: context.read<ActionRepository>(),
+  ),
+),
 ```
-
-**Changes in NightScreen:**
-```dart
-// Old: hardcoded user ID
-..loadSleepData('hardcoded-user-id')
-
-// New: get from SettingsViewModel
-final userId = context.read<SettingsViewModel>().currentUser?.id ?? '';
-..loadSleepData(userId)
-```
-
-**Why:** Uses actual user ID instead of placeholder
 
 ---
 
-## Step 5.6: Optional - Update MainNavigation with Provider
+## Step 5.8: Optional - Create NightReviewViewModel (If Not Exists)
 
-**File:** `lib/shared/widgets/navigation/main_navigation.dart`
-**Purpose:** Optionally manage tab state with Provider (not critical)
-**Action:** Can keep existing setState() implementation or migrate later
-
-**Note:** MainNavigation state is simple enough that setState() is fine. Provider here is optional.
+**Similar to ActionViewModel, but for Night Review feature.**
 
 ---
 
 ## Testing Checklist
 
 ### Manual Tests:
-- [ ] Launch app, should show splash screen briefly
+
+#### App Startup:
+- [ ] Launch app, should show splash screen for ~2 seconds
 - [ ] If first launch: Navigate to questionnaire
-- [ ] Complete questionnaire, mark first launch as done
+- [ ] Complete questionnaire, set `is_first_launch = false`
 - [ ] Restart app, should skip questionnaire and load main screen
-- [ ] Navigate to Action Center, should load actions for current user
-- [ ] Navigate to Night Review, should load sleep data for current user
-- [ ] Navigate to Settings, should show current user's name
-- [ ] Edit profile, changes should persist across app restarts
+- [ ] No errors in console about "Provider not found"
+
+#### User Loading:
+- [ ] SplashScreen loads user before navigation
+- [ ] SettingsViewModel.currentUser is not null after startup
+- [ ] Current user ID matches the default user created in Phase 4
+
+#### Action Center:
+- [ ] Navigate to Action Center
+- [ ] Should load actions for current user (not hardcoded ID)
+- [ ] Creating/completing actions uses current user ID
+- [ ] No "user123" or hardcoded IDs in logs
+
+#### Night Review:
+- [ ] Navigate to Night Review
+- [ ] Should load sleep data for current user
+- [ ] No hardcoded user IDs used
+
+#### Settings Screen:
+- [ ] Navigate to Settings
+- [ ] Should display current user's name and email
+- [ ] "Sleep User" and "default@sleepbalance.app" should be visible
+- [ ] No crashes or null pointer exceptions
 
 ### Provider Tests:
-- [ ] Verify all providers are registered in correct order
-- [ ] Verify no "Provider not found" errors in console
-- [ ] Verify ViewModels dispose correctly on screen exit (no memory leaks)
+
+- [ ] All ViewModels registered in correct order (after their repositories)
+- [ ] ChangeNotifierProvider used for ViewModels
+- [ ] Provider<T> used for repositories and services
+- [ ] No duplicate provider registrations
+- [ ] ViewModels dispose correctly (check with Flutter DevTools)
 
 ### Error Handling Tests:
-- [ ] What if database initialization fails? (Should show error screen)
-- [ ] What if no current user? (Should handle gracefully, maybe force onboarding)
+
+- [ ] What if user is null? (Should be handled gracefully)
+- [ ] What if repository call fails? (Should show error message)
+- [ ] What if database is empty? (Default user should exist from Phase 4)
 
 ### Performance Tests:
-- [ ] App startup time (should be < 3 seconds on device)
-- [ ] Database queries are not blocking UI thread
+
+- [ ] App startup time < 3 seconds
+- [ ] No lag when switching between tabs
+- [ ] ViewModel operations don't block UI thread
 
 ---
 
@@ -335,67 +453,119 @@ final userId = context.read<SettingsViewModel>().currentUser?.id ?? '';
 
 **If Phase 5 fails:**
 
-### Option A: Minimal Provider
-1. Only register repositories, not ViewModels
-2. Create ViewModels locally in each screen
-3. Gradually migrate to global Provider
+### Option A: Minimal ViewModel
+1. Only create SettingsViewModel
+2. Keep Action Center and Night Review with hardcoded IDs temporarily
+3. Gradually add ViewModels one at a time
 
-### Option B: Full rollback
-1. Revert main.dart to original
-2. Keep Providers in individual screens (ChangeNotifierProvider in each screen's build)
-3. This still works but less efficient
+### Option B: Local ViewModels
+1. Create ViewModels inside each screen (not global)
+2. Use `ChangeNotifierProvider` in each screen's build method
+3. Less efficient but safer for testing
+
+### Option C: Full rollback
+1. Revert ViewModel files
+2. Keep Phase 4 data layer intact
+3. Screens use repositories directly (context.read<UserRepository>())
 
 ---
 
 ## Common Issues & Solutions
 
-### Issue: "Provider not found in ancestor"
-**Solution:** Ensure Provider is registered before it's used. Check provider order in _createProviders.
+### Issue: "Provider<SettingsViewModel> not found"
+**Solution:**
+- Check SettingsViewModel is registered in main.dart providers list
+- Ensure it's registered AFTER UserRepository
+- Verify import statement is correct
+
+### Issue: "currentUser is null"
+**Solution:**
+- Check SplashScreen calls `loadCurrentUser()`
+- Verify default user was created in database (check with SQLite viewer)
+- Verify SharedPreferences has `current_user_id` key
 
 ### Issue: "setState called after dispose"
-**Solution:** Ensure ViewModels properly dispose of listeners, use mounted checks in async methods.
-
-### Issue: "Database is locked"
-**Solution:** Don't call database operations from initState, use FutureBuilder or post-frame callbacks.
+**Solution:**
+- Add `if (!mounted)` checks before setState in async methods
+- Ensure ViewModels don't call notifyListeners() after disposal
+- Use `context.mounted` in Flutter 3.10+
 
 ### Issue: App hangs on splash screen
-**Solution:** Check for exceptions in _checkFirstLaunch, add try-catch blocks.
+**Solution:**
+- Add try-catch in _checkFirstLaunch
+- Check for infinite loops in navigation logic
+- Verify database initialization completes successfully
+
+### Issue: Hardcoded user IDs still appear
+**Solution:**
+- Search project for 'user123' or other hardcoded IDs
+- Replace with `context.read<SettingsViewModel>().currentUser?.id`
+- Add null checks for when user might not be loaded
 
 ---
 
 ## Next Steps
 
 After Phase 5:
-- App is now fully wired up with MVVM + Provider
-- Proceed to **PHASE_6.md:** Implement first intervention module (Light)
-- Light module demonstrates full module pattern for future modules
+- App is fully wired with MVVM + Provider architecture
+- All screens use actual user data (no hardcoded IDs)
+- Ready for Settings UI implementation
+- Proceed to **SETTINGS_IMPLEMENTATION_PLAN.md:** Build Settings and User Profile screens
+- Then **PHASE_6:** Implement first intervention module (Light)
 
 ---
 
 ## Notes
 
-**Why Provider order matters:**
-- Providers are created top-to-bottom
-- Dependencies must exist before dependents
-- ProxyProvider automatically handles updates
+**What Phase 4 Already Gave Us:**
+- Database with users table (migration V4)
+- User model with fromDatabase/toDatabase methods
+- UserLocalDataSource for SQLite operations
+- UserRepositoryImpl with SharedPreferences integration
+- Default user automatically created on first launch
+- Current user ID automatically set in SharedPreferences
+- All providers registered in main.dart
 
-**Disposal:**
-- ChangeNotifier ViewModels auto-dispose when removed from tree
-- No manual cleanup needed for most cases
+**What Phase 5 Adds:**
+- SettingsViewModel for UI state management
+- SplashScreen user loading logic
+- Replacement of hardcoded user IDs throughout app
+- ViewModel layer for MVVM pattern completion
 
-**Performance:**
-- MultiProvider has minimal overhead
-- Lazy initialization only creates providers when first accessed
-- Proper use of context.read vs context.watch prevents unnecessary rebuilds
+**Key Learnings Applied:**
+1. **Provider dependency order matters:** Services → DataSources → Repositories → ViewModels
+2. **ChangeNotifierProvider for ViewModels:** Automatic disposal and rebuild on notifyListeners()
+3. **context.read vs context.watch:** read for one-time access, watch for reactive updates
+4. **Null safety critical:** Always check if currentUser is null
+5. **async operations need mounted checks:** Prevent setState after disposal
+6. **Load user in SplashScreen:** Centralized user loading before app navigation
 
-**Alternative: Riverpod**
-- Could use Riverpod instead of Provider
-- Similar concepts, different syntax
-- Provider is simpler for this use case
+**Architecture Benefits:**
+- Clean separation of concerns (Model-View-ViewModel)
+- Easy to test (mock repositories, test ViewModels in isolation)
+- Scalable (add new features following same pattern)
+- Maintainable (changes in one layer don't affect others)
 
-**Estimated Time:** 3-4 hours
-- main.dart setup: 60 minutes
-- Provider configuration: 60 minutes
-- SplashScreen refactoring: 45 minutes
-- Screen updates: 30 minutes
-- Testing & debugging: 60 minutes
+**Performance Considerations:**
+- ChangeNotifierProvider rebuilds only widgets using Consumer or watch
+- context.read doesn't rebuild, only fetches value
+- Lazy initialization - providers created only when first accessed
+- ViewModels automatically disposed when removed from widget tree
+
+**Alternative Approaches:**
+- **Riverpod:** Modern provider alternative, compile-time safety
+- **BLoC:** Event-driven architecture, more complex but powerful
+- **GetX:** All-in-one solution, but less community support
+
+For this project, Provider + MVVM is the sweet spot:
+- Simple enough for junior developers
+- Powerful enough for complex apps
+- Well-documented and widely used
+- Official Flutter recommendation
+
+**Estimated Time:** 2-3 hours
+- SettingsViewModel creation: 45 minutes
+- Provider registration: 15 minutes
+- SplashScreen refactoring: 30 minutes
+- Screen updates (Action Center, Night Review): 45 minutes
+- Testing & debugging: 45 minutes
