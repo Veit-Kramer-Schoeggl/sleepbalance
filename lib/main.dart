@@ -4,6 +4,9 @@ import 'core/database/database_helper.dart';
 import 'features/action_center/data/datasources/action_local_datasource.dart';
 import 'features/action_center/data/repositories/action_repository_impl.dart';
 import 'features/action_center/domain/repositories/action_repository.dart';
+import 'features/night_review/data/datasources/sleep_record_local_datasource.dart';
+import 'features/night_review/data/repositories/sleep_record_repository_impl.dart';
+import 'features/night_review/domain/repositories/sleep_record_repository.dart';
 import 'shared/screens/app/splash_screen.dart';
 
 void main() async {
@@ -17,6 +20,10 @@ void main() async {
     // MultiProvider wraps the app to provide dependencies to all widgets
     MultiProvider(
       providers: [
+        // ============================================================================
+        // Action Center - Data Layer
+        // ============================================================================
+
         // Data sources layer - direct database access
         Provider<ActionLocalDataSource>(
           create: (_) => ActionLocalDataSource(database: database),
@@ -27,6 +34,22 @@ void main() async {
         Provider<ActionRepository>(
           create: (context) => ActionRepositoryImpl(
             dataSource: context.read<ActionLocalDataSource>(),
+          ),
+        ),
+
+        // ============================================================================
+        // Night Review - Data Layer
+        // ============================================================================
+
+        // Sleep Records DataSource
+        Provider<SleepRecordLocalDataSource>(
+          create: (_) => SleepRecordLocalDataSource(database: database),
+        ),
+
+        // Sleep Records Repository
+        Provider<SleepRecordRepository>(
+          create: (context) => SleepRecordRepositoryImpl(
+            dataSource: context.read<SleepRecordLocalDataSource>(),
           ),
         ),
       ],

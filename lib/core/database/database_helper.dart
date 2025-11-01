@@ -5,6 +5,7 @@ import 'package:sqflite/sqflite.dart';
 import '../../shared/constants/database_constants.dart';
 import 'migrations/migration_v1.dart';
 import 'migrations/migration_v2.dart';
+import 'migrations/migration_v3.dart';
 
 /// Database Helper - Singleton for managing SQLite database lifecycle
 ///
@@ -57,9 +58,10 @@ class DatabaseHelper {
   /// Called when database is created for the first time.
   /// Executes all migrations up to the current version.
   ///
-  /// For fresh installs at V2:
+  /// For fresh installs at V3:
   /// - Executes MIGRATION_V1 (base schema)
   /// - Executes MIGRATION_V2 (daily_actions table)
+  /// - Executes MIGRATION_V3 (sleep_records and user_sleep_baselines tables)
   Future<void> _onCreate(Database db, int version) async {
     // Always execute V1 first (base schema)
     await db.execute(MIGRATION_V1);
@@ -68,10 +70,9 @@ class DatabaseHelper {
     if (version >= 2) {
       await db.execute(MIGRATION_V2);
     }
-    // Future migrations:
-    // if (version >= 3) {
-    //   await db.execute(MIGRATION_V3);
-    // }
+    if (version >= 3) {
+      await db.execute(MIGRATION_V3);
+    }
   }
 
   /// Upgrade database callback
@@ -87,10 +88,9 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute(MIGRATION_V2);
     }
-    // Future migrations:
-    // if (oldVersion < 3) {
-    //   await db.execute(MIGRATION_V3);
-    // }
+    if (oldVersion < 3) {
+      await db.execute(MIGRATION_V3);
+    }
   }
 
   /// Close database connection

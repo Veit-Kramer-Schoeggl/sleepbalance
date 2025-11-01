@@ -11,7 +11,7 @@ library;
 // ============================================================================
 
 const String DATABASE_NAME = 'sleepbalance.db';
-const int DATABASE_VERSION = 2;
+const int DATABASE_VERSION = 3;
 
 // ============================================================================
 // Table Names
@@ -68,6 +68,7 @@ const String SLEEP_RECORDS_AVG_HEART_RATE = 'avg_heart_rate';
 const String SLEEP_RECORDS_MIN_HEART_RATE = 'min_heart_rate';
 const String SLEEP_RECORDS_MAX_HEART_RATE = 'max_heart_rate';
 const String SLEEP_RECORDS_AVG_HRV = 'avg_hrv';
+const String SLEEP_RECORDS_AVG_HEART_RATE_VARIABILITY = 'avg_heart_rate_variability';
 const String SLEEP_RECORDS_AVG_BREATHING_RATE = 'avg_breathing_rate';
 const String SLEEP_RECORDS_QUALITY_RATING = 'quality_rating';
 const String SLEEP_RECORDS_QUALITY_NOTES = 'quality_notes';

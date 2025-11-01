@@ -1,7 +1,9 @@
 # PHASE 4: Settings & User Profile - Data Layer
 
 ## Overview
-Create user management system data layer: database migration, User model, repository pattern, and default user setup. UI implementation will be done separately.
+Create user management system **DATA LAYER ONLY**: database migration, User model, repository pattern, and default user setup.
+
+**IMPORTANT:** This phase implements ONLY the data layer (models, datasources, repositories). UI implementation (ViewModel, Screens) is intentionally excluded and will be done by junior developers separately. See SETTINGS_IMPLEMENTATION_PLAN.md for UI layer details.
 
 ## Prerequisites
 - **Phase 1 completed:** Database infrastructure with migrations and constants
@@ -463,14 +465,17 @@ After Phase 4:
 - Alternative: Implement proper onUpgrade logic (more complex)
 - For development, uninstall is fastest approach
 
-**Key Learnings Applied:**
-1. Migration created FIRST (Step 4.0)
-2. Models use fromDatabase/toDatabase (separate from fromJson/toJson)
-3. DatabaseDateUtils for all DateTime conversions
-4. DatabaseConstants for all table/column names
-5. Provider dependency order: DataSource → Repository
-6. Run build_runner after creating models
-7. Goal: 0 analyzer warnings
+**Key Learnings Applied from Phase 3:**
+1. **Migration created FIRST** (Step 4.0) - Always define schema before models
+2. **Models use fromDatabase/toDatabase** (separate from fromJson/toJson) - Critical for SQLite
+3. **DatabaseDateUtils for all DateTime conversions** - toDateString() for dates, toTimestamp() for timestamps
+4. **DatabaseConstants for all table/column names** - Zero hardcoded strings in queries
+5. **Provider dependency order: DataSource → Repository** - Register in correct order in main.dart
+6. **Run build_runner after creating models** - Generates .g.dart files for JSON serialization
+7. **Library directive BEFORE imports** - `library;` must come first in migration files
+8. **Handle nullable fields correctly** - Inline null checks in fromDatabase/toDatabase methods
+9. **Goal: 0 analyzer warnings** - Always run `flutter analyze` at the end
+10. **Data layer only** - No UI/ViewModel implementation in this phase
 
 **Estimated Time:** 3-4 hours (Data Layer Only)
 - Migration: 30 minutes
