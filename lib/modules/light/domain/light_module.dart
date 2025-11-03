@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../shared/domain/interfaces/module_interface.dart';
 import '../../shared/domain/models/user_module_config.dart';
 import '../../shared/constants/module_metadata.dart';
+import '../presentation/screens/light_config_standard_screen.dart';
 
 /// Light Therapy Module
 ///
@@ -21,16 +22,7 @@ class LightModule implements ModuleInterface {
     required String userId,
     UserModuleConfig? config,
   }) {
-    // TODO: Return Light module's configuration screen when UI is implemented
-    // For now, return a placeholder widget
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Light Therapy Configuration'),
-      ),
-      body: const Center(
-        child: Text('Configuration UI to be implemented by juniors'),
-      ),
-    );
+    return const LightConfigStandardScreen();
   }
 
   @override

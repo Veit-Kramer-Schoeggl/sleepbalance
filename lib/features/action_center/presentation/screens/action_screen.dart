@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
+import '../../../../modules/light/presentation/screens/light_config_standard_screen.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/checkbox_button.dart';
@@ -121,8 +122,16 @@ class _ActionScreenContent extends StatelessWidget {
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton(
-                                onPressed: viewModel.addDefaultActions,
-                                child: const Text('Add Default Actions'),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LightConfigStandardScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text('Configure Light Module'),
                               ),
                             ],
                           ),

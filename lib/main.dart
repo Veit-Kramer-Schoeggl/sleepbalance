@@ -12,7 +12,11 @@ import 'features/settings/data/datasources/user_local_datasource.dart';
 import 'features/settings/data/repositories/user_repository_impl.dart';
 import 'features/settings/domain/repositories/user_repository.dart';
 import 'features/settings/presentation/viewmodels/settings_viewmodel.dart';
+import 'modules/light/data/datasources/light_module_local_datasource.dart';
+import 'modules/light/data/repositories/light_module_repository_impl.dart';
 import 'modules/light/domain/light_module.dart';
+import 'modules/light/domain/repositories/light_repository.dart';
+import 'modules/light/presentation/viewmodels/light_module_viewmodel.dart';
 import 'modules/shared/data/datasources/module_config_local_datasource.dart';
 import 'modules/shared/data/repositories/module_config_repository_impl.dart';
 import 'modules/shared/domain/repositories/module_config_repository.dart';
@@ -126,6 +130,22 @@ void main() async {
         ),
 
         // ============================================================================
+        // Light Module - Data Layer
+        // ============================================================================
+
+        // Light Module DataSource
+        Provider<LightModuleLocalDataSource>(
+          create: (_) => LightModuleLocalDataSource(database: database),
+        ),
+
+        // Light Module Repository
+        Provider<LightRepository>(
+          create: (context) => LightModuleRepositoryImpl(
+            dataSource: context.read<LightModuleLocalDataSource>(),
+          ),
+        ),
+
+        // ============================================================================
         // ViewModels
         // ============================================================================
 
@@ -134,6 +154,14 @@ void main() async {
         ChangeNotifierProvider<SettingsViewModel>(
           create: (context) => SettingsViewModel(
             repository: context.read<UserRepository>(),
+          ),
+        ),
+
+        // Light Module ViewModel - manages light module state
+        // Important: Registered AFTER LightRepository (its dependency)
+        ChangeNotifierProvider<LightModuleViewModel>(
+          create: (context) => LightModuleViewModel(
+            repository: context.read<LightRepository>(),
           ),
         ),
       ],

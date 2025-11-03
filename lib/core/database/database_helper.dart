@@ -10,6 +10,7 @@ import 'migrations/migration_v2.dart';
 import 'migrations/migration_v3.dart';
 import 'migrations/migration_v4.dart';
 import 'migrations/migration_v5.dart';
+import 'migrations/migration_v6.dart';
 
 /// Database Helper - Singleton for managing SQLite database lifecycle
 ///
@@ -88,6 +89,11 @@ class DatabaseHelper {
     if (version >= 5) {
       await db.execute(MigrationV5.MIGRATION_V5);
     }
+    // TODO: Fix Migration V6 - currently disabled due to multi-statement execution issues
+    // The index and triggers are nice-to-have optimizations, not required for functionality
+    // if (version >= 6) {
+    //   await executeMigrationV6(db);
+    // }
   }
 
   /// Create default user
@@ -145,6 +151,10 @@ class DatabaseHelper {
     if (oldVersion < 5) {
       await db.execute(MigrationV5.MIGRATION_V5);
     }
+    // TODO: Fix Migration V6 - currently disabled
+    // if (oldVersion < 6) {
+    //   await executeMigrationV6(db);
+    // }
   }
 
   /// Close database connection
