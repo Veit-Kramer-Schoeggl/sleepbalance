@@ -148,29 +148,15 @@ CREATE TABLE modules (
   name TEXT UNIQUE NOT NULL,              -- Internal name
   display_name TEXT NOT NULL,             -- e.g., 'Light Therapy'
   description TEXT,
-  icon TEXT,                              -- Icon identifier
+  icon TEXT,                              -- Icon identifier (legacy)
   is_active BOOLEAN DEFAULT TRUE,         -- Can disable modules app-wide
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Pre-populate with 9 modules
-INSERT INTO modules (id, name, display_name) VALUES
-  ('light', 'light', 'Light Therapy'),
-  ('sport', 'sport', 'Exercise & Movement'),
-  ('temperature', 'temperature', 'Temperature Exposure'),
-  ('nutrition', 'nutrition', 'Sleep-Promoting Nutrition'),
-  ('mealtime', 'mealtime', 'Meal Timing'),
-  ('sleep_hygiene', 'sleep_hygiene', 'Sleep Hygiene'),
-  ('meditation', 'meditation', 'Meditation & Relaxation'),
-  ('journaling', 'journaling', 'Sleep Journaling'),
-  ('medication', 'medication', 'Medication Tracking');
+-- Pre-populated with 9 modules in migration_v1.dart
 ```
 
-**Design Decision:** Why a modules table?
-- Centralized module registry
-- Easy to add new modules without code changes
-- Can disable modules globally (e.g., beta features)
-- Metadata (icons, descriptions) stored in one place
+**IMPORTANT (PHASE 7 Update):** Module metadata (icons, colors, descriptions) is now **hardcoded** in `lib/modules/shared/constants/module_metadata.dart` for better type safety and compile-time guarantees. The modules table remains for foreign key relationships but metadata queries use the hardcoded `ModuleMetadata` map.
 
 ---
 
@@ -340,6 +326,31 @@ VALUES
 
 ---
 
+### 7. Daily Actions Table
+
+**Added in Migration V2.** Stores user's daily action items for the Action Center feature.
+
+```sql
+CREATE TABLE daily_actions (
+  id TEXT PRIMARY KEY,                    -- UUID
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,                    -- Action item text
+  icon_name TEXT NOT NULL,                -- Icon identifier
+  is_completed BOOLEAN DEFAULT FALSE,     -- Completion status
+  action_date DATE NOT NULL,              -- The day this action is for
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP,                 -- When user marked it complete
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_daily_actions_user_date ON daily_actions(user_id, action_date);
+```
+
+**Purpose:** Action Center displays daily tasks/habits that users can check off. Currently used for custom tasks; will integrate with module reminders in future phases.
+
+---
+
 ## Optional: Future Tables
 
 ### Sleep Stages Time-Series (Future)
@@ -454,18 +465,21 @@ WHERE sr.user_id = 'user123'
 
 ## Migration Strategy
 
-### Phase 1: Local SQLite (Now)
+### Phase 1: Local SQLite ✅ Complete
 
-1. Create all core tables (users, sleep_records, modules, user_module_configurations, intervention_activities, user_sleep_baselines)
-2. Implement migrations in `core/database/migrations/`
-3. Version 1 schema
-4. Focus on Light module as pilot
+1. ✅ Created all core tables across migrations v1-v5
+2. ✅ Implemented migrations in `core/database/migrations/`
+3. ✅ Database version 5 schema
+4. ✅ Module system framework with ModuleInterface pattern
+5. ✅ Light module as pilot reference implementation
 
-### Phase 2: Additional Modules (Weeks 2-8)
+### Phase 2: Additional Modules (In Progress)
 
-1. Add Sport, Meditation, etc. (no schema changes needed!)
-2. Just add configuration JSON and module-specific data fields
-3. Migrate existing user configurations if needed
+1. Implement remaining modules (Sport, Meditation, Temperature, etc.)
+2. No schema changes needed - modules use existing tables
+3. Each module implements ModuleInterface and registers with ModuleRegistry
+4. Configuration stored as JSON in user_module_configurations
+5. Activity tracking uses intervention_activities table
 
 ### Phase 3: PostgreSQL Sync (Future)
 
@@ -486,49 +500,33 @@ WHERE sr.user_id = 'user123'
 
 ## Schema Migrations
 
-### Migration Version 1 (Initial Schema)
+### Actual Implementation
 
-**File:** `lib/core/database/migrations/migration_v1.dart`
+Migrations are split across multiple files for maintainability:
 
-```dart
-const String MIGRATION_V1 = '''
-  -- Create users table
-  CREATE TABLE users (...);
+**Migration V1** (`migration_v1.dart`) - Core schema
+- All 6 core tables (users, sleep_records, modules, user_module_configurations, intervention_activities, user_sleep_baselines)
+- All indexes for performance
+- Pre-populated modules table with 9 modules
 
-  -- Create sleep_records table
-  CREATE TABLE sleep_records (...);
+**Migration V2** (`migration_v2.dart`) - Daily actions
+- `daily_actions` table for Action Center feature
+- Index for user+date queries
 
-  -- Create modules table
-  CREATE TABLE modules (...);
-  INSERT INTO modules (id, name, display_name) VALUES (...);
+**Migration V3** (`migration_v3.dart`) - Sleep tracking (duplicate removed in v1)
+- Note: Sleep tables moved to v1, v3 kept for compatibility
 
-  -- Create user_module_configurations table
-  CREATE TABLE user_module_configurations (...);
+**Migration V4** (`migration_v4.dart`) - Users (duplicate removed in v1)
+- Note: Users table moved to v1, v4 kept for compatibility
 
-  -- Create intervention_activities table
-  CREATE TABLE intervention_activities (...);
+**Migration V5** (`migration_v5.dart`) - Module configurations framework (PHASE 7)
+- `user_module_configurations` table (already in v1, but v5 ensures it exists)
+- Unique index for one config per user per module
+- Indexes for efficient queries
 
-  -- Create user_sleep_baselines table
-  CREATE TABLE user_sleep_baselines (...);
+**Current Database Version:** 5
 
-  -- Create indexes
-  CREATE INDEX idx_sleep_records_user_date ON sleep_records(user_id, sleep_date);
-  CREATE INDEX idx_intervention_activities_user_date ON intervention_activities(user_id, activity_date);
-  CREATE INDEX idx_baselines_user ON user_sleep_baselines(user_id, baseline_type, metric_name);
-''';
-```
-
-### Example Migration v2 (Future)
-
-```dart
-const String MIGRATION_V2 = '''
-  -- Add new column to users table
-  ALTER TABLE users ADD COLUMN occupation_type TEXT;
-
-  -- Add new table for granular sleep data
-  CREATE TABLE sleep_stages_timeseries (...);
-''';
-```
+**Note:** Migrations v1, v3, and v4 have overlapping tables due to refactoring. The database helper applies them sequentially, using `CREATE TABLE IF NOT EXISTS` to prevent conflicts.
 
 ---
 
@@ -546,18 +544,24 @@ const String MIGRATION_V2 = '''
 
 ---
 
-## Implementation Checklist
+## Implementation Status
 
-- [ ] Create `database_helper.dart` with version management
-- [ ] Implement Migration v1 (all core tables)
-- [ ] Create repository interfaces in domain layer
-- [ ] Implement SQLite repositories in data layer
-- [ ] Add UUID generator utility
+- ✅ Create `database_helper.dart` with version management
+- ✅ Implement Migration v1 (all core tables)
+- ✅ Implement Migration v2 (daily_actions)
+- ✅ Implement Migration v3 (sleep_records, user_sleep_baselines)
+- ✅ Implement Migration v4 (users)
+- ✅ Implement Migration v5 (module configurations framework)
+- ✅ Create repository interfaces in domain layer
+- ✅ Implement SQLite repositories in data layer (Action Center, Night Review, Settings)
+- ✅ Add UUID generator utility
+- ✅ Add database constants file
+- ✅ Module system framework (PHASE 7) - ModuleInterface, ModuleRegistry, ModuleConfigRepository
+- ✅ Light module as reference implementation
 - [ ] Build sync queue infrastructure (basic)
-- [ ] Test with Light module (pilot)
 - [ ] Implement baseline calculation service
-- [ ] Document common queries for features
-- [ ] Add database constants file
+- [ ] Complete Light module repository with activity tracking
+- [ ] Implement remaining modules (Sport, Meditation, Temperature, Mealtime, Nutrition, Journaling)
 
 ---
 
