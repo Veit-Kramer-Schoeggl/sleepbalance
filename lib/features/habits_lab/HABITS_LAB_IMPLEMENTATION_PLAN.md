@@ -354,113 +354,70 @@ Wenn `viewModel.errorMessage != null`:
 - Zeige Fehlertext in rot
 - Button: "Nochmal versuchen" → ruft `viewModel.loadModuleConfigs()` auf
 
-### Schritt 4: Modul-Metadaten zentral definieren
+### Schritt 4: Modul-Metadaten nutzen (BEREITS FERTIG!)
 
-**Problem:** Jedes Modul braucht Icon, Name, Beschreibung, Farbe
+**✅ WICHTIG: Die zentrale Modul-Metadaten-Datei existiert bereits!**
 
-**Lösung:** Eine zentrale Datei für Modul-Metadaten
+**Wo:** `lib/modules/shared/constants/module_metadata.dart`
 
-**Was benennen wir es:** `ModuleMetadata` class
+**Was ist bereits fertig:**
+- ✅ `ModuleMetadata` Klasse mit allen Feldern
+- ✅ `moduleMetadata` Map mit allen 7 Modulen definiert
+- ✅ Helper-Funktionen: `getModuleMetadata()`, `getAvailableModules()`, `getPlannedModules()`
+- ✅ Komplette Metadaten für: light, sport, meditation, temperature, mealtime, nutrition, journaling
 
-**Wo kommt es hin:** `lib/modules/shared/module_config.dart`
+**Verfügbare Module (aktuell implementiert):**
+- ✅ `'light'` - Light Therapy (Licht-Therapie)
 
-**Struktur:**
+**Geplante Module (noch nicht implementiert):**
+- ⏳ `'sport'` - Physical Activity
+- ⏳ `'meditation'` - Meditation & Relaxation
+- ⏳ `'temperature'` - Temperature Therapy
+- ⏳ `'mealtime'` - Meal Timing
+- ⏳ `'nutrition'` - Sleep Nutrition
+- ⏳ `'journaling'` - Sleep Journaling
 
+**Wie du es nutzt:**
 ```dart
-class ModuleMetadata {
-  final String id;              // 'light_therapy'
-  final String displayName;     // 'Licht-Therapie'
-  final String description;     // 'Morgendliches helles Licht...'
-  final IconData icon;          // Icons.lightbulb
-  final Color primaryColor;     // Colors.amber
-  final Color secondaryColor;   // Colors.amber.shade100
-}
+// Import
+import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 
-// Global verfügbare Map
-final Map<String, ModuleMetadata> moduleMetadata = {
-  'light_therapy': ModuleMetadata(
-    id: 'light_therapy',
-    displayName: 'Licht-Therapie',
-    description: 'Morgendliches helles Licht gegen Wintermüdigkeit und zur Unterstützung des zirkadianen Rhythmus',
-    icon: Icons.lightbulb,
-    primaryColor: Colors.amber,
-    secondaryColor: Colors.amber.shade100,
-  ),
+// Einzelnes Modul holen
+final lightMeta = getModuleMetadata('light');
+Icon(lightMeta.icon, color: lightMeta.primaryColor)
+Text(lightMeta.displayName)      // "Light Therapy"
+Text(lightMeta.shortDescription) // "Morning bright light..."
 
-  'physical_activity': ModuleMetadata(
-    id: 'physical_activity',
-    displayName: 'Sport & Bewegung',
-    description: 'Regelmäßige körperliche Aktivität für besseren Schlaf',
-    icon: Icons.directions_run,
-    primaryColor: Colors.green,
-    secondaryColor: Colors.green.shade100,
-  ),
+// Alle verfügbaren Module (nur implementierte)
+final available = getAvailableModules(); // Returns: [light]
 
-  'relaxation': ModuleMetadata(
-    id: 'relaxation',
-    displayName: 'Entspannung',
-    description: 'Meditation, Progressive Muskelentspannung und Atemübungen',
-    icon: Icons.spa,
-    primaryColor: Colors.purple,
-    secondaryColor: Colors.purple.shade100,
-  ),
+// Alle geplanten Module (noch nicht implementiert)
+final planned = getPlannedModules(); // Returns: [sport, meditation, ...]
 
-  'sleep_environment': ModuleMetadata(
-    id: 'sleep_environment',
-    displayName: 'Schlafumgebung',
-    description: 'Optimierung von Temperatur, Licht, Lärm und Luftqualität',
-    icon: Icons.bed,
-    primaryColor: Colors.blue,
-    secondaryColor: Colors.blue.shade100,
-  ),
-
-  'nutrition': ModuleMetadata(
-    id: 'nutrition',
-    displayName: 'Ernährung',
-    description: 'Koffein-Timing, Alkohol-Konsum und Essens-Zeitpunkt',
-    icon: Icons.restaurant,
-    primaryColor: Colors.orange,
-    secondaryColor: Colors.orange.shade100,
-  ),
-
-  'social_rhythm': ModuleMetadata(
-    id: 'social_rhythm',
-    displayName: 'Sozialer Rhythmus',
-    description: 'Regelmäßige Zeiten für Mahlzeiten und soziale Aktivitäten',
-    icon: Icons.people,
-    primaryColor: Colors.teal,
-    secondaryColor: Colors.teal.shade100,
-  ),
-};
-
-// Helper Funktion
-ModuleMetadata getModuleMetadata(String moduleId) {
-  return moduleMetadata[moduleId] ??
-    ModuleMetadata(
-      id: moduleId,
-      displayName: 'Unbekanntes Modul',
-      description: '',
-      icon: Icons.help_outline,
-      primaryColor: Colors.grey,
-      secondaryColor: Colors.grey.shade100,
-    );
+// Gesamte Map durchlaufen
+for (final entry in moduleMetadata.entries) {
+  final id = entry.key;
+  final meta = entry.value;
+  print('${meta.displayName}: ${meta.isAvailable ? "Available" : "Coming soon"}');
 }
 ```
 
-**Wie nutzen:**
-```dart
-final metadata = getModuleMetadata('light_therapy');
-Icon(metadata.icon, color: metadata.primaryColor)
-Text(metadata.displayName)
-Text(metadata.description)
-```
+**ModuleMetadata Felder:**
+- `id` - Modul-ID (z.B. 'light', 'sport')
+- `displayName` - Anzeige-Name (z.B. "Light Therapy")
+- `shortDescription` - Kurzbeschreibung (1 Satz)
+- `longDescription` - Lange Beschreibung (mehrere Sätze)
+- `icon` - Flutter IconData
+- `primaryColor` - Hauptfarbe für das Modul
+- `isAvailable` - true wenn implementiert, false wenn geplant
 
 **Warum ist das gut?**
-- Ein Ort für alle Modul-Infos
-- Einfach neue Module hinzufügen
-- Konsistent in ganzer App (Habits Lab, Action Center, Statistics)
-- Keine Magic Strings überall
-- Type-safe
+- ✅ Ein Ort für alle Modul-Infos
+- ✅ Einfach neue Module hinzufügen
+- ✅ Konsistent in ganzer App (Habits Lab, Action Center, Statistics)
+- ✅ Keine Magic Strings überall
+- ✅ Type-safe
+- ✅ Unterscheidung zwischen verfügbar und geplant
 
 ### Schritt 5: Repository erstellen
 
@@ -726,5 +683,396 @@ Nach Habits Lab:
 - Onboarding: "Welche Module passen zu dir?"
 - Benachrichtigungen: "Du hast heute noch keine Licht-Therapie gemacht"
 - Gamification: Badges für konsequente Nutzung
+
+**Du hast jetzt ein professionelles Modul-Management-System!**
+
+## 📚 Modul-Verträge und APIs (WICHTIG!)
+
+### Was sind Modul-Verträge?
+
+Jedes Interventions-Modul (Light, Sport, Meditation, etc.) folgt einem **standardisierten Vertrag** (Contract/Interface). Das bedeutet:
+- Alle Module implementieren die gleichen Methoden
+- Habits Lab kann mit allen Modulen auf die gleiche Weise interagieren
+- Neue Module können einfach hinzugefügt werden
+
+### Die drei zentralen Verträge
+
+#### 1. `ModuleInterface` - Der Hauptvertrag
+**Wo:** `lib/modules/shared/domain/interfaces/module_interface.dart`
+
+**Jedes Modul MUSS implementieren:**
+
+```dart
+abstract class ModuleInterface {
+  // Eindeutige Modul-ID (z.B. 'light', 'sport')
+  String get moduleId;
+
+  // Metadaten holen (Name, Icon, Beschreibung)
+  ModuleMetadata getMetadata();
+
+  // Konfigurations-Screen für Benutzer
+  Widget getConfigurationScreen({
+    required String userId,
+    UserModuleConfig? config,
+  });
+
+  // Standard-Konfiguration beim ersten Aktivieren
+  Map<String, dynamic> getDefaultConfiguration({
+    required String userId,
+    TimeOfDay? userWakeTime,
+    TimeOfDay? userBedTime,
+  });
+
+  // Konfiguration validieren vor dem Speichern
+  String? validateConfiguration(Map<String, dynamic> config);
+
+  // Lifecycle Hook: Modul wurde aktiviert
+  Future<void> onModuleActivated({
+    required String userId,
+    required Map<String, dynamic> config,
+  });
+
+  // Lifecycle Hook: Modul wurde deaktiviert
+  Future<void> onModuleDeactivated({
+    required String userId,
+  });
+
+  // Optional: Schlaf-Zeitplan hat sich geändert
+  Future<void> onSleepScheduleChanged({
+    required String userId,
+    required TimeOfDay newWakeTime,
+    required TimeOfDay newBedTime,
+  });
+}
+```
+
+**Was Habits Lab damit macht:**
+1. Zeigt alle Module an (via `getMetadata()`)
+2. Öffnet Konfigurations-Screen beim Tap (via `getConfigurationScreen()`)
+3. Ruft `onModuleActivated()` auf wenn User ein Modul aktiviert
+4. Ruft `onModuleDeactivated()` auf wenn User ein Modul deaktiviert
+
+#### 2. `ModuleConfigRepository` - Konfigurationsverwaltung
+**Wo:** `lib/modules/shared/domain/repositories/module_config_repository.dart`
+
+**Verfügbare Methoden:**
+
+```dart
+// Einzelne Konfiguration holen
+Future<UserModuleConfig?> getModuleConfig(String userId, String moduleId);
+
+// Alle Konfigurationen für User
+Future<List<UserModuleConfig>> getAllModuleConfigs(String userId);
+
+// Nur aktive Konfigurationen
+Future<List<UserModuleConfig>> getActiveModuleConfigs(String userId);
+
+// Nur aktive Modul-IDs (praktisch für Listen)
+Future<List<String>> getActiveModuleIds(String userId);
+
+// Neue Konfiguration speichern
+Future<void> addModuleConfig(UserModuleConfig config);
+
+// Bestehende Konfiguration aktualisieren
+Future<void> updateModuleConfig(UserModuleConfig config);
+
+// Modul aktivieren/deaktivieren
+Future<void> setModuleEnabled(String userId, String moduleId, bool isEnabled);
+
+// Konfiguration löschen (VORSICHT!)
+Future<void> deleteModuleConfig(String userId, String moduleId);
+```
+
+**Wie Habits Lab das nutzt:**
+```dart
+// Alle aktiven Module laden
+final activeConfigs = await repository.getActiveModuleConfigs(userId);
+
+// Modul aktivieren
+await repository.setModuleEnabled(userId, 'light', true);
+
+// Modul deaktivieren
+await repository.setModuleEnabled(userId, 'light', false);
+```
+
+#### 3. `InterventionRepository` - Aktivitäts-Tracking
+**Wo:** `lib/modules/shared/domain/repositories/intervention_repository.dart`
+
+**Für Module die tägliche Aktivitäten tracken** (Light, Sport, Meditation, etc.):
+
+```dart
+// Konfiguration
+Future<UserModuleConfig?> getUserConfig(String userId);
+Future<void> saveConfig(UserModuleConfig config);
+
+// Aktivitäten für bestimmtes Datum
+Future<List<InterventionActivity>> getActivitiesForDate(
+  String userId,
+  DateTime date,
+);
+
+// Aktivitäten in Zeitraum
+Future<List<InterventionActivity>> getActivitiesBetween(
+  String userId,
+  DateTime startDate,
+  DateTime endDate,
+);
+
+// Neue Aktivität loggen
+Future<void> logActivity(InterventionActivity activity);
+
+// Aktivität aktualisieren
+Future<void> updateActivity(InterventionActivity activity);
+
+// Aktivität löschen
+Future<void> deleteActivity(String activityId);
+
+// Statistiken
+Future<int> getCompletionCount(
+  String userId,
+  DateTime startDate,
+  DateTime endDate,
+);
+
+Future<double> getCompletionRate(
+  String userId,
+  DateTime startDate,
+  DateTime endDate,
+);
+```
+
+**Nicht alle Module nutzen dies!**
+- ✅ Nutzen es: Light, Sport, Meditation, Temperature, Mealtime, Journaling
+- ❌ Nutzen es NICHT: Nutrition (reines Bildungsmodul ohne tägliches Tracking)
+
+### Wie dein ViewModel die Contracts nutzt
+
+**In HabitsViewModel:**
+
+```dart
+class HabitsViewModel extends ChangeNotifier {
+  final ModuleConfigRepository _configRepository;
+  final ModuleRegistry _moduleRegistry; // Registriert alle verfügbaren Module
+
+  // Laden aller Module
+  Future<void> loadModules(String userId) async {
+    // 1. Hole alle verfügbaren Module via ModuleRegistry
+    final allModules = _moduleRegistry.getAllModules();
+
+    // 2. Hole User's Konfigurationen
+    final userConfigs = await _configRepository.getActiveModuleConfigs(userId);
+
+    // 3. Kombiniere: Welche Module sind aktiv?
+    for (final module in allModules) {
+      final config = userConfigs.firstWhere(
+        (c) => c.moduleId == module.moduleId,
+        orElse: () => null,
+      );
+
+      // Nutze module.getMetadata() für UI-Anzeige
+      final metadata = module.getMetadata();
+
+      // Zeige in UI mit metadata.icon, metadata.displayName, etc.
+    }
+  }
+
+  // Modul aktivieren
+  Future<void> activateModule(String userId, String moduleId) async {
+    // 1. Hole Modul-Implementierung
+    final module = _moduleRegistry.getModule(moduleId);
+
+    // 2. Erstelle Standard-Konfiguration
+    final defaultConfig = module.getDefaultConfiguration(
+      userId: userId,
+      userWakeTime: TimeOfDay(hour: 7, minute: 0),
+      userBedTime: TimeOfDay(hour: 23, minute: 0),
+    );
+
+    // 3. Validiere Konfiguration
+    final error = module.validateConfiguration(defaultConfig);
+    if (error != null) {
+      _errorMessage = error;
+      return;
+    }
+
+    // 4. Speichere in Datenbank
+    final config = UserModuleConfig(
+      id: uuid.v4(),
+      userId: userId,
+      moduleId: moduleId,
+      isEnabled: true,
+      configuration: defaultConfig,
+      enrolledAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await _configRepository.addModuleConfig(config);
+
+    // 5. Rufe Lifecycle-Hook auf
+    await module.onModuleActivated(
+      userId: userId,
+      config: defaultConfig,
+    );
+
+    notifyListeners();
+  }
+
+  // Modul deaktivieren
+  Future<void> deactivateModule(String userId, String moduleId) async {
+    // 1. Setze in Datenbank auf inaktiv
+    await _configRepository.setModuleEnabled(userId, moduleId, false);
+
+    // 2. Rufe Lifecycle-Hook auf (räumt Notifications etc. auf)
+    final module = _moduleRegistry.getModule(moduleId);
+    await module.onModuleDeactivated(userId: userId);
+
+    notifyListeners();
+  }
+
+  // Modul konfigurieren (Navigation)
+  void openModuleConfig(BuildContext context, String userId, String moduleId) {
+    // 1. Hole Modul
+    final module = _moduleRegistry.getModule(moduleId);
+
+    // 2. Hole aktuelle Konfiguration
+    final config = await _configRepository.getModuleConfig(userId, moduleId);
+
+    // 3. Navigiere zu Modul-spezifischem Screen
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => module.getConfigurationScreen(
+          userId: userId,
+          config: config,
+        ),
+      ),
+    );
+  }
+}
+```
+
+### Beispiel: Light Module Implementation
+
+**Datei:** `lib/modules/light/domain/light_module.dart`
+
+```dart
+class LightModule implements ModuleInterface {
+  @override
+  String get moduleId => 'light';
+
+  @override
+  ModuleMetadata getMetadata() {
+    return getModuleMetadata('light'); // Aus module_metadata.dart
+  }
+
+  @override
+  Widget getConfigurationScreen({
+    required String userId,
+    UserModuleConfig? config,
+  }) {
+    return LightConfigStandardScreen(); // Dein UI
+  }
+
+  @override
+  Map<String, dynamic> getDefaultConfiguration({
+    required String userId,
+    TimeOfDay? userWakeTime,
+    TimeOfDay? userBedTime,
+  }) {
+    // Wissenschaftlich fundierte Defaults
+    return {
+      'mode': 'standard',
+      'light_type': 'natural_sunlight',
+      'target_time': '07:30', // 30 min nach Aufwachen
+      'duration_minutes': 20,
+      'notification_enabled': true,
+      'notification_time': '07:00',
+    };
+  }
+
+  @override
+  String? validateConfiguration(Map<String, dynamic> config) {
+    // Geschäftsregeln validieren
+    final duration = config['duration_minutes'] as int?;
+    if (duration == null || duration < 5 || duration > 120) {
+      return 'Light therapy duration must be between 5 and 120 minutes';
+    }
+    return null; // Alles OK
+  }
+
+  @override
+  Future<void> onModuleActivated({
+    required String userId,
+    required Map<String, dynamic> config,
+  }) async {
+    // Notifikationen planen, Analytics loggen, etc.
+    print('Light module activated for user $userId');
+
+    if (config['notification_enabled'] == true) {
+      // Schedule daily notification at target time
+      // await _notificationService.schedule(...);
+    }
+  }
+
+  @override
+  Future<void> onModuleDeactivated({
+    required String userId,
+  }) async {
+    // Alle Notifications löschen
+    print('Light module deactivated for user $userId');
+    // await _notificationService.cancelAll(moduleId: 'light');
+  }
+
+  @override
+  Future<void> onSleepScheduleChanged({
+    required String userId,
+    required TimeOfDay newWakeTime,
+    required TimeOfDay newBedTime,
+  }) async {
+    // Licht-Therapie Zeit anpassen (30 min nach Aufwachen)
+    final newTargetTime = TimeOfDay(
+      hour: (newWakeTime.hour + (newWakeTime.minute + 30) ~/ 60) % 24,
+      minute: (newWakeTime.minute + 30) % 60,
+    );
+
+    // Update configuration...
+  }
+}
+```
+
+### Zusammenfassung für Habits Lab
+
+**Was du nutzen musst:**
+
+1. **`getAvailableModules()`** - Alle implementierten Module holen
+   ```dart
+   import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+   final modules = getAvailableModules(); // Gibt: [light]
+   ```
+
+2. **`ModuleConfigRepository`** - Konfigurationen verwalten
+   ```dart
+   // Über Provider holen:
+   final repo = context.read<ModuleConfigRepository>();
+
+   // Aktive Module laden:
+   final activeIds = await repo.getActiveModuleIds(userId);
+
+   // Modul aktivieren/deaktivieren:
+   await repo.setModuleEnabled(userId, 'light', true);
+   ```
+
+3. **`ModuleRegistry`** (später) - Modul-Implementierungen holen
+   ```dart
+   final registry = context.read<ModuleRegistry>();
+   final lightModule = registry.getModule('light');
+   final configScreen = lightModule.getConfigurationScreen(...);
+   ```
+
+**Wichtig:**
+- ✅ ModuleMetadata ist FERTIG (nutze `getAvailableModules()`)
+- ✅ ModuleConfigRepository Interface ist FERTIG
+- ✅ InterventionRepository Interface ist FERTIG
+- ✅ Light Module ist komplett implementiert als Referenz
+- ⏳ ModuleRegistry musst du noch implementieren (registriert alle Module)
 
 **Du hast jetzt ein professionelles Modul-Management-System!**
