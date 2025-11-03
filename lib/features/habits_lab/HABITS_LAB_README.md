@@ -33,5 +33,4 @@ Siehe `HABITS_LAB_IMPLEMENTATION_PLAN.md` für:
 
 - Nutzt **shared/intervention_repository** für modul-übergreifende Queries
 - Zeigt Aktivitäten aus ALLEN Modulen (Light, Sport, etc.)
-- Reine Lese-Operationen (keine Creates/Updates)
-- Fokus auf Aggregation und Statistiken
+- Reine Lese-Operationen (keine Creates/Updates diese passieren in den jeweiligen modulen)

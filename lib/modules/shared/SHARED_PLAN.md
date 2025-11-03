@@ -505,6 +505,312 @@ const String INTERVENTION_ACTIVITIES_UPDATED_AT = 'updated_at';
 
 ---
 
+### Step S1.4: Base Intervention Repository Interface
+
+**File:** `lib/modules/shared/domain/repositories/intervention_repository.dart`
+
+**Purpose:** Base repository interface for activity-tracking modules
+
+**Why:** Most modules (Light, Sport, Temperature, Mealtime, Meditation, Journaling) track daily activities. This interface defines common CRUD operations they all need, reducing code duplication.
+
+**Who uses this:**
+- ✅ Light, Sport, Temperature, Mealtime, Meditation, Journaling
+- ❌ Nutrition (educational module, different pattern)
+
+**Class: InterventionRepository (Abstract Interface)**
+
+```dart
+import '../models/intervention_activity.dart';
+import '../models/user_module_config.dart';
+
+/// Base repository interface for intervention modules that track daily activities
+///
+/// Provides common CRUD operations for:
+/// - Module configuration (settings)
+/// - Activity tracking (daily completion)
+/// - Analytics (completion rates, statistics)
+///
+/// Each module extends this interface with module-specific methods.
+///
+/// Example: LightRepository extends InterventionRepository
+abstract class InterventionRepository {
+  // ========================================================================
+  // Configuration Operations
+  // ========================================================================
+
+  /// Get user's configuration for this module
+  ///
+  /// Returns null if user hasn't configured this module yet.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await lightRepository.getUserConfig('user-123');
+  /// final mode = config?.getConfigValue<String>('mode'); // 'standard' or 'advanced'
+  /// ```
+  Future<UserModuleConfig?> getUserConfig(String userId);
+
+  /// Save or update user's module configuration
+  ///
+  /// Stores module settings in user_module_configurations table.
+  /// Configuration is validated by module before saving.
+  ///
+  /// Example:
+  /// ```dart
+  /// final newConfig = UserModuleConfig(
+  ///   id: uuid.v4(),
+  ///   userId: 'user-123',
+  ///   moduleId: 'light',
+  ///   isEnabled: true,
+  ///   configuration: {'mode': 'advanced', 'sessions': [...]},
+  ///   enrolledAt: DateTime.now(),
+  /// );
+  /// await lightRepository.saveConfig(newConfig);
+  /// ```
+  Future<void> saveConfig(UserModuleConfig config);
+
+  // ========================================================================
+  // Activity CRUD Operations
+  // ========================================================================
+
+  /// Get all activities for a specific date
+  ///
+  /// Returns activities for this module on the given date.
+  /// Used by daily tracking screens and calendar views.
+  ///
+  /// Parameters:
+  /// - userId: User's ID
+  /// - date: The date to query (time component ignored)
+  ///
+  /// Returns: List of activities, may be empty
+  Future<List<InterventionActivity>> getActivitiesForDate(
+    String userId,
+    DateTime date,
+  );
+
+  /// Get activities within a date range
+  ///
+  /// Used for analytics, trend visualization, and reports.
+  ///
+  /// Parameters:
+  /// - userId: User's ID
+  /// - startDate: Start of range (inclusive)
+  /// - endDate: End of range (inclusive)
+  ///
+  /// Returns: List of activities ordered by date descending
+  Future<List<InterventionActivity>> getActivitiesBetween(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Log a new activity
+  ///
+  /// Called when user completes an intervention.
+  /// Creates new record in intervention_activities table.
+  ///
+  /// Example:
+  /// ```dart
+  /// final activity = InterventionActivity(
+  ///   id: uuid.v4(),
+  ///   userId: 'user-123',
+  ///   moduleId: 'light',
+  ///   activityDate: DateTime.now(),
+  ///   wasCompleted: true,
+  ///   completedAt: DateTime.now(),
+  ///   durationMinutes: 20,
+  ///   timeOfDay: 'morning',
+  ///   moduleSpecificData: {'type': 'sunlight', 'location': 'outdoors'},
+  ///   createdAt: DateTime.now(),
+  /// );
+  /// await lightRepository.logActivity(activity);
+  /// ```
+  Future<void> logActivity(InterventionActivity activity);
+
+  /// Update existing activity
+  ///
+  /// Allows user to edit logged activities (fix mistakes, add notes).
+  ///
+  /// Parameters:
+  /// - activity: Activity with updated fields
+  ///
+  /// Throws: Exception if activity doesn't exist
+  Future<void> updateActivity(InterventionActivity activity);
+
+  /// Delete activity
+  ///
+  /// Permanently removes activity record.
+  ///
+  /// Parameters:
+  /// - activityId: UUID of activity to delete
+  Future<void> deleteActivity(String activityId);
+
+  // ========================================================================
+  // Analytics & Statistics
+  // ========================================================================
+
+  /// Get count of completed activities in date range
+  ///
+  /// Only counts activities where wasCompleted = true.
+  /// Used for streak tracking and milestone achievements.
+  ///
+  /// Example:
+  /// ```dart
+  /// final last30Days = await lightRepository.getCompletionCount(
+  ///   'user-123',
+  ///   DateTime.now().subtract(Duration(days: 30)),
+  ///   DateTime.now(),
+  /// ); // Returns: 23 (user completed light therapy 23 out of 30 days)
+  /// ```
+  Future<int> getCompletionCount(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Get completion rate as percentage
+  ///
+  /// Calculates: (completed activities / total days in range) * 100
+  ///
+  /// Returns:
+  /// - 0.0 to 100.0 (percentage)
+  /// - 0.0 if no activities in range
+  ///
+  /// Example:
+  /// ```dart
+  /// final rate = await lightRepository.getCompletionRate(
+  ///   'user-123',
+  ///   DateTime.now().subtract(Duration(days: 7)),
+  ///   DateTime.now(),
+  /// ); // Returns: 71.4 (5 out of 7 days = 71.4%)
+  /// ```
+  Future<double> getCompletionRate(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+}
+```
+
+---
+
+### How Modules Extend This Interface
+
+Each module creates its own repository interface that extends `InterventionRepository`.
+
+**Pattern:**
+
+```dart
+// Light Module extends with light-specific analytics
+abstract class LightRepository extends InterventionRepository {
+  /// Get distribution of light types used
+  /// Returns: {'sunlight': 15, 'lightbox': 8, 'bluelight': 2}
+  Future<Map<String, int>> getLightTypeDistribution(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+}
+
+// Sport Module extends with sport-specific analytics
+abstract class SportRepository extends InterventionRepository {
+  /// Get total minutes exercised
+  Future<int> getTotalMinutesExercised(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Get distribution of activity types
+  /// Returns: {'running': 12, 'cycling': 5, 'hiit': 8}
+  Future<Map<String, int>> getActivityTypeDistribution(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Get distribution of intensity levels
+  /// Returns: {'high': 10, 'medium': 8, 'low': 7}
+  Future<Map<String, int>> getIntensityDistribution(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
+}
+
+// Meditation Module extends and adds content library operations
+abstract class MeditationRepository extends InterventionRepository {
+  /// Get all meditation session content
+  Future<List<MeditationSessionContent>> getAllSessions();
+
+  /// Get sessions by technique
+  Future<List<MeditationSessionContent>> getSessionsByTechnique(String technique);
+
+  /// Get user's favorite session IDs
+  Future<List<String>> getUserFavorites(String userId);
+
+  /// Add session to favorites
+  Future<void> addFavorite(String userId, String sessionId);
+}
+```
+
+**Benefits of Extension Pattern:**
+
+✅ **No duplication** - Common CRUD operations defined once
+✅ **Type safety** - Each module has its specific repository type
+✅ **Clear contracts** - Easy to see what each module provides
+✅ **Testable** - Mock base interface, extend for module-specific tests
+✅ **Junior-friendly** - Clear pattern to follow for new modules
+
+---
+
+### Module-Specific Services (Separate from Repository)
+
+Some modules need specialized services beyond data access:
+
+**Sport Module:**
+```dart
+// lib/modules/sport/domain/services/sport_wearable_service.dart
+abstract class SportWearableService {
+  Future<List<WearableWorkout>> getWorkoutsForDate(String userId, DateTime date);
+  Future<bool> hasPermission();
+  Future<void> requestPermission();
+}
+```
+
+**Meditation Module:**
+```dart
+// lib/modules/meditation/domain/services/meditation_audio_service.dart
+abstract class MeditationAudioService {
+  Future<void> initialize();
+  Future<void> loadSession(String sessionId);
+  Future<void> play();
+  Future<void> pause();
+  Stream<PlayerState> get playerStateStream;
+}
+```
+
+**Journaling Module:**
+```dart
+// lib/modules/journaling/domain/services/journal_encryption_service.dart
+abstract class JournalEncryptionService {
+  Future<String> encrypt(String plaintext, String userId);
+  Future<String> decrypt(String ciphertext, String userId);
+}
+
+// lib/modules/journaling/domain/services/journal_pattern_service.dart
+abstract class JournalPatternService {
+  Future<List<JournalPattern>> analyzeEntry(JournalEntry entry);
+  Future<List<CorrelationInsight>> correlateWithSleep(String userId);
+}
+```
+
+**Why separate services?**
+- Repositories handle data persistence
+- Services handle business logic, external integrations, processing
+- Single Responsibility Principle
+
+---
+
 ## Phase S.3: Extraction After Light (Extract Proven Patterns)
 
 ### Step S3.1: Extract TimeSliderWidget

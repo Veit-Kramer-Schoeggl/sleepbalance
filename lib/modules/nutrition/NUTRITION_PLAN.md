@@ -209,7 +209,46 @@ static NutritionConfig get defaultConfig => NutritionConfig(
 
 ---
 
-## Step N.5: Content Recommendation Service
+## Step N.5: Nutrition Repository Interface
+
+**File:** `lib/modules/nutrition/domain/repositories/nutrition_repository.dart`
+**Purpose:** Data operations for nutrition content and food library
+**Dependencies:** Models
+
+**Educational module - does NOT extend InterventionRepository** (no activity tracking)
+
+```dart
+import '../models/nutrition_content.dart';
+import '../models/food_item.dart';
+import '../models/nutrition_config.dart';
+
+/// Nutrition repository for content and food library
+abstract class NutritionRepository {
+  // Content operations
+  Future<List<NutritionContent>> getAllContent();
+  Future<List<NutritionContent>> getContentByCategory(String category);
+  Future<NutritionContent?> getContentById(String id);
+
+  // Food library operations
+  Future<List<FoodItem>> getAllFoods();
+  Future<List<FoodItem>> getFoodsByCategory(String category);
+  Future<List<FoodItem>> searchFoods(String query);
+
+  // User interaction tracking
+  Future<void> recordContentView(String userId, String contentId);
+  Future<void> markContentHelpful(String userId, String contentId);
+
+  // Configuration
+  Future<NutritionConfig?> getUserConfig(String userId);
+  Future<void> saveConfig(NutritionConfig config);
+}
+```
+
+**Why different?** Nutrition is educational (content delivery), not activity tracking.
+
+---
+
+## Step N.6: Content Recommendation Service
 
 **File:** `lib/modules/nutrition/domain/services/nutrition_recommendation_service.dart`
 
@@ -256,7 +295,7 @@ abstract class NutritionRecommendationService {
 
 ---
 
-## Step N.6: Nutrition ViewModel
+## Step N.7: Nutrition ViewModel
 
 **File:** `lib/modules/nutrition/presentation/viewmodels/nutrition_module_viewmodel.dart`
 
@@ -349,7 +388,7 @@ Future<void> loadFoodDiary(String userId, DateTime date) async {
 
 ---
 
-## Step N.7: Nutrition Content Screen
+## Step N.8: Nutrition Content Screen
 
 **File:** `lib/modules/nutrition/presentation/screens/nutrition_content_screen.dart`
 
@@ -455,7 +494,7 @@ TabBarView(
 
 ---
 
-## Step N.8: Food Diary Screen (Optional)
+## Step N.9: Food Diary Screen (Optional)
 
 **File:** `lib/modules/nutrition/presentation/screens/food_diary_screen.dart`
 

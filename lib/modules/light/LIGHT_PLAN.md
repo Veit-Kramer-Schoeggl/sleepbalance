@@ -197,37 +197,32 @@ String? get deviceUsed => moduleSpecificData?['device_used'];
 
 ## Step L.4: Create Light Repository Interface
 
-**File:** `lib/modules/light/domain/repositories/light_module_repository.dart`
-**Purpose:** Abstract interface for Light module data operations
-**Dependencies:** Models, `user_module_config` (shared)
+**File:** `lib/modules/light/domain/repositories/light_repository.dart`
+**Purpose:** Light module data operations interface
+**Dependencies:** `InterventionRepository` (from shared), models
 
-**Abstract Class: LightModuleRepository**
+**Interface extends shared base:**
 
-**Methods:**
 ```dart
-abstract class LightModuleRepository {
-  // Configuration management
-  Future<UserModuleConfig?> getUserConfig(String userId);
-  Future<void> saveConfig(UserModuleConfig config);
-  Future<bool> isModuleEnabled(String userId);
-  Future<void> enableModule(String userId, LightConfig defaultConfig);
-  Future<void> disableModule(String userId);
+import '../../../shared/domain/repositories/intervention_repository.dart';
+import '../models/light_activity.dart';
 
-  // Activity tracking
-  Future<List<LightActivity>> getActivitiesForDate(String userId, DateTime date);
-  Future<List<LightActivity>> getActivitiesBetween(String userId, DateTime start, DateTime end);
-  Future<void> logActivity(LightActivity activity);
-  Future<void> updateActivity(LightActivity activity);
-  Future<void> deleteActivity(String activityId);
-
-  // Analytics
-  Future<int> getCompletionCount(String userId, DateTime start, DateTime end);
-  Future<double> getCompletionRate(String userId, DateTime start, DateTime end);
-  Future<Map<String, int>> getLightTypeDistribution(String userId, DateTime start, DateTime end);
+/// Light module repository
+/// Extends InterventionRepository with light-specific analytics
+abstract class LightRepository extends InterventionRepository {
+  // Light-specific analytics
+  /// Returns: {'sunlight': 15, 'lightbox': 8, 'bluelight': 2, 'redlight': 1}
+  Future<Map<String, int>> getLightTypeDistribution(
+    String userId,
+    DateTime startDate,
+    DateTime endDate,
+  );
 }
 ```
 
-**Why:** Clean abstraction enabling testing and future data source changes
+**Inherited from base:** `getUserConfig`, `saveConfig`, `getActivitiesForDate`, `getActivitiesBetween`, `logActivity`, `updateActivity`, `deleteActivity`, `getCompletionCount`, `getCompletionRate`
+
+**Why:** Reuses common CRUD operations, adds only light-specific analytics
 
 ---
 

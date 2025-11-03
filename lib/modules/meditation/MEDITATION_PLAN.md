@@ -206,37 +206,31 @@ int? get stressReduction {
 
 ---
 
-## Step M.5: Meditation Content Repository
+## Step M.5: Meditation Repository Interface
 
-**File:** `lib/modules/meditation/domain/repositories/meditation_content_repository.dart`
+**File:** `lib/modules/meditation/domain/repositories/meditation_repository.dart`
 
-**Abstract Class: MeditationContentRepository**
-
-**Methods:**
+**Import & Interface:**
 ```dart
-abstract class MeditationContentRepository {
-  // Content library
+import '../../../shared/domain/repositories/intervention_repository.dart';
+import '../models/meditation_activity.dart';
+import '../models/meditation_session_content.dart';
+
+/// Meditation repository interface
+/// Extends InterventionRepository with content library and favorites management
+abstract class MeditationRepository extends InterventionRepository {
+  // Content library - getAllSessions, getSessionsByTechnique, getSessionsByDuration, getFavorites, getRecentlyPlayed
   Future<List<MeditationSessionContent>> getAllSessions();
   Future<List<MeditationSessionContent>> getSessionsByTechnique(String technique);
   Future<List<MeditationSessionContent>> getSessionsByDuration(int minMinutes, int maxMinutes);
-  Future<List<MeditationSessionContent>> getSessionsByTeacher(String teacherName);
-  Future<MeditationSessionContent?> getSessionById(String sessionId);
-
-  // Favorites
   Future<List<MeditationSessionContent>> getUserFavorites(String userId);
   Future<void> addFavorite(String userId, String sessionId);
   Future<void> removeFavorite(String userId, String sessionId);
-  Future<bool> isFavorite(String userId, String sessionId);
-
-  // Play history
-  Future<void> recordPlaySession(String userId, String sessionId, int durationListenedMinutes, bool completed);
   Future<List<MeditationSessionContent>> getRecentlyPlayed(String userId, int limit);
-
-  // Downloaded content
-  Future<void> markAsDownloaded(String sessionId, String localPath);
-  Future<List<MeditationSessionContent>> getDownloadedSessions();
 }
 ```
+
+**Inherited from base:** `getUserConfig`, `saveConfig`, `getActivitiesForDate`, `getActivitiesBetween`, `logActivity`, `updateActivity`, `deleteActivity`, `getCompletionCount`, `getCompletionRate`
 
 ---
 

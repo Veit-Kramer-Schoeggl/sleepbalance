@@ -270,7 +270,30 @@ Color getColorForTime(TimeOfDay time, TimeOfDay wakeTime, TimeOfDay bedTime) {
 
 ---
 
-## Step MT.5: Mealtime ViewModel with Auto-Adjustment
+## Step MT.5: Mealtime Repository Interface
+
+**File:** `lib/modules/mealtime/domain/repositories/mealtime_repository.dart`
+
+**Import & Interface:**
+```dart
+import '../../../shared/domain/repositories/intervention_repository.dart';
+import '../models/mealtime_activity.dart';
+
+/// Mealtime repository interface
+/// Extends InterventionRepository with meal adherence and timing analysis
+abstract class MealtimeRepository extends InterventionRepository {
+  // Meal adherence and timing methods
+  Future<double> getMealAdherenceRate(String userId, DateTime start, DateTime end);
+  Future<int> getOnTimeMealCount(String userId, DateTime start, DateTime end);
+  Future<Map<String, int>> getMealTypeDistribution(String userId, DateTime start, DateTime end);
+}
+```
+
+**Inherited from base:** `getUserConfig`, `saveConfig`, `getActivitiesForDate`, `getActivitiesBetween`, `logActivity`, `updateActivity`, `deleteActivity`, `getCompletionCount`, `getCompletionRate`
+
+---
+
+## Step MT.6: Mealtime ViewModel with Auto-Adjustment
 
 **File:** `lib/modules/mealtime/presentation/viewmodels/mealtime_module_viewmodel.dart`
 
@@ -368,7 +391,7 @@ Future<void> logMeal(
 
 ---
 
-## Step MT.6: Mealtime Configuration Screen with Time Slider
+## Step MT.7: Mealtime Configuration Screen with Time Slider
 
 **File:** `lib/modules/mealtime/presentation/screens/mealtime_config_screen.dart`
 
@@ -516,7 +539,7 @@ SwitchListTile(
 
 ---
 
-## Step MT.7: Meal Logging Screen
+## Step MT.8: Meal Logging Screen
 
 **File:** `lib/modules/mealtime/presentation/screens/meal_logging_screen.dart`
 

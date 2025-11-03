@@ -200,7 +200,29 @@ Color getColorForTime(TimeOfDay time, String temperatureType, TimeOfDay bedTime,
 
 ---
 
-## Step T.5: Temperature ViewModel with Safety Checks
+## Step T.5: Temperature Repository Interface
+
+**File:** `lib/modules/temperature/domain/repositories/temperature_repository.dart`
+
+**Import & Interface:**
+```dart
+import '../../../shared/domain/repositories/intervention_repository.dart';
+import '../models/temperature_activity.dart';
+
+/// Temperature repository interface
+/// Extends InterventionRepository with dual-type (cold/heat) operations
+abstract class TemperatureRepository extends InterventionRepository {
+  // Temperature-specific methods only
+  Future<Map<String, int>> getTypeDistribution(String userId, DateTime start, DateTime end);
+  Future<List<InterventionActivity>> getActivitiesByType(String userId, String temperatureType, DateTime start, DateTime end);
+}
+```
+
+**Inherited from base:** `getUserConfig`, `saveConfig`, `getActivitiesForDate`, `getActivitiesBetween`, `logActivity`, `updateActivity`, `deleteActivity`, `getCompletionCount`, `getCompletionRate`
+
+---
+
+## Step T.6: Temperature ViewModel with Safety Checks
 
 **File:** `lib/modules/temperature/presentation/viewmodels/temperature_module_viewmodel.dart`
 

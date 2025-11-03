@@ -169,34 +169,25 @@ class WearableWorkout {
 
 ## Step S.5: Create Sport Repository Interface
 
-**File:** `lib/modules/sport/domain/repositories/sport_module_repository.dart`
+**File:** `lib/modules/sport/domain/repositories/sport_repository.dart`
 
-**Abstract Class: SportModuleRepository**
-
-**Methods:**
+**Import & Interface:**
 ```dart
-abstract class SportModuleRepository {
-  // Configuration
-  Future<UserModuleConfig?> getUserConfig(String userId);
-  Future<void> saveConfig(UserModuleConfig config);
-  Future<bool> isModuleEnabled(String userId);
-  Future<void> enableModule(String userId, SportConfig defaultConfig);
-  Future<void> disableModule(String userId);
+import '../../../shared/domain/repositories/intervention_repository.dart';
+import '../models/sport_activity.dart';
 
-  // Activity tracking
-  Future<List<SportActivity>> getActivitiesForDate(String userId, DateTime date);
-  Future<List<SportActivity>> getActivitiesBetween(String userId, DateTime start, DateTime end);
-  Future<void> logActivity(SportActivity activity);
-  Future<void> updateActivity(SportActivity activity);
-  Future<void> deleteActivity(String activityId);
-
-  // Analytics
+/// Sport repository interface
+/// Extends InterventionRepository with sport-specific operations
+abstract class SportRepository extends InterventionRepository {
+  // Sport-specific methods only (remove common CRUD)
   Future<int> getTotalMinutesExercised(String userId, DateTime start, DateTime end);
   Future<Map<String, int>> getActivityTypeDistribution(String userId, DateTime start, DateTime end);
   Future<Map<String, int>> getIntensityDistribution(String userId, DateTime start, DateTime end);
   Future<int> getHighIntensityCount(String userId, DateTime start, DateTime end);
 }
 ```
+
+**Inherited from base:** `getUserConfig`, `saveConfig`, `getActivitiesForDate`, `getActivitiesBetween`, `logActivity`, `updateActivity`, `deleteActivity`, `getCompletionCount`, `getCompletionRate`
 
 ---
 

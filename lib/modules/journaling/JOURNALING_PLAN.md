@@ -281,7 +281,37 @@ class OCRResult {
 
 ---
 
-## Step J.7: Journaling Configuration Model
+## Step J.7: Journaling Repository Interface
+
+**File:** `lib/modules/journaling/domain/repositories/journaling_repository.dart`
+
+**Import & Interface:**
+```dart
+import '../../../shared/domain/repositories/intervention_repository.dart';
+import '../models/journaling_activity.dart';
+import '../models/journal_entry.dart';
+import '../models/journal_pattern.dart';
+
+/// Journaling repository interface
+/// Extends InterventionRepository with encrypted journal entry and pattern analysis operations
+abstract class JournalingRepository extends InterventionRepository {
+  // Journal entry methods (with encryption support)
+  Future<void> saveEntry(JournalEntry entry);
+  Future<JournalEntry?> getEntry(String entryId);
+  Future<List<JournalEntry>> getEntriesBetween(String userId, DateTime start, DateTime end);
+
+  // Pattern extraction and analysis
+  Future<void> savePattern(JournalPattern pattern);
+  Future<List<JournalPattern>> getPatterns(String userId);
+  Future<List<JournalPattern>> getPatternsByType(String userId, String patternType);
+}
+```
+
+**Inherited from base:** `getUserConfig`, `saveConfig`, `getActivitiesForDate`, `getActivitiesBetween`, `logActivity`, `updateActivity`, `deleteActivity`, `getCompletionCount`, `getCompletionRate`
+
+---
+
+## Step J.8: Journaling Configuration Model
 
 **File:** `lib/modules/journaling/domain/models/journaling_config.dart`
 
