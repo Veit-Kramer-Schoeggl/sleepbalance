@@ -25,54 +25,6 @@ Build the foundational framework for Habits Lab module management system. This p
 
 ## Architecture Overview
 
-### What We're Building
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Habits Lab UI (Future)                       │
-│                     Implemented by Juniors                       │
-└────────────────────┬────────────────────────────────────────────┘
-                     │ uses
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    ModuleRegistry (Phase 7)                      │
-│  getAllModules() → List all available modules                    │
-│  getModule(id) → Get specific module                             │
-├─────────────────────────────────────────────────────────────────┤
-│         ┌──────────────┬──────────────┬──────────────┐          │
-│         │ LightModule  │ SportModule  │ MeditModule  │          │
-│         │ implements   │ implements   │ implements   │          │
-│         │ Interface    │ Interface    │ Interface    │          │
-│         └──────────────┴──────────────┴──────────────┘          │
-└────────────────────┬────────────────────────────────────────────┘
-                     │ implements
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              ModuleInterface (Phase 7 Contract)                  │
-│  - getMetadata() → ModuleMetadata                                │
-│  - getConfigurationScreen() → Widget                             │
-│  - getDefaultConfiguration() → Map<String, dynamic>              │
-│  - onModuleActivated() → Schedule notifications, etc.            │
-│  - onModuleDeactivated() → Cancel notifications, etc.            │
-└────────────────────┬────────────────────────────────────────────┘
-                     │ uses
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│           ModuleConfigRepository (Phase 7 Data Layer)            │
-│  - getUserModuleConfigs() → List<UserModuleConfig>               │
-│  - addModuleConfig() → Enable module with default settings       │
-│  - updateModuleConfig() → Update module settings                 │
-│  - deactivateModule() → Mark module as inactive                  │
-└────────────────────┬────────────────────────────────────────────┘
-                     │ queries
-                     ▼
-┌─────────────────────────────────────────────────────────────────┐
-│           user_module_configurations Table (Phase 7)             │
-│  Columns: id, user_id, module_id, is_enabled, configuration,    │
-│           enrolled_at, updated_at                                │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ### User Flow (After UI is Built)
 
 1. User opens Habits Lab → sees list of modules (from ModuleRegistry)

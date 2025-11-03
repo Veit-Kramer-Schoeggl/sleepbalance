@@ -12,12 +12,26 @@ import 'features/settings/data/datasources/user_local_datasource.dart';
 import 'features/settings/data/repositories/user_repository_impl.dart';
 import 'features/settings/domain/repositories/user_repository.dart';
 import 'features/settings/presentation/viewmodels/settings_viewmodel.dart';
+import 'modules/light/domain/light_module.dart';
+import 'modules/shared/data/datasources/module_config_local_datasource.dart';
+import 'modules/shared/data/repositories/module_config_repository_impl.dart';
+import 'modules/shared/domain/repositories/module_config_repository.dart';
+import 'modules/shared/domain/services/module_registry.dart';
 import 'shared/constants/database_constants.dart';
 import 'shared/screens/app/splash_screen.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized before async operations
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ============================================================================
+  // Register Modules
+  // ============================================================================
+
+  ModuleRegistry.register(LightModule());
+  // TODO: Register other modules as they're implemented
+  // ModuleRegistry.register(SportModule());
+  // ModuleRegistry.register(MeditationModule());
 
   // Initialize database (runs migrations if needed)
   final database = await DatabaseHelper.instance.database;
@@ -92,6 +106,22 @@ void main() async {
           create: (context) => UserRepositoryImpl(
             dataSource: context.read<UserLocalDataSource>(),
             prefs: context.read<SharedPreferences>(),
+          ),
+        ),
+
+        // ============================================================================
+        // Module Configuration Repository
+        // ============================================================================
+
+        // DataSource (needs database)
+        Provider<ModuleConfigLocalDataSource>(
+          create: (_) => ModuleConfigLocalDataSource(database: database),
+        ),
+
+        // Repository (needs datasource)
+        Provider<ModuleConfigRepository>(
+          create: (context) => ModuleConfigRepositoryImpl(
+            dataSource: context.read<ModuleConfigLocalDataSource>(),
           ),
         ),
 

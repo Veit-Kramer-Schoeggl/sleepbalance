@@ -11,7 +11,7 @@ library;
 // ============================================================================
 
 const String DATABASE_NAME = 'sleepbalance.db';
-const int DATABASE_VERSION = 4;
+const int DATABASE_VERSION = 5;
 
 // ============================================================================
 // Table Names

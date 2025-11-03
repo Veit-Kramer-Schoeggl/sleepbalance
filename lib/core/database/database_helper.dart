@@ -9,6 +9,7 @@ import 'migrations/migration_v1.dart';
 import 'migrations/migration_v2.dart';
 import 'migrations/migration_v3.dart';
 import 'migrations/migration_v4.dart';
+import 'migrations/migration_v5.dart';
 
 /// Database Helper - Singleton for managing SQLite database lifecycle
 ///
@@ -61,11 +62,12 @@ class DatabaseHelper {
   /// Called when database is created for the first time.
   /// Executes all migrations up to the current version.
   ///
-  /// For fresh installs at V4:
+  /// For fresh installs at V5:
   /// - Executes MIGRATION_V1 (base schema)
   /// - Executes MIGRATION_V2 (daily_actions table)
   /// - Executes MIGRATION_V3 (sleep_records and user_sleep_baselines tables)
   /// - Executes MIGRATION_V4 (users table)
+  /// - Executes MIGRATION_V5 (user_module_configurations table)
   Future<void> _onCreate(Database db, int version) async {
     // Always execute V1 first (base schema)
     await db.execute(MIGRATION_V1);
@@ -82,6 +84,9 @@ class DatabaseHelper {
 
       // Insert default user after creating users table
       await _createDefaultUser(db);
+    }
+    if (version >= 5) {
+      await db.execute(MigrationV5.MIGRATION_V5);
     }
   }
 
@@ -118,10 +123,11 @@ class DatabaseHelper {
   /// Called when database version increases.
   /// Executes migrations sequentially from oldVersion to newVersion.
   ///
-  /// Example: If user has v1 and app requires v4:
+  /// Example: If user has v1 and app requires v5:
   /// - Execute migration v1→v2
   /// - Then execute migration v2→v3
   /// - Then execute migration v3→v4
+  /// - Then execute migration v4→v5
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     // Execute migrations sequentially
     if (oldVersion < 2) {
@@ -135,6 +141,9 @@ class DatabaseHelper {
 
       // Create default user if upgrading to V4
       await _createDefaultUser(db);
+    }
+    if (oldVersion < 5) {
+      await db.execute(MigrationV5.MIGRATION_V5);
     }
   }
 
