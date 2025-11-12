@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
+import 'package:sleepbalance/fitbit_test.dart';
 
 /// Habits Lab screen for sleep habit tracking and experimentation
 class HabitsScreen extends StatelessWidget {
@@ -79,6 +80,13 @@ class HabitsScreen extends StatelessWidget {
                 width: double.infinity,
               ),
             ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/fitbit');
+              },
+              child: const Text('Fitbit verbinden'),
+            ),
+
           ],
         ),
       ),
