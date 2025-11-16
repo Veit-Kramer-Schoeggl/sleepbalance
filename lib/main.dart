@@ -1,10 +1,15 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/database/database_helper.dart';
+import 'core/wearables/data/datasources/fitbit_api_datasource.dart';
 import 'core/wearables/data/datasources/wearable_credentials_local_datasource.dart';
+import 'core/wearables/data/datasources/wearable_sync_record_local_datasource.dart';
 import 'core/wearables/data/repositories/wearable_auth_repository_impl.dart';
+import 'core/wearables/data/repositories/wearable_data_sync_repository_impl.dart';
 import 'core/wearables/domain/repositories/wearable_auth_repository.dart';
+import 'core/wearables/domain/repositories/wearable_data_sync_repository.dart';
 import 'core/wearables/presentation/screens/wearable_connection_test_screen.dart';
 import 'core/wearables/presentation/viewmodels/wearable_connection_viewmodel.dart';
 import 'features/action_center/data/datasources/action_local_datasource.dart';
@@ -154,15 +159,44 @@ void main() async {
         // Wearables - Data Layer
         // ============================================================================
 
+        // Dio HTTP Client (for Fitbit API calls)
+        Provider<Dio>(
+          create: (_) => Dio(),
+        ),
+
         // Wearable Credentials DataSource
         Provider<WearableCredentialsLocalDataSource>(
           create: (_) => WearableCredentialsLocalDataSource(database: database),
+        ),
+
+        // Wearable Sync Record DataSource
+        Provider<WearableSyncRecordLocalDataSource>(
+          create: (_) => WearableSyncRecordLocalDataSource(database: database),
+        ),
+
+        // Fitbit API DataSource
+        Provider<FitbitApiDataSource>(
+          create: (context) => FitbitApiDataSource(
+            dio: context.read<Dio>(),
+          ),
         ),
 
         // Wearable Auth Repository
         Provider<WearableAuthRepository>(
           create: (context) => WearableAuthRepositoryImpl(
             dataSource: context.read<WearableCredentialsLocalDataSource>(),
+          ),
+        ),
+
+        // Wearable Data Sync Repository
+        Provider<WearableDataSyncRepository>(
+          create: (context) => WearableDataSyncRepositoryImpl(
+            credentialsDataSource:
+                context.read<WearableCredentialsLocalDataSource>(),
+            syncRecordDataSource:
+                context.read<WearableSyncRecordLocalDataSource>(),
+            fitbitApiDataSource: context.read<FitbitApiDataSource>(),
+            sleepRecordDataSource: context.read<SleepRecordLocalDataSource>(),
           ),
         ),
 

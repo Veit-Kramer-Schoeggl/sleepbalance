@@ -24,9 +24,9 @@ Each connection is tied to a specific user and provider combination. Users can h
 
 ### Data Synchronization
 
-The sync system operates on a scheduled basis, fetching sleep data from connected wearables and transforming it into the app's unified sleep record format. Each sync attempt is logged with detailed metadata including success/failure status, number of records fetched, and any errors encountered.
+The sync system fetches sleep data from connected wearables and transforms it into the app's unified sleep record format. Manual sync is triggered by the user (background scheduling planned for future). Each sync attempt is logged with detailed metadata including success/failure status, number of records fetched, and any errors encountered.
 
-Sync operations are idempotent—running multiple syncs for the same date range will not create duplicate records. The system tracks the last successful sync timestamp for each provider and typically fetches only new data since that point.
+The default sync window is 7 days, fetching recent sleep data and merging it with existing records. **Smart conflict resolution** preserves user-entered quality notes when Fitbit data overwrites objective metrics. Sync operations are idempotent—running multiple syncs for the same date range updates existing records without duplication.
 
 ### Token Management
 
@@ -87,14 +87,19 @@ lib/core/wearables/
 **Domain Models**:
 - `domain/models/wearable_credentials.dart` - OAuth token storage model
 - `domain/models/wearable_sync_record.dart` - Sync attempt tracking model
-- `domain/models/sleep_data.dart` - Unified sleep data representation
+- `domain/exceptions/wearable_exception.dart` - Custom exception types
 
-**Repository Interface**:
+**Repository Interfaces**:
 - `domain/repositories/wearable_auth_repository.dart` - Authentication contract
+- `domain/repositories/wearable_data_sync_repository.dart` - Data sync contract
 
 **Data Access**:
-- `data/datasources/wearable_credentials_local_datasource.dart` - SQLite operations
-- `data/repositories/wearable_auth_repository_impl.dart` - Repository implementation
+- `data/datasources/wearable_credentials_local_datasource.dart` - Credentials SQLite operations
+- `data/datasources/wearable_sync_record_local_datasource.dart` - Sync history SQLite operations
+- `data/datasources/fitbit_api_datasource.dart` - Fitbit REST API calls via Dio
+- `data/transformers/fitbit_sleep_transformer.dart` - Fitbit JSON → SleepRecord mapping
+- `data/repositories/wearable_auth_repository_impl.dart` - Auth repository implementation
+- `data/repositories/wearable_data_sync_repository_impl.dart` - Sync repository implementation
 
 **Presentation**:
 - `presentation/viewmodels/wearable_connection_viewmodel.dart` - Connection state management
@@ -118,11 +123,17 @@ See `core/database/migrations/migration_v7.dart` for complete schema definitions
 - Connection UI with status display
 - Database schema and migrations
 
-**Phase 2 - PLANNED**:
-- Sleep data fetching from Fitbit API
-- Data transformation to unified sleep record format
+**Phase 2 - COMPLETE**:
+- Sleep data fetching from Fitbit REST API
+- Data transformation (Fitbit JSON → SleepRecord)
+- Manual sync trigger functionality
+- Smart conflict resolution (preserves user quality notes)
+- Token refresh before API calls
+- Sync history logging with detailed metrics
+- Exception handling with retryable error types
+
+**Future Enhancements**:
 - Background sync scheduler
-- Conflict resolution between manual and wearable data
 - Sync status UI with progress indicators
 
 **Future Phases**:
@@ -134,15 +145,29 @@ See `core/database/migrations/migration_v7.dart` for complete schema definitions
 
 ## Testing
 
+### Phase 1 (OAuth) Testing
+
 The OAuth flow can be tested through the temporary test screen accessible from Habits Lab. Tap "Fitbit verbinden" to initiate authentication. After granting permissions in the browser, the connection status updates to show connected state, last sync time, and token expiration.
 
-For end-to-end testing:
+OAuth test scenarios:
 1. Connect a Fitbit account through OAuth
 2. Verify credentials are saved in database
 3. Restart app and confirm connection persists
 4. Disconnect and verify credentials are removed
 
-See `PHASE_1_PROGRESS_REPORT.md` for detailed implementation notes and test scenarios.
+### Phase 2 (Data Sync) Testing
+
+Manual sync can be triggered programmatically through the `WearableDataSyncRepository.syncSleepData()` method (UI integration pending).
+
+Sync test scenarios:
+1. Connect Fitbit account with recent sleep data
+2. Trigger manual sync for last 7 days
+3. Verify sleep records appear in Night Review
+4. Add quality notes to a synced record (manual edit)
+5. Re-run sync and verify quality notes are preserved
+6. Check sync history in wearable_sync_history table
+
+See `PHASE_1_PROGRESS_REPORT.md` and `PHASE_2_WEARABLES_PLAN.md` for detailed implementation notes.
 
 ## Security Considerations
 
