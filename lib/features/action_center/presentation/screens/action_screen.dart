@@ -1,100 +1,173 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
+import '../../../../modules/light/presentation/screens/light_config_standard_screen.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/checkbox_button.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
+import '../viewmodels/action_viewmodel.dart';
 
 /// Action Center screen for actionable sleep recommendations and tasks
-class ActionScreen extends StatefulWidget {
+///
+/// Refactored to use MVVM + Provider pattern.
+/// StatelessWidget that creates and provides ActionViewModel to child widgets.
+/// Uses current user from SettingsViewModel for data operations.
+class ActionScreen extends StatelessWidget {
   const ActionScreen({super.key});
 
   @override
-  State<ActionScreen> createState() => _ActionScreenState();
+  Widget build(BuildContext context) {
+    // Get current user from SettingsViewModel
+    final settingsViewModel = context.read<SettingsViewModel>();
+    final currentUserId = settingsViewModel.currentUser?.id;
+
+    // Handle case where user is not loaded
+    if (currentUserId == null) {
+      return BackgroundWrapper(
+        imagePath: 'assets/images/main_background.png',
+        overlayOpacity: 0.3,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('Action Center',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+          ),
+          body: const Center(
+            child: Text(
+              'No user logged in',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Create ActionViewModel with current user ID
+    return ChangeNotifierProvider(
+      create: (_) => ActionViewModel(
+        repository: context.read(), // Reads ActionRepository from parent MultiProvider
+        userId: currentUserId, // Use actual user ID from SettingsViewModel
+      )..loadActions(),
+      child: const _ActionScreenContent(),
+    );
+  }
 }
 
-class _ActionScreenState extends State<ActionScreen> {
-  DateTime _currentDate = DateTime.now();
-  
-  // List of action items with checkbox states
-  List<Map<String, dynamic>> _actionItems = [
-    {
-      'text': 'Drink a glass of water',
-      'icon': Icons.local_drink,
-      'isChecked': false,
-    },
-    {
-      'text': 'Take 5 deep breaths',
-      'icon': Icons.air,
-      'isChecked': false,
-    },
-    {
-      'text': 'Stretch for 2 minutes',
-      'icon': Icons.accessibility_new,
-      'isChecked': false,
-    },
-  ];
+/// Private content widget that watches ActionViewModel
+///
+/// Rebuilds automatically when ViewModel state changes via notifyListeners().
+class _ActionScreenContent extends StatelessWidget {
+  const _ActionScreenContent();
 
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<ActionViewModel>();
+
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
       overlayOpacity: 0.3,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Action Center', style: TextStyle(color: Colors.white)),
+          title: const Text('Action Center',
+              style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
         ),
         body: Column(
           children: [
+            // Date navigation header
             DateNavigationHeader(
-              currentDate: _currentDate,
+              currentDate: viewModel.currentDate,
               onPreviousDay: () {
-                setState(() {
-                  _currentDate = _currentDate.subtract(const Duration(days: 1));
-                });
+                viewModel.changeDate(
+                  viewModel.currentDate.subtract(const Duration(days: 1)),
+                );
               },
               onNextDay: () {
-                setState(() {
-                  _currentDate = _currentDate.add(const Duration(days: 1));
-                });
+                viewModel.changeDate(
+                  viewModel.currentDate.add(const Duration(days: 1)),
+                );
               },
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ListView.builder(
-                  itemCount: _actionItems.length,
-                  itemBuilder: (context, index) {
-                    final item = _actionItems[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: CheckboxButton(
-                        text: item['text'],
-                        icon: item['icon'],
-                        isChecked: item['isChecked'],
-                        onChanged: (value) {
-                          setState(() {
-                            _actionItems[index]['isChecked'] = value ?? false;
-                          });
-                        },
-                      ),
-                    );
-                  },
+
+            // Error message display
+            if (viewModel.errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  viewModel.errorMessage!,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
+
+            // Main content area
+            Expanded(
+              child: viewModel.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : viewModel.actions.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'No actions for today',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 16),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const LightConfigStandardScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text('Configure Light Module'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ListView.builder(
+                            itemCount: viewModel.actions.length,
+                            itemBuilder: (context, index) {
+                              final action = viewModel.actions[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: CheckboxButton(
+                                  text: action.title,
+                                  icon: action.icon,
+                                  isChecked: action.isCompleted,
+                                  onChanged: (_) =>
+                                      viewModel.toggleAction(action.id),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
             ),
+
+            // Bottom button
             Padding(
               padding: const EdgeInsets.all(24),
               child: AcceptanceButton(
                 text: 'Complete Actions',
                 onPressed: () {
-                  final completedCount = _actionItems.where((item) => item['isChecked']).length;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('$completedCount of ${_actionItems.length} actions completed!'),
+                      content: Text(
+                        '${viewModel.completedCount} of ${viewModel.actions.length} actions completed!',
+                      ),
                       backgroundColor: Colors.blue,
                     ),
                   );

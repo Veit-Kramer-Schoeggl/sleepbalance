@@ -68,12 +68,12 @@ class _ExpandableCalendarState extends State<ExpandableCalendar>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -87,13 +87,13 @@ class _ExpandableCalendarState extends State<ExpandableCalendar>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.1),
-                Colors.white.withOpacity(0.05),
+                Colors.white.withValues(alpha: 0.1),
+                Colors.white.withValues(alpha: 0.05),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               width: 1,
             ),
           ),

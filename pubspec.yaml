@@ -41,6 +41,20 @@ dependencies:
   #Fitbit Web API
 
 
+  # State Management
+  provider: ^6.1.1
+
+  # Local Database
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  path: ^1.8.3
+
+  # UUID Generation
+  uuid: ^4.2.0
+
+  # JSON Serialization
+  json_annotation: ^4.8.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -51,6 +65,13 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+
+  # Code Generation
+  build_runner: ^2.4.6
+  json_serializable: ^6.7.1
+
+  # Testing Database
+  sqflite_common_ffi: ^2.3.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

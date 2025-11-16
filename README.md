@@ -18,16 +18,7 @@ SleepBalance helps people fall and stay asleep through data-driven, personalized
 - Personalizes initial recommendations
 
 ### Modular Intervention System
-Users can select, combine, and customize individual modules:
-- **Light Module**: Morning/evening light exposure settings
-- **Sport Module**: Morning movement and exercise routines
-- **Temperature Module**: Sauna, heat and cold exposure protocols
-- **Nutrition Module**: Information about sleep-promoting foods
-- **Meal-time Module**: Eating schedule optimization (when to eat/avoid eating)
-- **Sleep Hygiene Module**: Bedtime routine optimization
-- **Meditation Module**: Calming and relaxation techniques
-- **Journaling Module**: Progress tracking and reflection exercises
-- **Medication Module**: Track medication intake and effects on sleep
+- Users can select, combine, and customize individual modules.
 
 ### Wearable Integration
 - Core feature: sync sleep data from watches
@@ -35,10 +26,11 @@ Users can select, combine, and customize individual modules:
 - Data-driven recommendation engine
 
 ### Main Navigation
-- **Action Center** (default tab): Actionable sleep recommendations
-- **Night Review**: Review previous night's sleep data
-- **Habits Lab**: Track and experiment with sleep habits
-- **Settings**: Configure app preferences and modules
+Bottom navigation with 4 tabs (indexed 0-3):
+1. **Settings** (index 0): Configure app preferences and modules
+2. **Night Review** (index 1): Review previous night's sleep data with date navigation and expandable calendar
+3. **Action Center** (index 2, default on launch): Actionable sleep recommendations with checkboxes
+4. **Habits Lab** (index 3): Track and experiment with sleep habits
 
 ## Architecture
 
@@ -54,94 +46,200 @@ Users can select, combine, and customize individual modules:
 ```
 lib/
 ├── core/                          # Core app infrastructure
-│   ├── auth/                      # Authentication system
-│   │   ├── data/                  # Auth data sources & repositories
-│   │   ├── domain/                # Auth models, interfaces & use cases
-│   │   └── presentation/          # Login/signup screens & widgets
+│   ├── auth/                      # Authentication system (future)
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
 │   │
-│   ├── wearables/                 # Wearable integration (CRITICAL)
-│   │   ├── data/                  # Wearable data sources & repositories
-│   │   ├── domain/                # Sleep data models & services
-│   │   └── presentation/          # Wearable connection & sync UI
+│   ├── wearables/                 # Wearable integration (Apple Health, Google Fit)
+│   │   ├── data/                  # Datasources for Apple/Android wearables
+│   │   ├── domain/                # Sleep record models & repository interfaces
+│   │   │   └── models/sleep_data.dart  # ✅ Implemented
+│   │   └── presentation/          # Wearable connection UI
 │   │
-│   └── recommendations/           # Recommendation engine
-│       ├── data/                  # Recommendation data repositories
-│       ├── domain/                # Analysis algorithms & use cases
-│       └── presentation/          # Recommendation widgets
+│   ├── recommendations/           # AI recommendation engine (future)
+│   │   ├── data/
+│   │   ├── domain/
+│   │   └── presentation/
+│   │
+│   ├── database/                  # 📊 SQLite database infrastructure
+│   │   ├── database_helper.dart   # Database setup & version management
+│   │   ├── migrations/            # Schema migrations (v1, v2, ...)
+│   │   └── sync/                  # Local-to-server sync logic (future PostgreSQL)
+│   │
+│   ├── notifications/             # 🔔 Push notification service
+│   │   ├── notification_service.dart      # Wrapper for flutter_local_notifications
+│   │   ├── notification_scheduler.dart    # Schedule recurring reminders
+│   │   └── notification_handler.dart      # Handle notification taps
+│   │
+│   └── utils/                     # Core utilities
+│       ├── date_formatter.dart    # ✅ Localized date formatting (DE/EN)
+│       └── uuid_generator.dart    # UUID generation for local-first IDs
 │
-├── modules/                       # Intervention modules (pluggable)
+├── modules/                       # 🧩 Intervention modules (pluggable)
 │   ├── shared/                    # Shared module infrastructure
-│   │   ├── domain/                # Base module models & interfaces
-│   │   └── presentation/          # Common module widgets
+│   │   ├── data/                  # Base intervention repository implementation
+│   │   ├── domain/
+│   │   │   ├── models/
+│   │   │   │   ├── module.dart                    # Module definition
+│   │   │   │   ├── user_module_config.dart        # User's module settings
+│   │   │   │   ├── intervention_activity.dart     # Daily activity record
+│   │   │   │   └── module_notification.dart       # Notification config
+│   │   │   ├── repositories/
+│   │   │   │   └── intervention_repository.dart   # Base repository interface
+│   │   │   └── services/
+│   │   │       └── module_notification_service.dart
+│   │   └── presentation/
+│   │       ├── widgets/           # Reusable module UI components
+│   │       └── viewmodels/
+│   │           └── base_module_viewmodel.dart
 │   │
-│   ├── light/                     # Light exposure module
-│   ├── sport/                     # Exercise & movement module
-│   ├── temperature/               # Temperature exposure module
-│   ├── nutrition/                 # Sleep-promoting nutrition module
-│   ├── mealtime/                  # Meal timing module
-│   ├── sleep_hygiene/             # Bedtime routine module
-│   ├── meditation/                # Meditation & relaxation module
-│   ├── journaling/                # Journaling & tracking module
-│   └── medication/                # Medication tracking module
-│       └── [Each module: data/, domain/, presentation/]
+│   ├── light/                     # ☀️ Light exposure module (FIRST IMPLEMENTATION)
+│   │   ├── data/                  # Light activity database operations
+│   │   ├── domain/
+│   │   │   ├── models/
+│   │   │   │   ├── light_activity.dart            # Daily light tracking
+│   │   │   │   ├── light_config.dart              # User's light settings
+│   │   │   │   └── light_notification_config.dart # Notification preferences
+│   │   │   ├── repositories/
+│   │   │   └── services/
+│   │   │       └── light_notification_scheduler.dart  # Morning/evening reminders
+│   │   └── presentation/
+│   │       ├── screens/           # Light configuration & activity log
+│   │       ├── widgets/           # Light-specific UI components
+│   │       └── viewmodels/
+│   │
+│   ├── sport/                     # Exercise module (future)
+│   ├── temperature/               # Temperature exposure (future)
+│   ├── nutrition/                 # Sleep-promoting nutrition (future)
+│   ├── mealtime/                  # Meal timing optimization (future)
+│   ├── sleep_hygiene/             # Bedtime routine (future)
+│   ├── meditation/                # Relaxation techniques (future)
+│   ├── journaling/                # Progress tracking (future)
+│   └── medication/                # Medication tracking (future)
+│       └── [Each module follows: data/, domain/, presentation/]
 │
-├── features/                      # Main app features (navigation tabs)
-│   ├── onboarding/                # First-time setup questionnaire
-│   │   ├── data/
+├── features/                      # 📱 Main app features (navigation tabs)
+│   ├── onboarding/
 │   │   ├── domain/
 │   │   └── presentation/
+│   │       └── screens/questionnaire_screen.dart  # ✅ Implemented
 │   │
-│   ├── action_center/             # Action tab (recommendations)
-│   │   ├── data/
+│   ├── action_center/             # ✅ Action Center (daily tasks)
+│   │   ├── data/                  # Action items database operations
 │   │   ├── domain/
+│   │   │   ├── models/daily_action.dart
+│   │   │   └── repositories/action_repository.dart
 │   │   └── presentation/
+│   │       ├── screens/action_screen.dart         # To be refactored (MVVM)
+│   │       └── viewmodels/action_viewmodel.dart
 │   │
-│   ├── night_review/              # Night tab (sleep review)
-│   │   ├── data/
+│   ├── night_review/              # 😴 Sleep review & analysis
+│   │   ├── data/                  # Sleep record database operations
 │   │   ├── domain/
+│   │   │   ├── models/
+│   │   │   │   ├── sleep_record.dart              # Nightly sleep data
+│   │   │   │   ├── sleep_baseline.dart            # User's average metrics
+│   │   │   │   └── sleep_comparison.dart          # Today vs personal average
+│   │   │   ├── repositories/sleep_record_repository.dart
+│   │   │   └── services/sleep_analysis_service.dart  # Calculate baselines
 │   │   └── presentation/
+│   │       ├── screens/night_screen.dart          # ✅ Implemented (to refactor)
+│   │       ├── widgets/
+│   │       │   ├── sleep_chart.dart
+│   │       │   ├── sleep_phase_breakdown.dart
+│   │       │   └── quality_rating_widget.dart     # 3-point scale input
+│   │       └── viewmodels/night_review_viewmodel.dart
 │   │
-│   ├── habits_lab/                # Habits tab (experimentation)
-│   │   ├── data/
-│   │   ├── domain/
+│   ├── habits_lab/                # 🧪 Habit experimentation
 │   │   └── presentation/
+│   │       └── screens/habits_screen.dart         # ✅ Implemented
 │   │
-│   └── settings/                  # Settings tab
-│       ├── data/
+│   └── settings/                  # ⚙️ Settings & module management
+│       ├── data/                  # User profile database operations
 │       ├── domain/
+│       │   ├── models/user.dart
+│       │   └── repositories/user_repository.dart
 │       └── presentation/
+│           ├── screens/
+│           │   ├── settings_screen.dart           # ✅ Implemented (to expand)
+│           │   ├── user_profile_screen.dart
+│           │   └── module_management_screen.dart  # Enable/disable modules
+│           └── viewmodels/settings_viewmodel.dart
 │
-└── shared/                        # Shared utilities & components
-    ├── services/                  # Cross-cutting services
-    │   └── storage/               # Persistent storage services
-    ├── widgets/                   # Reusable widgets
-    │   ├── ui/                    # UI components (backgrounds, etc.)
-    │   └── navigation/            # Navigation components
-    ├── screens/                   # Shared screens
-    │   └── app/                   # App-level screens (splash, etc.)
-    ├── theme/                     # Theme configuration
+└── shared/                        # 🔧 Shared utilities & components
+    ├── services/
+    │   ├── storage/
+    │   │   └── preferences_service.dart  # ✅ SharedPreferences wrapper
+    │   ├── analytics/             # Usage tracking (future)
+    │   └── logging/               # Error logging (future)
+    │
+    ├── widgets/
+    │   ├── ui/                    # ✅ Reusable UI components
+    │   │   ├── background_wrapper.dart
+    │   │   ├── date_navigation_header.dart
+    │   │   ├── expandable_calendar.dart
+    │   │   ├── checkbox_button.dart
+    │   │   ├── acceptance_button.dart
+    │   │   ├── time_picker_field.dart     # For module configuration
+    │   │   └── duration_picker_field.dart # For module configuration
+    │   └── navigation/
+    │       └── main_navigation.dart  # ✅ Bottom tab navigation
+    │
+    ├── screens/
+    │   └── app/
+    │       └── splash_screen.dart # ✅ Launch screen with moon icon
+    │
+    ├── theme/                     # Theme configuration (planned)
     ├── constants/                 # App constants
+    │   ├── notification_channels.dart  # Notification channel definitions
+    │   └── database_constants.dart     # Table & column name constants
     └── utils/                     # Helper functions
+        └── extensions/            # Dart extensions (DateTime, String, etc.)
 ```
 
 ### Architecture Principles
 
 **Separation of Concerns:**
-- `core/` - Foundational infrastructure (auth, wearables, recommendations)
+- `core/` - Foundational infrastructure (auth, wearables, database, notifications)
 - `modules/` - Pluggable intervention modules (customizable, combinable)
 - `features/` - Main app screens/flows (the 4 navigation tabs + onboarding)
 - `shared/` - Cross-cutting utilities and reusable components
 
 **Clean Architecture Layers:**
-- `data/` - External data sources, API clients, repository implementations
+- `data/` - Database operations, external data sources, repository implementations
 - `domain/` - Business logic, models, use cases, repository interfaces
-- `presentation/` - UI screens, widgets, and view logic
+- `presentation/` - UI screens, widgets, ViewModels (MVVM pattern)
+
+**State Management:**
+- **MVVM + Provider pattern** for reactive UI updates
+- ViewModels manage business logic and state
+- Screens consume ViewModels via Provider
+- Clear data flow: UI → ViewModel → Repository → Database
 
 **Module System:**
-- Each intervention module is self-contained
+- Each intervention module is self-contained with its own data/domain/presentation layers
 - Modules share common infrastructure via `modules/shared/`
-- Users can select, combine, and customize individual modules
-- Easy to add new modules without affecting existing code
+- Base models: `InterventionActivity`, `UserModuleConfig`, `ModuleNotification`
+- Users can enable multiple modules simultaneously and configure each individually
+- Easy to add new modules by extending shared base classes
+
+**Data Persistence:**
+- **Local-first architecture** with SQLite for offline-capable data storage
+- Hybrid schema: typed columns for common attributes + JSON for module-specific data
+- Individual user baselines: Calculate personal averages (7-day, 30-day rolling windows)
+- Future: PostgreSQL backend sync for cloud backup and multi-device support
+- See [DATABASE.md](DATABASE.md) for detailed schema and design decisions
+
+**Notifications:**
+- Module-driven push notifications (e.g., Light module: morning reminders, evening dimming alerts)
+- Configurable per-user via module settings
+- Handled by `core/notifications/` service wrapping `flutter_local_notifications`
+
+**Implementation Status:**
+- ✅ **Fully Implemented**: Main navigation, splash screen, onboarding questionnaire (3 questions), night review screen with calendar, action center with checkboxes, shared UI widgets (6 components), date formatter utility, preferences service
+- 🚧 **In Progress**: Database schema, MVVM refactoring, Light module (first intervention)
+- 📋 **Planned**: Auth system, recommendation engine, remaining 8 intervention modules, PostgreSQL sync
 
 ## Assets
 
@@ -149,22 +247,154 @@ lib/
 - Splash icon: `assets/images/moon_star.png`
 - Icon folders: `assets/icons/{app,navigation,features}/`
 
-## Data Model
+## How It Works
 
-- `SleepData` model with sleep phases, heart rate, breathing rate, fragmentation
-- JSON serialization for API integration
-- Comprehensive test coverage
+### Core Components
+
+**Database Layer** (`core/database/`)
+- SQLite for local-first data persistence
+- Schema migrations for version management
+- Sync queue for future PostgreSQL backend integration
+- See [DATABASE.md](DATABASE.md) for complete schema details
+
+**Wearable Integration** (`core/wearables/`)
+- Connects to Apple Health (iOS) and Google Fit (Android)
+- Fetches nightly sleep data: sleep phases, heart rate, HRV, breathing rate
+- Stores aggregated sleep records for quick access
+- Optional: Store fine-grained time-series data for advanced analysis
+
+**Notification System** (`core/notifications/`)
+- Module-specific reminders scheduled via user configuration
+- Example: Light module sends morning light reminder at 7:00 AM, evening dimming alert at 8:00 PM
+- Users can enable/disable and customize notification times per module
+
+### Module System
+
+**Shared Infrastructure** (`modules/shared/`)
+- Common patterns, base classes, and utilities used across all intervention modules
+- Base models: `InterventionActivity`, `UserModuleConfig`, `ModuleInterface`
+- Standard vs Advanced mode for all modules with science-based defaults
+- [More details](lib/modules/shared/SHARED_README.md)
+
+**Available Modules:**
+
+- **[Light Module](lib/modules/light/LIGHT_README.md)**: Bright light therapy timing and type selection for circadian rhythm optimization. Morning exposure promotes alertness; evening red light supports melatonin production.
+
+- **[Mealtime Module](lib/modules/mealtime/MEALTIME_README.md)**: Eating schedule optimization with visual time slider. Default 3-meal pattern or customizable eating windows for intermittent fasting, automatically adjusted to user's sleep schedule.
+
+- **[Temperature Module](lib/modules/temperature/TEMPERATURE_README.md)**: Cold and heat exposure protocols for sleep enhancement. Morning cold showers boost alertness; evening saunas facilitate sleep onset through subsequent body cooling.
+
+- **[Sport Module](lib/modules/sport/SPORT_README.md)**: Exercise timing and intensity guidance with wearable integration. Morning HIIT for optimal sleep benefit; intensity-based scheduling prevents evening exercise sleep disruption.
+
+- **[Meditation Module](lib/modules/meditation/MEDITATION_README.md)**: Guided relaxation and breathwork library. Evening pre-sleep sessions reduce anxiety and racing thoughts; diverse techniques from multiple teachers and traditions.
+
+- **[Journaling Module](lib/modules/journaling/JOURNALING_README.md)**: Reflective writing with multiple input methods (typing, voice-to-text, handwritten OCR). ML-based pattern recognition identifies factors affecting sleep and provides personalized insights.
+
+- **[Nutrition Module](lib/modules/nutrition/NUTRITION_README.md)**: Evidence-based education on sleep-promoting foods and nutrients. Daily tips, comprehensive food database, and personalized recommendations based on dietary preferences.
+
+- **Sleep Hygiene Module** *(planned)*: Comprehensive bedtime routine optimization and sleep environment setup guidance.
+
+- **Medication Module** *(planned)*: Track medication intake timing and correlate with sleep effects for informed health discussions.
+
+**[Shared Module Infrastructure](lib/modules/shared/SHARED_README.md)**: Common patterns, base classes, and utilities used across all intervention modules.
+
+### Feature Screens
+
+**Action Center** (`features/action_center/`)
+- Displays daily recommended actions from enabled modules
+- Checkbox-based completion tracking
+- Data persists to database for correlation analysis
+- Uses MVVM: ActionViewModel manages state, ActionRepository handles database
+
+**Night Review** (`features/night_review/`)
+- Shows previous night's sleep data from wearables
+- Displays sleep phases breakdown (deep, REM, light, awake)
+- User provides subjective quality rating (bad/average/good scale)
+- Compares today's sleep to personal baseline: "Your 7-day average deep sleep: 85 min. Tonight: 95 min (+10!)"
+- Date navigation with expandable calendar for historical review
+
+**Habits Lab** (`features/habits_lab/`)
+- Future: Experiment with module combinations
+- Track correlations between interventions and sleep improvements
+- Visualize which interventions work best for the individual user
+
+**Settings** (`features/settings/`)
+- User profile management (name, birth date, sleep goals)
+- Module management: Enable/disable interventions, configure each module
+- Notification preferences, timezone settings
+
+### Data Flow Example (Light Module)
+
+```
+1. User Action: Completes morning light therapy
+   ↓
+2. UI: LightActivityLogScreen
+   ↓
+3. ViewModel: LightModuleViewModel.logActivity()
+   ↓
+4. Repository: LightModuleRepository.saveActivity()
+   ↓
+5. Database: INSERT into intervention_activities
+   ↓
+6. Analysis: Later correlate with tonight's sleep data
+   ↓
+7. Insights: "You slept 20 min longer on days with morning light exposure"
+```
+
+### Correlation & Analysis (to be implemented later)
+
+**Individual Baselines:**
+- System calculates user's personal averages (7-day, 30-day rolling windows)
+- Metrics: average deep sleep, total sleep time, sleep efficiency, etc.
+- Stored in `user_sleep_baselines` table
+- UI shows relative performance: "above your average" or "below your average"
+
+**Intervention Correlation:**
+- Query: Get all interventions on Day N, join with sleep record for Night N→N+1
+- Analyze: Does light therapy on Day N improve deep sleep on Night N?
+- Multi-module: Compare sleep quality when using Light+Sport vs Light alone
+- Time-range analysis: Last 7 days, last 30 days, or custom date ranges
 
 ## Development
 
+### Setup
+
 ```bash
-flutter run  # Run the app
-flutter test # Run tests
+flutter pub get  # Install dependencies
+flutter run      # Run the app
+flutter test     # Run tests
 ```
 
-**Debug flag**: Set `FORCE_ONBOARDING = true` in `preferences_service.dart` to always show questionnaire.
+### Dependencies
 
+```yaml
+# State Management
+provider: ^6.1.1
 
-AFter that we need a standard butt for accepting things that just holds a string and we need second
-button/ box that contains a checkbox at the right corner, an icon at the left corner and a text within
-the center. both elements should have some kind of floating effect.
+# Local Database
+sqflite: ^2.3.0
+path_provider: ^2.1.1
+path: ^1.8.3
+
+# Notifications
+flutter_local_notifications: ^17.0.0
+timezone: ^0.9.2
+
+# UUID generation (local-first IDs)
+uuid: ^4.2.0
+
+# JSON Serialization
+json_annotation: ^4.8.1
+
+# Dev dependencies
+build_runner: ^2.4.6
+json_serializable: ^6.7.1
+```
+
+### Debug Flags
+
+- Set `FORCE_ONBOARDING = true` in `preferences_service.dart` to always show questionnaire
+
+### Documentation
+
+- [DATABASE.md](DATABASE.md) - Complete database schema, design decisions, and migration strategy
