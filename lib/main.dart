@@ -23,7 +23,6 @@ import 'modules/shared/domain/repositories/module_config_repository.dart';
 import 'modules/shared/domain/services/module_registry.dart';
 import 'shared/constants/database_constants.dart';
 import 'shared/screens/app/splash_screen.dart';
-import 'fitbit_test.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized before async operations
@@ -183,10 +182,10 @@ class SleepBalanceApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const SplashScreen(),
-      routes: {
-        '/fitbit': (context) => const FitbitTest(),
-      }
-
+      // TODO: Add wearable connection screen route when implementing WEARABLES_INTEGRATION_REPORT.md
+      // routes: {
+      //   '/wearables': (context) => const WearableSettingsScreen(),
+      // },
     );
   }
 }

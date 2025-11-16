@@ -1,14 +1,37 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
-import 'package:sleepbalance/fitbit_test.dart';
+
+// TODO: Remove fitbit_test import - file has been removed from version control
+// import 'package:sleepbalance/fitbit_test.dart';
+
+// TODO: Import module metadata when implementing proper architecture
+// import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+
+// TODO: Import ViewModel and Provider when implementing MVVM pattern
+// import 'package:provider/provider.dart';
+// import '../viewmodels/habits_viewmodel.dart';
 
 /// Habits Lab screen for sleep habit tracking and experimentation
+///
+/// TODO: Refactor to use MVVM pattern with Provider (see REPORT.md)
+/// Current implementation uses local state - needs to be connected to:
+/// - HabitsViewModel (to be created)
+/// - ModuleConfigRepository (for database persistence)
+/// - ModuleMetadata (for centralized module information)
 class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // TODO: Wrap with ChangeNotifierProvider when HabitsViewModel is ready
+    // return ChangeNotifierProvider(
+    //   create: (_) => HabitsViewModel(
+    //     repository: context.read<ModuleConfigRepository>(),
+    //   )..loadModules(userId),
+    //   child: _HabitsScreenContent(),
+    // );
+
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
       overlayOpacity: 0.3,
@@ -69,6 +92,8 @@ class HabitsScreen extends StatelessWidget {
               child: AcceptanceButton(
                 text: 'Save Habits',
                 onPressed: () {
+                  // TODO: Replace with actual save logic via ViewModel
+                  // Should call: viewModel.saveModuleConfigs(userId)
                   // Handle save action
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -80,12 +105,14 @@ class HabitsScreen extends StatelessWidget {
                 width: double.infinity,
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/fitbit');
-              },
-              child: const Text('Fitbit verbinden'),
-            ),
+            // TODO: Remove this test button - replaced by proper wearable integration
+            // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.pushNamed(context, '/fitbit');
+            //   },
+            //   child: const Text('Fitbit verbinden'),
+            // ),
 
           ],
         ),
@@ -94,7 +121,9 @@ class HabitsScreen extends StatelessWidget {
   }
 }
 
-//einfache List mit local state
+// TODO: Replace this widget with proper ViewModel-connected version
+// Simple list with local state (temporary implementation)
+// See: lib/features/habits_lab/REPORT.md for refactoring steps
 class _SimpleModulesList extends StatefulWidget {
   const _SimpleModulesList();
 
@@ -103,7 +132,9 @@ class _SimpleModulesList extends StatefulWidget {
 }
 
 class _SimpleModulesListState extends State<_SimpleModulesList> {
-  // Moduli (titoli in tedesco + emoji, come nello screenshot)
+  // TODO: Replace hardcoded module list with data from ModuleMetadata
+  // Should use: getAvailableModules() from module_metadata.dart
+  // Modules (German titles + emoji, as in screenshot)
   final List<_Module> _modules = const [
     _Module(id: 'light', title: 'Licht-Therapie', emoji: '🌞'),
     _Module(id: 'sport', title: 'Sport & Bewegung', emoji: '🏃'),
@@ -114,7 +145,9 @@ class _SimpleModulesListState extends State<_SimpleModulesList> {
     _Module(id: 'med', title: 'Meditation', emoji: '🧘'),
   ];
 
-  // Welche sind Aktiv (zum Beispiel die erste zwei)
+  // TODO: Replace local state with ViewModel
+  // Should use: viewModel.isModuleActive(moduleId)
+  // Which are active (example: first two)
   final Set<String> _active = {'light', 'sport'};
 
   @override
@@ -168,6 +201,8 @@ class _SimpleModulesListState extends State<_SimpleModulesList> {
                       child: Checkbox(
                         value: isOn,
                         onChanged: (_) {
+                          // TODO: Replace with ViewModel call
+                          // Should call: viewModel.toggleModule(userId, moduleId)
                           setState(() {
                             if (isOn) {
                               _active.remove(m.id);
@@ -190,7 +225,9 @@ class _SimpleModulesListState extends State<_SimpleModulesList> {
 
                     const SizedBox(width: 8),
 
-                    // settings
+                    // Settings button
+                    // TODO: Navigate to module-specific config screen
+                    // Should call: viewModel.openModuleConfig(context, userId, moduleId)
                     _GearButton(onTap: () {
                       showDialog(
                         context: context,
@@ -225,7 +262,7 @@ class _SimpleModulesListState extends State<_SimpleModulesList> {
   }
 }
 
-/// kleine taste "settings" mit look pill
+// Small "settings" button with pill look
 class _GearButton extends StatelessWidget {
   final VoidCallback onTap;
   const _GearButton({required this.onTap});
@@ -248,7 +285,8 @@ class _GearButton extends StatelessWidget {
   }
 }
 
-/// minimal Model für die Liste
+// TODO: Remove this local model when using ModuleMetadata
+// Minimal model for the list
 class _Module {
   final String id;
   final String title;
