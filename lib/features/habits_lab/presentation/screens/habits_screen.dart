@@ -107,12 +107,12 @@ class HabitsScreen extends StatelessWidget {
             ),
             // TODO: Remove this test button - replaced by proper wearable integration
             // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.pushNamed(context, '/fitbit');
-            //   },
-            //   child: const Text('Fitbit verbinden'),
-            // ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/wearable-test');
+              },
+              child: const Text('Fitbit verbinden'),
+            ),
 
           ],
         ),

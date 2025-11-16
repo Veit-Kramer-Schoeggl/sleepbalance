@@ -51,11 +51,19 @@ lib/
 │   │   ├── domain/
 │   │   └── presentation/
 │   │
-│   ├── wearables/                 # Wearable integration (Apple Health, Google Fit)
-│   │   ├── data/                  # Datasources for Apple/Android wearables
-│   │   ├── domain/                # Sleep record models & repository interfaces
-│   │   │   └── models/sleep_data.dart  # ✅ Implemented
-│   │   └── presentation/          # Wearable connection UI
+│   ├── wearables/                 # ✅ Wearable integration (OAuth + sync)
+│   │   ├── data/                  # ✅ Database & API datasources
+│   │   │   ├── datasources/       # Local credentials storage
+│   │   │   └── repositories/      # Repository implementations
+│   │   ├── domain/                # ✅ Business logic & models
+│   │   │   ├── enums/            # Provider types, sync status
+│   │   │   ├── models/           # Credentials, sync records, sleep data
+│   │   │   └── repositories/     # Repository interfaces
+│   │   ├── presentation/          # ✅ Connection UI & ViewModels
+│   │   │   ├── viewmodels/       # State management
+│   │   │   └── screens/          # OAuth flow UI
+│   │   ├── utils/                # OAuth configuration
+│   │   └── WEARABLES_README.md   # Full documentation
 │   │
 │   ├── recommendations/           # AI recommendation engine (future)
 │   │   ├── data/
@@ -258,15 +266,41 @@ lib/
 - See [DATABASE.md](DATABASE.md) for complete schema details
 
 **Wearable Integration** (`core/wearables/`)
-- Connects to Apple Health (iOS) and Google Fit (Android)
+- OAuth 2.0 authentication with sleep tracking devices (Fitbit, Apple Health, Google Fit)
+- Secure token storage and automatic refresh for continuous data access
 - Fetches nightly sleep data: sleep phases, heart rate, HRV, breathing rate
-- Stores aggregated sleep records for quick access
-- Optional: Store fine-grained time-series data for advanced analysis
+- Sync history tracking with detailed error logging for troubleshooting
+- Clean architecture with domain/data/presentation separation
+- [Full documentation](lib/core/wearables/WEARABLES_README.md)
 
 **Notification System** (`core/notifications/`)
 - Module-specific reminders scheduled via user configuration
 - Example: Light module sends morning light reminder at 7:00 AM, evening dimming alert at 8:00 PM
 - Users can enable/disable and customize notification times per module
+
+### Wearables Integration
+
+**Phase 1 - Complete (OAuth & Authentication)**:
+The wearables system enables users to connect their sleep tracking devices through industry-standard OAuth 2.0. Users authenticate directly with their wearable provider (Fitbit, Apple Health, etc.) and grant the app permission to access sleep data. Access tokens are stored securely in SQLite with automatic refresh to maintain continuous access.
+
+**Supported Devices**:
+- ✅ **Fitbit**: Full OAuth integration with sleep, activity, and heart rate data access
+- 📋 **Apple Health**: Planned iOS HealthKit integration
+- 📋 **Google Fit**: Planned Android fitness data integration
+- 📋 **Garmin**: Planned OAuth connection
+
+**Key Features**:
+- Secure token management with automatic refresh before expiration
+- Multi-provider support (users can connect multiple devices)
+- Connection status tracking (connected since, last sync, token validity)
+- Detailed sync history with error logging for troubleshooting
+- Test UI for OAuth flow validation (accessible from Habits Lab)
+
+**Architecture**:
+The wearables system follows clean architecture with complete separation of concerns across domain (business logic), data (storage & APIs), and presentation (UI) layers. Each layer has clearly defined responsibilities and dependencies flow inward toward the domain. See [lib/core/wearables/WEARABLES_README.md](lib/core/wearables/WEARABLES_README.md) for complete architecture documentation.
+
+**Next Phase (Data Sync)**:
+Phase 2 will implement automatic sleep data fetching, transformation to the app's unified format, background sync scheduling, and conflict resolution between manual and wearable data entries.
 
 ### Module System
 

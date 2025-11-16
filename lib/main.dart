@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/database/database_helper.dart';
+import 'core/wearables/data/datasources/wearable_credentials_local_datasource.dart';
+import 'core/wearables/data/repositories/wearable_auth_repository_impl.dart';
+import 'core/wearables/domain/repositories/wearable_auth_repository.dart';
+import 'core/wearables/presentation/screens/wearable_connection_test_screen.dart';
+import 'core/wearables/presentation/viewmodels/wearable_connection_viewmodel.dart';
 import 'features/action_center/data/datasources/action_local_datasource.dart';
 import 'features/action_center/data/repositories/action_repository_impl.dart';
 import 'features/action_center/domain/repositories/action_repository.dart';
@@ -146,6 +151,22 @@ void main() async {
         ),
 
         // ============================================================================
+        // Wearables - Data Layer
+        // ============================================================================
+
+        // Wearable Credentials DataSource
+        Provider<WearableCredentialsLocalDataSource>(
+          create: (_) => WearableCredentialsLocalDataSource(database: database),
+        ),
+
+        // Wearable Auth Repository
+        Provider<WearableAuthRepository>(
+          create: (context) => WearableAuthRepositoryImpl(
+            dataSource: context.read<WearableCredentialsLocalDataSource>(),
+          ),
+        ),
+
+        // ============================================================================
         // ViewModels
         // ============================================================================
 
@@ -163,6 +184,22 @@ void main() async {
           create: (context) => LightModuleViewModel(
             repository: context.read<LightRepository>(),
           ),
+        ),
+
+        // Wearable Connection ViewModel - manages wearable connections
+        // Important: Registered AFTER WearableAuthRepository and SettingsViewModel
+        // Note: userId is fetched dynamically in the screen
+        ChangeNotifierProxyProvider<SettingsViewModel, WearableConnectionViewModel>(
+          create: (context) => WearableConnectionViewModel(
+            repository: context.read<WearableAuthRepository>(),
+            userId: context.read<SettingsViewModel>().currentUser?.id ?? '',
+          ),
+          update: (context, settingsViewModel, previous) =>
+              previous ??
+              WearableConnectionViewModel(
+                repository: context.read<WearableAuthRepository>(),
+                userId: settingsViewModel.currentUser?.id ?? '',
+              ),
         ),
       ],
       child: const SleepBalanceApp(),
@@ -182,10 +219,10 @@ class SleepBalanceApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const SplashScreen(),
-      // TODO: Add wearable connection screen route when implementing WEARABLES_INTEGRATION_REPORT.md
-      // routes: {
-      //   '/wearables': (context) => const WearableSettingsScreen(),
-      // },
+      routes: {
+        '/wearable-test': (context) => const WearableConnectionTestScreen(),
+        // TODO: Move to proper settings screen when implementing full wearables UI
+      },
     );
   }
 }
