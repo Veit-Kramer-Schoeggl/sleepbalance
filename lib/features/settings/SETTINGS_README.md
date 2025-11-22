@@ -22,31 +22,55 @@ settings/
 
 ## Status
 
-### ✅ Phase 4 abgeschlossen (Data Layer)
+### ✅ Phase 4 abgeschlossen (Data Layer) - **COMPLETED**
 
 **Implementierte Dateien:**
-- `lib/core/database/migrations/migration_v4.dart` - Users Tabelle
-- `domain/models/user.dart` - User Model mit allen Feldern
-- `domain/repositories/user_repository.dart` - Repository Interface
-- `data/datasources/user_local_datasource.dart` - SQLite Operationen
-- `data/repositories/user_repository_impl.dart` - Implementierung mit SharedPreferences
+- `lib/core/database/migrations/migration_v1.dart` - Users Tabelle **COMPLETED**
+- `domain/models/user.dart` - User Model mit allen Feldern **COMPLETED**
+- `domain/models/user.g.dart` - Auto-generated JSON serialization **COMPLETED**
+- `domain/repositories/user_repository.dart` - Repository Interface **COMPLETED**
+- `data/datasources/user_local_datasource.dart` - SQLite Operationen **COMPLETED**
+- `data/repositories/user_repository_impl.dart` - Implementierung mit SharedPreferences **COMPLETED**
 
 **Datenbank:**
-- Migration V4 erstellt users Tabelle
-- Default User automatisch beim ersten Start angelegt
-- User-ID in SharedPreferences unter 'current_user_id'
+- Migration V1 erstellt users Tabelle **COMPLETED**
+- Default User automatisch beim ersten Start angelegt **COMPLETED**
+- User-ID in SharedPreferences unter 'current_user_id' **COMPLETED**
 
 **Provider Registration:**
-- SharedPreferences Provider in main.dart
-- UserLocalDataSource Provider in main.dart
-- UserRepository Provider in main.dart
+- SharedPreferences Provider in main.dart **COMPLETED**
+- UserLocalDataSource Provider in main.dart **COMPLETED**
+- UserRepository Provider in main.dart **COMPLETED**
+
+### ✅ Phase 5 abgeschlossen (ViewModel) - **COMPLETED**
+
+**Implementierte Dateien:**
+- `presentation/viewmodels/settings_viewmodel.dart` - State Management **COMPLETED**
+
+**ViewModel Methoden:**
+- `loadCurrentUser()` **COMPLETED**
+- `updateUserProfile(User)` **COMPLETED**
+- `updateLanguage(String)` **COMPLETED**
+- `updateUnitSystem(String)` **COMPLETED**
+- `updateSleepTargets()` **COMPLETED**
+- `logout()` **COMPLETED**
+- `clearError()` **COMPLETED**
+
+**Provider Registration:**
+- SettingsViewModel ChangeNotifierProvider in main.dart **COMPLETED**
 
 ### ⏳ UI Layer - Noch zu implementieren
 
-Siehe `SETTINGS_IMPLEMENTATION_PLAN.md` für:
-- SettingsViewModel (State Management)
-- SettingsScreen (User-Info + Einstellungen)
-- UserProfileScreen (Vollständiger Editor)
+**Navigation (Grundgerüst vorhanden):**
+- `presentation/settings_navigator.dart` - Navigation zwischen Screens **COMPLETED**
+- `presentation/screens/settings_screen.dart` - Basis-Screen mit Buttons **COMPLETED** (nur Navigation)
+
+**Screens (nur Placeholder - UI-Verbindung fehlt):**
+- ❌ `SettingsScreen` - Verbindung zu ViewModel, User-Info Anzeige
+- ❌ `UserProfileScreen` - Formular mit allen User-Feldern
+- ❌ `TimezoneScreen` - Timezone-Auswahl
+- ❌ `UnitsScreen` - Metric/Imperial Auswahl
+- ❌ `DateTimeScreen` - Datum/Zeit Format Auswahl
 
 ## User Model
 
@@ -165,10 +189,13 @@ if (userId != null) {
 ## Nächste Schritte
 
 **1. UI Layer implementieren (siehe SETTINGS_IMPLEMENTATION_PLAN.md):**
-- [ ] SettingsViewModel erstellen
-- [ ] SettingsViewModel in main.dart registrieren
-- [ ] SettingsScreen mit User-Info erstellen
+- [x] SettingsViewModel erstellen **COMPLETED**
+- [x] SettingsViewModel in main.dart registrieren **COMPLETED**
+- [ ] SettingsScreen mit User-Info und ViewModel-Verbindung erstellen
 - [ ] UserProfileScreen mit Formular erstellen
+- [ ] TimezoneScreen mit Auswahl erstellen
+- [ ] UnitsScreen mit Metric/Imperial Toggle erstellen
+- [ ] DateTimeScreen mit Format-Auswahl erstellen
 - [ ] Hardcoded User-IDs in anderen Features ersetzen
 
 **2. Später erweitern:**
