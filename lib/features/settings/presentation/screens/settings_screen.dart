@@ -1,29 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 
+/// Settings Screen - Main settings overview
+///
+/// Uses the global SettingsViewModel from main.dart Provider tree.
+/// Navigation is handled locally within this screen.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => SettingsViewModel(
-        context: context
-      ),
-      child: const _SettingsScreenContent(),
-    );
-  }
-}
-
-class _SettingsScreenContent extends StatelessWidget {
-  const _SettingsScreenContent();
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<SettingsViewModel>();
-
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
       overlayOpacity: 0.3,
@@ -32,7 +18,6 @@ class _SettingsScreenContent extends StatelessWidget {
         appBar: AppBar(
           title: const Text('App Settings', style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.transparent,
-
           elevation: 0,
         ),
         body: Center(
@@ -54,46 +39,47 @@ class _SettingsScreenContent extends StatelessWidget {
                 'Configure your app preferences',
                 style: TextStyle(fontSize: 16, color: Colors.white70),
               ),
-              Padding(padding: EdgeInsets.all(16), child:
-                Column(
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Padding(padding: EdgeInsets.all(16)),
+                    const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: viewModel.onChangeTimeZone,
+                      onPressed: () => Navigator.of(context).pushNamed('/timezone'),
                       label: const Text("Timezone"),
                       icon: const Icon(Icons.access_time),
                       style: ElevatedButton.styleFrom(
-                        alignment: Alignment.centerLeft, // optional: left-align content
+                        alignment: Alignment.centerLeft,
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: viewModel.onChangeUserProfile,
+                      onPressed: () => Navigator.of(context).pushNamed('/profile'),
                       label: const Text("Userprofile"),
-                      icon: Icon(Icons.person),
+                      icon: const Icon(Icons.person),
                       style: ElevatedButton.styleFrom(
-                        alignment: Alignment.centerLeft, // optional: left-align content
+                        alignment: Alignment.centerLeft,
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: viewModel.onChangeDateTimeFormat,
+                      onPressed: () => Navigator.of(context).pushNamed('/format'),
                       label: const Text("Date/Time Format"),
                       icon: const Icon(Icons.date_range),
                       style: ElevatedButton.styleFrom(
-                        alignment: Alignment.centerLeft, // optional: left-align content
+                        alignment: Alignment.centerLeft,
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: viewModel.onChangeUnits,
+                      onPressed: () => Navigator.of(context).pushNamed('/units'),
                       label: const Text("Units (Imperial/Metric)"),
                       icon: const Icon(Icons.straighten),
                       style: ElevatedButton.styleFrom(
-                        alignment: Alignment.centerLeft, // optional: left-align content
+                        alignment: Alignment.centerLeft,
                       ),
                     ),
                   ],
-                )
-              )
+                ),
+              ),
             ],
           ),
         ),
