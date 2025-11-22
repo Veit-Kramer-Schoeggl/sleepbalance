@@ -66,7 +66,15 @@ Beim Aktivieren eines Moduls wirft das Repository einen Fehler, weil noch kein `
 
 **Was zu tun ist:** Die hardcodierte `'demo-user'` ID durch die echte User ID ersetzen.
 
-**Wie:** Sobald ein Auth-System oder User-Profil existiert, die ID von dort holen (z.B. via Provider oder aus dem User-Repository).
+**Wie:** Sobald ein Auth-System oder User-Profil existiert, die ID von dort holen:
+
+Über SettingsViewModel (empfohlen für UI)
+
+final settingsViewModel = context.read<SettingsViewModel>();
+final userId = settingsViewModel.currentUser?.id;
+
+Wo: SettingsViewModel ist bereits in main.dart als Provider registriert und lädt den aktuellen User automatisch.
+
 
 ---
 
@@ -79,19 +87,6 @@ Beim Aktivieren eines Moduls wirft das Repository einen Fehler, weil noch kein `
 - Bei Deaktivierung: `module.onModuleDeactivated(userId)` aufrufen
 
 **Voraussetzung:** Der `ModuleRegistry` muss implementiert sein, um die Modul-Implementierung anhand der ID zu bekommen.
-
----
-
-### 5. Settings-Screens (Zukunft)
-
-**Kontext:** Der Settings-Button bei jedem Modul zeigt aktuell nur einen Placeholder-Dialog.
-
-**Was zu tun ist:** Wenn ein User auf Settings tippt:
-1. Das Modul über `ModuleRegistry.getModule(moduleId)` holen
-2. Den Konfigurations-Screen via `module.getConfigurationScreen(userId, config)` bekommen
-3. Zu diesem Screen navigieren
-
-**Voraussetzung:** Die modul-spezifischen Config-Screens müssen implementiert sein (z.B. `LightConfigScreen` für das Light-Modul).
 
 ---
 
