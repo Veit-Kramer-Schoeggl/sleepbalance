@@ -11,7 +11,7 @@ library;
 // ============================================================================
 
 const String DATABASE_NAME = 'sleepbalance.db';
-const int DATABASE_VERSION = 2;
+const int DATABASE_VERSION = 7;
 
 // ============================================================================
 // Table Names
@@ -23,6 +23,8 @@ const String TABLE_MODULES = 'modules';
 const String TABLE_USER_MODULE_CONFIGURATIONS = 'user_module_configurations';
 const String TABLE_INTERVENTION_ACTIVITIES = 'intervention_activities';
 const String TABLE_USER_SLEEP_BASELINES = 'user_sleep_baselines';
+const String TABLE_WEARABLE_CONNECTIONS = 'wearable_connections';
+const String TABLE_WEARABLE_SYNC_HISTORY = 'wearable_sync_history';
 
 // ============================================================================
 // Users Table Columns
@@ -68,6 +70,7 @@ const String SLEEP_RECORDS_AVG_HEART_RATE = 'avg_heart_rate';
 const String SLEEP_RECORDS_MIN_HEART_RATE = 'min_heart_rate';
 const String SLEEP_RECORDS_MAX_HEART_RATE = 'max_heart_rate';
 const String SLEEP_RECORDS_AVG_HRV = 'avg_hrv';
+const String SLEEP_RECORDS_AVG_HEART_RATE_VARIABILITY = 'avg_heart_rate_variability';
 const String SLEEP_RECORDS_AVG_BREATHING_RATE = 'avg_breathing_rate';
 const String SLEEP_RECORDS_QUALITY_RATING = 'quality_rating';
 const String SLEEP_RECORDS_QUALITY_NOTES = 'quality_notes';
@@ -148,3 +151,40 @@ const String DAILY_ACTIONS_IS_COMPLETED = 'is_completed';
 const String DAILY_ACTIONS_ACTION_DATE = 'action_date';
 const String DAILY_ACTIONS_CREATED_AT = 'created_at';
 const String DAILY_ACTIONS_COMPLETED_AT = 'completed_at';
+
+// ============================================================================
+// Wearable Connections Table Columns
+// ============================================================================
+
+const String WEARABLE_CONNECTIONS_ID = 'id';
+const String WEARABLE_CONNECTIONS_USER_ID = 'user_id';
+const String WEARABLE_CONNECTIONS_PROVIDER = 'provider';
+const String WEARABLE_CONNECTIONS_ACCESS_TOKEN = 'access_token';
+const String WEARABLE_CONNECTIONS_REFRESH_TOKEN = 'refresh_token';
+const String WEARABLE_CONNECTIONS_TOKEN_EXPIRES_AT = 'token_expires_at';
+const String WEARABLE_CONNECTIONS_USER_EXTERNAL_ID = 'user_external_id';
+const String WEARABLE_CONNECTIONS_GRANTED_SCOPES = 'granted_scopes';
+const String WEARABLE_CONNECTIONS_IS_ACTIVE = 'is_active';
+const String WEARABLE_CONNECTIONS_CONNECTED_AT = 'connected_at';
+const String WEARABLE_CONNECTIONS_LAST_SYNC_AT = 'last_sync_at';
+const String WEARABLE_CONNECTIONS_CREATED_AT = 'created_at';
+const String WEARABLE_CONNECTIONS_UPDATED_AT = 'updated_at';
+
+// ============================================================================
+// Wearable Sync History Table Columns
+// ============================================================================
+
+const String WEARABLE_SYNC_HISTORY_ID = 'id';
+const String WEARABLE_SYNC_HISTORY_USER_ID = 'user_id';
+const String WEARABLE_SYNC_HISTORY_PROVIDER = 'provider';
+const String WEARABLE_SYNC_HISTORY_SYNC_DATE_FROM = 'sync_date_from';
+const String WEARABLE_SYNC_HISTORY_SYNC_DATE_TO = 'sync_date_to';
+const String WEARABLE_SYNC_HISTORY_SYNC_STARTED_AT = 'sync_started_at';
+const String WEARABLE_SYNC_HISTORY_SYNC_COMPLETED_AT = 'sync_completed_at';
+const String WEARABLE_SYNC_HISTORY_STATUS = 'status';
+const String WEARABLE_SYNC_HISTORY_RECORDS_FETCHED = 'records_fetched';
+const String WEARABLE_SYNC_HISTORY_RECORDS_INSERTED = 'records_inserted';
+const String WEARABLE_SYNC_HISTORY_RECORDS_UPDATED = 'records_updated';
+const String WEARABLE_SYNC_HISTORY_RECORDS_SKIPPED = 'records_skipped';
+const String WEARABLE_SYNC_HISTORY_ERROR_CODE = 'error_code';
+const String WEARABLE_SYNC_HISTORY_ERROR_MESSAGE = 'error_message';

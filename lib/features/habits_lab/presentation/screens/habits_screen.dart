@@ -2,12 +2,36 @@ import 'package:flutter/material.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
 
+// TODO: Remove fitbit_test import - file has been removed from version control
+// import 'package:sleepbalance/fitbit_test.dart';
+
+// TODO: Import module metadata when implementing proper architecture
+// import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+
+// TODO: Import ViewModel and Provider when implementing MVVM pattern
+// import 'package:provider/provider.dart';
+// import '../viewmodels/habits_viewmodel.dart';
+
 /// Habits Lab screen for sleep habit tracking and experimentation
+///
+/// TODO: Refactor to use MVVM pattern with Provider (see REPORT.md)
+/// Current implementation uses local state - needs to be connected to:
+/// - HabitsViewModel (to be created)
+/// - ModuleConfigRepository (for database persistence)
+/// - ModuleMetadata (for centralized module information)
 class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // TODO: Wrap with ChangeNotifierProvider when HabitsViewModel is ready
+    // return ChangeNotifierProvider(
+    //   create: (_) => HabitsViewModel(
+    //     repository: context.read<ModuleConfigRepository>(),
+    //   )..loadModules(userId),
+    //   child: _HabitsScreenContent(),
+    // );
+
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
       overlayOpacity: 0.3,
@@ -21,7 +45,8 @@ class HabitsScreen extends StatelessWidget {
         ),
         body: Column(
           children: [
-            const Expanded(
+            const Padding(
+              padding: EdgeInsets.only(top: 24),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -40,16 +65,35 @@ class HabitsScreen extends StatelessWidget {
                     Text(
                       'Track and experiment with sleep habits',
                       style: TextStyle(fontSize: 16, color: Colors.white70),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
               ),
             ),
+
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(color: Colors.white24, height: 1),
+            ),
+            const SizedBox(height: 12),
+
+            //neuen List (scroll)
+            const Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: _SimpleModulesList(),
+              ),
+            ),
+
             Padding(
               padding: const EdgeInsets.all(24),
               child: AcceptanceButton(
                 text: 'Save Habits',
                 onPressed: () {
+                  // TODO: Replace with actual save logic via ViewModel
+                  // Should call: viewModel.saveModuleConfigs(userId)
                   // Handle save action
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -61,9 +105,191 @@ class HabitsScreen extends StatelessWidget {
                 width: double.infinity,
               ),
             ),
+            // TODO: Remove this test button - replaced by proper wearable integration
+            // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/wearable-test');
+              },
+              child: const Text('Fitbit verbinden'),
+            ),
+
           ],
         ),
       ),
     );
   }
+}
+
+// TODO: Replace this widget with proper ViewModel-connected version
+// Simple list with local state (temporary implementation)
+// See: lib/features/habits_lab/REPORT.md for refactoring steps
+class _SimpleModulesList extends StatefulWidget {
+  const _SimpleModulesList();
+
+  @override
+  State<_SimpleModulesList> createState() => _SimpleModulesListState();
+}
+
+class _SimpleModulesListState extends State<_SimpleModulesList> {
+  // TODO: Replace hardcoded module list with data from ModuleMetadata
+  // Should use: getAvailableModules() from module_metadata.dart
+  // Modules (German titles + emoji, as in screenshot)
+  final List<_Module> _modules = const [
+    _Module(id: 'light', title: 'Licht-Therapie', emoji: '🌞'),
+    _Module(id: 'sport', title: 'Sport & Bewegung', emoji: '🏃'),
+    _Module(id: 'temp', title: 'Temperatur-Exposition', emoji: '🌡️'),
+    _Module(id: 'food', title: 'Ernährung', emoji: '🍎'),
+    _Module(id: 'meal', title: 'Essenszeiten', emoji: '⏰'),
+    _Module(id: 'hyg', title: 'Schlafhygiene', emoji: '🛏️'),
+    _Module(id: 'med', title: 'Meditation', emoji: '🧘'),
+  ];
+
+  // TODO: Replace local state with ViewModel
+  // Should use: viewModel.isModuleActive(moduleId)
+  // Which are active (example: first two)
+  final Set<String> _active = {'light', 'sport'};
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = ScrollController();
+
+    return Scrollbar(
+        controller: controller,
+        thumbVisibility: true, // la barra resta visibile
+        radius: const Radius.circular(10),
+        thickness: 6,
+        child: ListView.separated(
+          controller: controller,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          itemCount: _modules.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (context, i) {
+            final m = _modules[i];
+            final isOn = _active.contains(m.id);
+
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                child: Row(
+                  children: [
+                    // Emoji/icon left
+                    Text(m.emoji, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 12),
+
+                    // Title
+                    Expanded(
+                      child: Text(
+                        m.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    // Checkbox stile einfach
+                    Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        value: isOn,
+                        onChanged: (_) {
+                          // TODO: Replace with ViewModel call
+                          // Should call: viewModel.toggleModule(userId, moduleId)
+                          setState(() {
+                            if (isOn) {
+                              _active.remove(m.id);
+                            } else {
+                              _active.add(m.id);
+                            }
+                          });
+                        },
+                        activeColor: Theme.of(context).colorScheme.primary,
+                        checkColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withOpacity(0.7),
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Settings button
+                    // TODO: Navigate to module-specific config screen
+                    // Should call: viewModel.openModuleConfig(context, userId, moduleId)
+                    _GearButton(onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          backgroundColor: const Color(0xFF2B2F3A),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: const Text(
+                            'Einstellungen',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          content: Text(
+                            '„${m.title}“ – Einstellungen kommen bald.',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        ));
+  }
+}
+
+// Small "settings" button with pill look
+class _GearButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _GearButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withOpacity(0.18)),
+        ),
+        child: const Icon(Icons.settings, size: 18, color: Colors.white70),
+      ),
+    );
+  }
+}
+
+// TODO: Remove this local model when using ModuleMetadata
+// Minimal model for the list
+class _Module {
+  final String id;
+  final String title;
+  final String emoji;
+  const _Module({required this.id, required this.title, required this.emoji});
 }

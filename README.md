@@ -18,16 +18,7 @@ SleepBalance helps people fall and stay asleep through data-driven, personalized
 - Personalizes initial recommendations
 
 ### Modular Intervention System
-Users can select, combine, and customize individual modules:
-- **Light Module**: Morning/evening light exposure settings
-- **Sport Module**: Morning movement and exercise routines
-- **Temperature Module**: Sauna, heat and cold exposure protocols
-- **Nutrition Module**: Information about sleep-promoting foods
-- **Meal-time Module**: Eating schedule optimization (when to eat/avoid eating)
-- **Sleep Hygiene Module**: Bedtime routine optimization
-- **Meditation Module**: Calming and relaxation techniques
-- **Journaling Module**: Progress tracking and reflection exercises
-- **Medication Module**: Track medication intake and effects on sleep
+- Users can select, combine, and customize individual modules.
 
 ### Wearable Integration
 - Core feature: sync sleep data from watches
@@ -60,11 +51,19 @@ lib/
 │   │   ├── domain/
 │   │   └── presentation/
 │   │
-│   ├── wearables/                 # Wearable integration (Apple Health, Google Fit)
-│   │   ├── data/                  # Datasources for Apple/Android wearables
-│   │   ├── domain/                # Sleep record models & repository interfaces
-│   │   │   └── models/sleep_data.dart  # ✅ Implemented
-│   │   └── presentation/          # Wearable connection UI
+│   ├── wearables/                 # ✅ Wearable integration (OAuth + sync)
+│   │   ├── data/                  # ✅ Database & API datasources
+│   │   │   ├── datasources/       # Local credentials storage
+│   │   │   └── repositories/      # Repository implementations
+│   │   ├── domain/                # ✅ Business logic & models
+│   │   │   ├── enums/            # Provider types, sync status
+│   │   │   ├── models/           # Credentials, sync records, sleep data
+│   │   │   └── repositories/     # Repository interfaces
+│   │   ├── presentation/          # ✅ Connection UI & ViewModels
+│   │   │   ├── viewmodels/       # State management
+│   │   │   └── screens/          # OAuth flow UI
+│   │   ├── utils/                # OAuth configuration
+│   │   └── WEARABLES_README.md   # Full documentation
 │   │
 │   ├── recommendations/           # AI recommendation engine (future)
 │   │   ├── data/
@@ -267,36 +266,71 @@ lib/
 - See [DATABASE.md](DATABASE.md) for complete schema details
 
 **Wearable Integration** (`core/wearables/`)
-- Connects to Apple Health (iOS) and Google Fit (Android)
+- OAuth 2.0 authentication with sleep tracking devices (Fitbit, Apple Health, Google Fit)
+- Secure token storage and automatic refresh for continuous data access
 - Fetches nightly sleep data: sleep phases, heart rate, HRV, breathing rate
-- Stores aggregated sleep records for quick access
-- Optional: Store fine-grained time-series data for advanced analysis
+- Sync history tracking with detailed error logging for troubleshooting
+- Clean architecture with domain/data/presentation separation
+- [Full documentation](lib/core/wearables/WEARABLES_README.md)
 
 **Notification System** (`core/notifications/`)
 - Module-specific reminders scheduled via user configuration
 - Example: Light module sends morning light reminder at 7:00 AM, evening dimming alert at 8:00 PM
 - Users can enable/disable and customize notification times per module
 
+### Wearables Integration
+
+**Phase 1 - Complete (OAuth & Authentication)**:
+The wearables system enables users to connect their sleep tracking devices through industry-standard OAuth 2.0. Users authenticate directly with their wearable provider (Fitbit, Apple Health, etc.) and grant the app permission to access sleep data. Access tokens are stored securely in SQLite with automatic refresh to maintain continuous access.
+
+**Supported Devices**:
+- ✅ **Fitbit**: Full OAuth integration with sleep, activity, and heart rate data access
+- 📋 **Apple Health**: Planned iOS HealthKit integration
+- 📋 **Google Fit**: Planned Android fitness data integration
+- 📋 **Garmin**: Planned OAuth connection
+
+**Key Features**:
+- Secure token management with automatic refresh before expiration
+- Multi-provider support (users can connect multiple devices)
+- Connection status tracking (connected since, last sync, token validity)
+- Detailed sync history with error logging for troubleshooting
+- Test UI for OAuth flow validation (accessible from Habits Lab)
+
+**Architecture**:
+The wearables system follows clean architecture with complete separation of concerns across domain (business logic), data (storage & APIs), and presentation (UI) layers. Each layer has clearly defined responsibilities and dependencies flow inward toward the domain. See [lib/core/wearables/WEARABLES_README.md](lib/core/wearables/WEARABLES_README.md) for complete architecture documentation.
+
+**Next Phase (Data Sync)**:
+Phase 2 will implement automatic sleep data fetching, transformation to the app's unified format, background sync scheduling, and conflict resolution between manual and wearable data entries.
+
 ### Module System
 
 **Shared Infrastructure** (`modules/shared/`)
-- Base models for all interventions: `InterventionActivity`, `UserModuleConfig`
-- Common repository operations (CRUD for activities, configurations)
-- Notification scheduling service that modules extend
-- Reusable UI widgets for module configuration screens
+- Common patterns, base classes, and utilities used across all intervention modules
+- Base models: `InterventionActivity`, `UserModuleConfig`, `ModuleInterface`
+- Standard vs Advanced mode for all modules with science-based defaults
+- [More details](lib/modules/shared/SHARED_README.md)
 
-**Light Module Example** (`modules/light/`)
-- User configures: target time (morning/evening), duration, light type (sunlight, light box, blue light)
-- Daily tracking: Did they complete it? When? How long?
-- Notifications: Morning reminder, evening "dim lights" alert, blue blocker reminder
-- Data stored with common typed fields (duration, time_of_day) + module-specific JSON (light_type, location)
+**Available Modules:**
 
-**Module Workflow:**
-1. User enables module in Settings
-2. Configures preferences (times, durations, notification settings)
-3. App schedules notifications based on configuration
-4. User receives reminders and logs completion daily
-5. System correlates intervention adherence with sleep quality
+- **[Light Module](lib/modules/light/LIGHT_README.md)**: Bright light therapy timing and type selection for circadian rhythm optimization. Morning exposure promotes alertness; evening red light supports melatonin production.
+
+- **[Mealtime Module](lib/modules/mealtime/MEALTIME_README.md)**: Eating schedule optimization with visual time slider. Default 3-meal pattern or customizable eating windows for intermittent fasting, automatically adjusted to user's sleep schedule.
+
+- **[Temperature Module](lib/modules/temperature/TEMPERATURE_README.md)**: Cold and heat exposure protocols for sleep enhancement. Morning cold showers boost alertness; evening saunas facilitate sleep onset through subsequent body cooling.
+
+- **[Sport Module](lib/modules/sport/SPORT_README.md)**: Exercise timing and intensity guidance with wearable integration. Morning HIIT for optimal sleep benefit; intensity-based scheduling prevents evening exercise sleep disruption.
+
+- **[Meditation Module](lib/modules/meditation/MEDITATION_README.md)**: Guided relaxation and breathwork library. Evening pre-sleep sessions reduce anxiety and racing thoughts; diverse techniques from multiple teachers and traditions.
+
+- **[Journaling Module](lib/modules/journaling/JOURNALING_README.md)**: Reflective writing with multiple input methods (typing, voice-to-text, handwritten OCR). ML-based pattern recognition identifies factors affecting sleep and provides personalized insights.
+
+- **[Nutrition Module](lib/modules/nutrition/NUTRITION_README.md)**: Evidence-based education on sleep-promoting foods and nutrients. Daily tips, comprehensive food database, and personalized recommendations based on dietary preferences.
+
+- **Sleep Hygiene Module** *(planned)*: Comprehensive bedtime routine optimization and sleep environment setup guidance.
+
+- **Medication Module** *(planned)*: Track medication intake timing and correlate with sleep effects for informed health discussions.
+
+**[Shared Module Infrastructure](lib/modules/shared/SHARED_README.md)**: Common patterns, base classes, and utilities used across all intervention modules.
 
 ### Feature Screens
 
@@ -341,7 +375,7 @@ lib/
 7. Insights: "You slept 20 min longer on days with morning light exposure"
 ```
 
-### Correlation & Analysis
+### Correlation & Analysis (to be implemented later)
 
 **Individual Baselines:**
 - System calculates user's personal averages (7-day, 30-day rolling windows)

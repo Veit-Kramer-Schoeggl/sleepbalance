@@ -94,3 +94,15 @@ app.*.map.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Security - API Keys and Secrets
+lib/fitbit_secrets.dart
+lib/**/secrets.dart
+lib/**/*_secrets.dart
+*.secrets.dart
+.env
+.env.*
+!.env.example
+
+# Android build directory
+android/build/
