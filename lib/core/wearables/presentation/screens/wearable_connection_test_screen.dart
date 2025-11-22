@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
+import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../domain/enums/wearable_provider.dart';
 import '../viewmodels/wearable_connection_viewmodel.dart';
+import '../viewmodels/wearable_sync_viewmodel.dart';
 
 /// Wearable Connection Test Screen
 ///
-/// Temporary test screen for validating Fitbit OAuth integration.
-/// Shows connection status, last sync time, and token expiration.
+/// Test screen for validating Fitbit OAuth integration and data sync.
+/// Uses the app's default background styling from habits_lab.
 ///
 /// Features:
 /// - Connect/Disconnect buttons for Fitbit
 /// - Display connection status
 /// - Show token expiration details
+/// - Sync sleep data with loading/success/error states
 /// - Error handling with user feedback
 ///
 /// TODO: This is a temporary test screen. Move to proper Settings UI later.
@@ -30,102 +33,133 @@ class _WearableConnectionTestScreenState
   @override
   void initState() {
     super.initState();
-    // Load connections after first frame
+    // Load connections and sync state after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final settingsViewModel = context.read<SettingsViewModel>();
       final userId = settingsViewModel.currentUser?.id;
       if (userId != null) {
-        final viewModel = Provider.of<WearableConnectionViewModel>(
+        // Load wearable connections
+        Provider.of<WearableConnectionViewModel>(
           context,
           listen: false,
-        );
-        viewModel.loadConnections();
+        ).loadConnections();
+
+        // Load last sync date
+        Provider.of<WearableSyncViewModel>(
+          context,
+          listen: false,
+        ).loadLastSyncDate();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Wearable Connections'),
-        backgroundColor: Colors.blue,
-      ),
-      body: Consumer<WearableConnectionViewModel>(
-        builder: (context, viewModel, child) {
-          // Loading state
-          if (viewModel.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    return BackgroundWrapper(
+      imagePath: 'assets/images/main_background.png',
+      overlayOpacity: 0.3,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text(
+            'Wearable Connections',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Consumer<WearableConnectionViewModel>(
+          builder: (context, viewModel, child) {
+            // Loading state
+            if (viewModel.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              );
+            }
 
-          // Error state
-          if (viewModel.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 60,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      viewModel.errorMessage ?? 'Unknown error',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red),
+            // Error state
+            if (viewModel.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.redAccent,
+                      size: 60,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: viewModel.clearError,
-                    child: const Text('Dismiss'),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Text(
+                        viewModel.errorMessage ?? 'Unknown error',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: viewModel.clearError,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Dismiss'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            // Main content
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Header
+                const Icon(
+                  Icons.watch,
+                  size: 60,
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Connect your wearable devices to sync sleep data',
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // Fitbit Connection Card
+                _buildFitbitCard(context, viewModel),
+
+                const SizedBox(height: 16),
+
+                // Future providers placeholder
+                _buildPlaceholderCard('Apple Health', Icons.favorite),
+                const SizedBox(height: 12),
+                _buildPlaceholderCard('Google Fit', Icons.fitness_center),
+                const SizedBox(height: 12),
+                _buildPlaceholderCard('Garmin', Icons.watch),
+              ],
             );
-          }
-
-          // Main content
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Header
-              const Text(
-                'Connect your wearable devices to sync sleep data',
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-
-              // Fitbit Connection Card
-              _buildFitbitCard(context, viewModel),
-
-              const SizedBox(height: 16),
-
-              // Future providers placeholder
-              _buildPlaceholderCard('Apple Health', Icons.favorite),
-              const SizedBox(height: 16),
-              _buildPlaceholderCard('Google Fit', Icons.fitness_center),
-              const SizedBox(height: 16),
-              _buildPlaceholderCard('Garmin', Icons.watch),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }
 
-  /// Build Fitbit connection card
+  /// Build Fitbit connection card with app styling
   Widget _buildFitbitCard(
     BuildContext context,
     WearableConnectionViewModel viewModel,
@@ -133,8 +167,12 @@ class _WearableConnectionTestScreenState
     final isConnected = viewModel.isConnected(WearableProvider.fitbit);
     final connection = viewModel.getConnection(WearableProvider.fitbit);
 
-    return Card(
-      elevation: 4,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -144,15 +182,15 @@ class _WearableConnectionTestScreenState
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.blue.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.favorite,
-                    color: Colors.blue,
-                    size: 32,
+                    color: Colors.white,
+                    size: 28,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -165,13 +203,14 @@ class _WearableConnectionTestScreenState
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
                       Text(
                         'Sleep tracking & heart rate',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: Colors.white60,
                         ),
                       ),
                     ],
@@ -184,13 +223,20 @@ class _WearableConnectionTestScreenState
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: isConnected ? Colors.green : Colors.grey.shade300,
+                    color: isConnected
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isConnected
+                          ? Colors.green.withValues(alpha: 0.5)
+                          : Colors.white.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Text(
                     isConnected ? 'Connected' : 'Not Connected',
                     style: TextStyle(
-                      color: isConnected ? Colors.white : Colors.black87,
+                      color: isConnected ? Colors.greenAccent : Colors.white60,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -224,8 +270,9 @@ class _WearableConnectionTestScreenState
                 connection.isTokenExpired()
                     ? 'EXPIRED (needs refresh)'
                     : 'Valid',
-                valueColor:
-                    connection.isTokenExpired() ? Colors.red : Colors.green,
+                valueColor: connection.isTokenExpired()
+                    ? Colors.redAccent
+                    : Colors.greenAccent,
               ),
               const SizedBox(height: 12),
             ],
@@ -273,19 +320,190 @@ class _WearableConnectionTestScreenState
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isConnected ? Colors.red : Colors.blue,
+                  backgroundColor: isConnected
+                      ? Colors.red.withValues(alpha: 0.8)
+                      : Colors.blue.withValues(alpha: 0.8),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text(
                   isConnected ? 'Disconnect Fitbit' : 'Connect Fitbit',
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
+
+            // Sync section (only show when connected)
+            if (isConnected) ...[
+              const SizedBox(height: 20),
+              Divider(color: Colors.white.withValues(alpha: 0.2)),
+              const SizedBox(height: 12),
+              _buildSyncSection(context),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  /// Build sync section with button and status
+  Widget _buildSyncSection(BuildContext context) {
+    return Consumer<WearableSyncViewModel>(
+      builder: (context, syncViewModel, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section header
+            const Text(
+              'Sync Sleep Data',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Last sync info
+            if (syncViewModel.lastSyncDate != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Last synced: ${_formatDateTime(syncViewModel.lastSyncDate!)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white60,
+                  ),
+                ),
+              ),
+
+            // Sync button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: syncViewModel.isSyncing
+                    ? null
+                    : () => syncViewModel.syncRecentData(days: 7),
+                icon: syncViewModel.isSyncing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.sync),
+                label: Text(
+                  syncViewModel.isSyncing ? 'Syncing...' : 'Sync Last 7 Days',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.withValues(alpha: 0.8),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.green.withValues(alpha: 0.4),
+                  disabledForegroundColor: Colors.white70,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+
+            // Success message
+            if (syncViewModel.isSuccess && syncViewModel.lastSyncResult != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.greenAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Synced ${syncViewModel.lastSyncResult!.recordsInserted} new, '
+                          '${syncViewModel.lastSyncResult!.recordsUpdated} updated',
+                          style: const TextStyle(color: Colors.greenAccent),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.white60,
+                        ),
+                        onPressed: syncViewModel.clearSuccess,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Error message
+            if (syncViewModel.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.redAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          syncViewModel.errorMessage ?? 'Sync failed',
+                          style: const TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+                      if (syncViewModel.canRetry)
+                        TextButton(
+                          onPressed: () => syncViewModel.syncRecentData(days: 7),
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        )
+                      else
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close,
+                            size: 18,
+                            color: Colors.white60,
+                          ),
+                          onPressed: syncViewModel.clearError,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -300,7 +518,7 @@ class _WearableConnectionTestScreenState
             label,
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color: Colors.white60,
             ),
           ),
           Text(
@@ -308,7 +526,7 @@ class _WearableConnectionTestScreenState
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: valueColor,
+              color: valueColor ?? Colors.white,
             ),
           ),
         ],
@@ -318,23 +536,26 @@ class _WearableConnectionTestScreenState
 
   /// Build placeholder card for future providers
   Widget _buildPlaceholderCard(String name, IconData icon) {
-    return Card(
-      elevation: 2,
-      color: Colors.grey.shade100,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: Colors.grey,
-                size: 32,
+                color: Colors.white38,
+                size: 28,
               ),
             ),
             const SizedBox(width: 12),
@@ -347,24 +568,31 @@ class _WearableConnectionTestScreenState
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                      color: Colors.white38,
                     ),
                   ),
                   const Text(
                     'Coming soon',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey,
+                      color: Colors.white24,
                     ),
                   ),
                 ],
               ),
             ),
-            const Text(
-              'Not Available',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Not Available',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white38,
+                ),
               ),
             ),
           ],

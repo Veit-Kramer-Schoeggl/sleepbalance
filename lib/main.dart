@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'core/config/wearable_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/wearables/data/datasources/fitbit_api_datasource.dart';
 import 'core/wearables/data/datasources/wearable_credentials_local_datasource.dart';
@@ -12,6 +13,7 @@ import 'core/wearables/domain/repositories/wearable_auth_repository.dart';
 import 'core/wearables/domain/repositories/wearable_data_sync_repository.dart';
 import 'core/wearables/presentation/screens/wearable_connection_test_screen.dart';
 import 'core/wearables/presentation/viewmodels/wearable_connection_viewmodel.dart';
+import 'core/wearables/presentation/viewmodels/wearable_sync_viewmodel.dart';
 import 'features/action_center/data/datasources/action_local_datasource.dart';
 import 'features/action_center/data/repositories/action_repository_impl.dart';
 import 'features/action_center/domain/repositories/action_repository.dart';
@@ -37,6 +39,12 @@ import 'shared/screens/app/splash_screen.dart';
 void main() async {
   // Ensure Flutter binding is initialized before async operations
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ============================================================================
+  // Load Configuration
+  // ============================================================================
+
+  await WearableConfig.load();
 
   // ============================================================================
   // Register Modules
@@ -232,6 +240,21 @@ void main() async {
               previous ??
               WearableConnectionViewModel(
                 repository: context.read<WearableAuthRepository>(),
+                userId: settingsViewModel.currentUser?.id ?? '',
+              ),
+        ),
+
+        // Wearable Sync ViewModel - manages sleep data synchronization
+        // Important: Registered AFTER WearableDataSyncRepository and SettingsViewModel
+        ChangeNotifierProxyProvider<SettingsViewModel, WearableSyncViewModel>(
+          create: (context) => WearableSyncViewModel(
+            repository: context.read<WearableDataSyncRepository>(),
+            userId: context.read<SettingsViewModel>().currentUser?.id ?? '',
+          ),
+          update: (context, settingsViewModel, previous) =>
+              previous ??
+              WearableSyncViewModel(
+                repository: context.read<WearableDataSyncRepository>(),
                 userId: settingsViewModel.currentUser?.id ?? '',
               ),
         ),

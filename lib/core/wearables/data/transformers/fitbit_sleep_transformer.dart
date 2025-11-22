@@ -48,10 +48,13 @@ class FitbitSleepTransformer {
       }
 
       // Find main sleep record (ignore naps)
-      final mainSleep = sleepList.firstWhere(
-        (sleep) => sleep['isMainSleep'] == true,
-        orElse: () => null,
-      ) as Map<String, dynamic>?;
+      Map<String, dynamic>? mainSleep;
+      for (final sleep in sleepList) {
+        if (sleep is Map<String, dynamic> && sleep['isMainSleep'] == true) {
+          mainSleep = sleep;
+          break;
+        }
+      }
 
       if (mainSleep == null) {
         return null; // No main sleep, only naps

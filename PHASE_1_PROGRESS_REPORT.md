@@ -300,45 +300,29 @@ lib/core/wearables/
 
 **PHASE 1 IS COMPLETE!** 🎉
 
-The OAuth foundation is ready. Next steps for Phase 2:
+**PHASE 2 IS COMPLETE!** 🚀
 
-**Phase 2 Goals:**
-1. Implement sleep data fetching from Fitbit API
-2. Create data transformation layer (Fitbit format → SleepRecord format)
-3. Implement sync scheduler (background sync, last sync tracking)
-4. Add sync conflict resolution (manual vs wearable data)
-5. Create sync status UI (last sync, sync in progress, errors)
+**All Phase 2 components implemented:**
+1. ✅ Fitbit REST API integration (direct HTTP calls via Dio)
+2. ✅ Data transformation layer (`FitbitSleepTransformer`)
+3. ✅ Token refresh logic (auto-refresh if expires within 5 min)
+4. ✅ Smart conflict resolution (preserves user quality notes)
+5. ✅ Sync history logging (`WearableSyncRecordLocalDataSource`)
+6. ✅ Exception handling with custom error types
+7. ✅ `WearableSyncViewModel` (presentation layer)
+8. ✅ "Sync Last 7 Days" button in test screen UI
+9. ✅ ViewModel registered in `main.dart`
 
-**Key Files to Create:**
-- `lib/core/wearables/domain/services/fitbit_sync_service.dart`
-- `lib/core/wearables/data/datasources/fitbit_api_datasource.dart`
-- `lib/core/wearables/data/mappers/fitbit_sleep_mapper.dart`
-- `lib/core/wearables/presentation/viewmodels/wearable_sync_viewmodel.dart`
+**Key Files Created:**
+- ✅ `lib/core/wearables/data/datasources/fitbit_api_datasource.dart`
+- ✅ `lib/core/wearables/data/transformers/fitbit_sleep_transformer.dart`
+- ✅ `lib/core/wearables/data/repositories/wearable_data_sync_repository_impl.dart`
+- ✅ `lib/core/wearables/data/datasources/wearable_sync_record_local_datasource.dart`
+- ✅ `lib/core/wearables/domain/repositories/wearable_data_sync_repository.dart`
+- ✅ `lib/core/wearables/domain/exceptions/wearable_exception.dart`
+- ✅ `lib/core/wearables/presentation/viewmodels/wearable_sync_viewmodel.dart`
 
-**API Reference:**
-- Fitbitter package has built-in methods for fetching sleep data
-- See: `FitbitSleepAPIManager` in fitbitter package
-- Requires: `FitbitCredentials` (already stored in database)
-
-**Suggested Next Session Prompt:**
-```
-Start Phase 2 of wearables integration: Sleep data sync from Fitbit.
-
-CONTEXT:
-- Phase 1 complete: OAuth flow, credentials storage, test UI
-- User can connect/disconnect Fitbit in Habits Lab
-- Credentials stored in wearable_connections table
-- Ready to fetch and sync sleep data
-
-GOALS:
-1. Fetch sleep data from Fitbit API using stored credentials
-2. Transform Fitbit sleep data to SleepRecord format
-3. Save to sleep_records table (avoid duplicates)
-4. Update last_sync_at timestamp
-5. Record sync attempt in wearable_sync_history
-
-Read WEARABLES_INTEGRATION_REPORT.md for Phase 2 details.
-```
+**See PHASE_2_WEARABLES_PLAN.md for full details.**
 
 ---
 

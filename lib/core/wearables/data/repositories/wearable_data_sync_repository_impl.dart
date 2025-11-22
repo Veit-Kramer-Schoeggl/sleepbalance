@@ -1,8 +1,8 @@
 import 'package:fitbitter/fitbitter.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/config/wearable_config.dart';
 import '../../../../features/night_review/data/datasources/sleep_record_local_datasource.dart';
 import '../../../../features/night_review/domain/models/sleep_record.dart';
-import '../../utils/fitbit_secrets.dart';
 import '../../domain/enums/sync_status.dart';
 import '../../domain/enums/wearable_provider.dart';
 import '../../domain/exceptions/wearable_exception.dart';
@@ -224,8 +224,8 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
 
       // Use fitbitter's refresh token method
       final newFitbitCredentials = await FitbitConnector.refreshToken(
-        clientID: FitbitSecrets.clientId,
-        clientSecret: FitbitSecrets.clientSecret,
+        clientID: WearableConfig.fitbitClientId,
+        clientSecret: WearableConfig.fitbitClientSecret,
         fitbitCredentials: fitbitCreds,
       );
 

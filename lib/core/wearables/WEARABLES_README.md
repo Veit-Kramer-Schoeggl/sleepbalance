@@ -4,6 +4,36 @@
 
 The wearables integration system provides OAuth-based authentication and data synchronization with external sleep tracking devices. The architecture follows a clean, layered approach that separates authentication, data storage, and presentation concerns.
 
+## Setup
+
+### Environment Configuration
+
+Wearable provider credentials are stored in environment variables for security:
+
+1. **Copy the template file:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Fill in your Fitbit credentials** (get from https://dev.fitbit.com/apps):
+   ```env
+   FITBIT_CLIENT_ID=your_client_id
+   FITBIT_CLIENT_SECRET=your_client_secret
+   ```
+
+3. **The `.env` file is gitignored** - never commit secrets to version control.
+
+### Verify Configuration
+
+```dart
+import 'package:sleepbalance/core/config/wearable_config.dart';
+
+// Check if credentials are configured
+if (WearableConfig.isFitbitConfigured) {
+  print('Fitbit ready!');
+}
+```
+
 ## How It Works
 
 ### Authentication Flow
@@ -71,18 +101,18 @@ lib/core/wearables/
 │   ├── datasources/    # Direct database and API access
 │   └── repositories/   # Repository implementations with business logic
 │
-├── presentation/       # UI layer (user interaction)
-│   ├── viewmodels/     # State management and business logic coordination
-│   ├── screens/        # Full-page UI components
-│   └── widgets/        # Reusable UI components (future)
-│
-└── utils/             # Shared utilities and configuration
+└── presentation/       # UI layer (user interaction)
+    ├── viewmodels/     # State management and business logic coordination
+    ├── screens/        # Full-page UI components
+    └── widgets/        # Reusable UI components (future)
 ```
 
 ### Key Files
 
 **Configuration**:
-- `utils/fitbit_secrets.dart` - OAuth client credentials and redirect URIs
+- `lib/core/config/wearable_config.dart` - OAuth credentials loader (from `.env`)
+- `.env` - Environment variables with secrets (gitignored)
+- `.env.example` - Template for team members (committed)
 
 **Domain Models**:
 - `domain/models/wearable_credentials.dart` - OAuth token storage model
@@ -103,7 +133,8 @@ lib/core/wearables/
 
 **Presentation**:
 - `presentation/viewmodels/wearable_connection_viewmodel.dart` - Connection state management
-- `presentation/screens/wearable_connection_test_screen.dart` - Test UI for OAuth flow
+- `presentation/viewmodels/wearable_sync_viewmodel.dart` - Sync state management (loading, success, error)
+- `presentation/screens/wearable_connection_test_screen.dart` - Test UI for OAuth flow and data sync
 
 ## Database Schema
 
@@ -124,17 +155,20 @@ See `core/database/migrations/migration_v7.dart` for complete schema definitions
 - Database schema and migrations
 
 **Phase 2 - COMPLETE**:
-- Sleep data fetching from Fitbit REST API
-- Data transformation (Fitbit JSON → SleepRecord)
-- Manual sync trigger functionality
-- Smart conflict resolution (preserves user quality notes)
-- Token refresh before API calls
-- Sync history logging with detailed metrics
-- Exception handling with retryable error types
+- ✅ Fitbit REST API integration (direct HTTP calls via Dio)
+- ✅ Data transformation (Fitbit JSON → SleepRecord via `FitbitSleepTransformer`)
+- ✅ Token refresh before API calls (auto-refresh if expires within 5 min)
+- ✅ Smart conflict resolution (preserves user quality notes on re-sync)
+- ✅ Sync history logging with detailed metrics (`WearableSyncRecordLocalDataSource`)
+- ✅ Exception handling with retryable error types (`WearableException`)
+- ✅ Repository implementation (`WearableDataSyncRepositoryImpl`)
+- ✅ `WearableSyncViewModel` - Presentation layer state management
+- ✅ Sync button UI - "Sync Last 7 Days" button with loading/success/error states
+- ✅ ViewModel registration in `main.dart`
 
 **Future Enhancements**:
 - Background sync scheduler
-- Sync status UI with progress indicators
+- Additional sync date range options
 
 **Future Phases**:
 - Apple Health integration (iOS)
@@ -157,7 +191,14 @@ OAuth test scenarios:
 
 ### Phase 2 (Data Sync) Testing
 
-Manual sync can be triggered programmatically through the `WearableDataSyncRepository.syncSleepData()` method (UI integration pending).
+**Unit Tests** (run with `flutter test test/core/wearables/`):
+- `test/core/wearables/data/transformers/fitbit_sleep_transformer_test.dart` - 11 tests
+- `test/core/wearables/data/datasources/fitbit_api_datasource_test.dart` - 9 tests
+- `test/core/wearables/presentation/viewmodels/wearable_sync_viewmodel_test.dart` - 12 tests
+
+**Manual Testing:**
+
+The sync functionality is available through the test screen. After connecting Fitbit, a "Sync Last 7 Days" button appears below the connection card.
 
 Sync test scenarios:
 1. Connect Fitbit account with recent sleep data

@@ -1,11 +1,11 @@
 import 'package:fitbitter/fitbitter.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/config/wearable_config.dart';
 import '../../../../core/utils/uuid_generator.dart';
 import '../../domain/enums/wearable_provider.dart';
 import '../../domain/models/wearable_credentials.dart';
 import '../../domain/repositories/wearable_auth_repository.dart';
-import '../../utils/fitbit_secrets.dart';
 
 /// ViewModel for Wearable Connections screen
 ///
@@ -92,10 +92,10 @@ class WearableConnectionViewModel extends ChangeNotifier {
       // Request all available scopes for comprehensive data access
       // Note: FitbitConnector.authorize is a static method
       final fitbitCredentials = await FitbitConnector.authorize(
-        clientID: FitbitSecrets.clientId,
-        clientSecret: FitbitSecrets.clientSecret,
-        redirectUri: FitbitSecrets.redirectUri,
-        callbackUrlScheme: FitbitSecrets.callbackScheme,
+        clientID: WearableConfig.fitbitClientId,
+        clientSecret: WearableConfig.fitbitClientSecret,
+        redirectUri: WearableConfig.fitbitRedirectUri,
+        callbackUrlScheme: WearableConfig.fitbitCallbackScheme,
         scopeList: [
           FitbitAuthScope.ACTIVITY,
           FitbitAuthScope.HEART_RATE,
