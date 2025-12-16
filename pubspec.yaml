@@ -37,6 +37,7 @@ dependencies:
   shared_preferences: ^2.2.2
   intl: ^0.20.2
   fitbitter: ^2.0.4
+  dio: ^5.0.0
 
   #Fitbit Web API
 
@@ -54,6 +55,7 @@ dependencies:
 
   # JSON Serialization
   json_annotation: ^4.8.1
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -86,6 +88,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - .env
     - assets/images/
     - assets/icons/app/
     - assets/icons/navigation/
