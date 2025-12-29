@@ -11,7 +11,7 @@ library;
 // ============================================================================
 
 const String DATABASE_NAME = 'sleepbalance.db';
-const int DATABASE_VERSION = 7;
+const int DATABASE_VERSION = 8;
 
 // ============================================================================
 // Table Names
@@ -25,6 +25,7 @@ const String TABLE_INTERVENTION_ACTIVITIES = 'intervention_activities';
 const String TABLE_USER_SLEEP_BASELINES = 'user_sleep_baselines';
 const String TABLE_WEARABLE_CONNECTIONS = 'wearable_connections';
 const String TABLE_WEARABLE_SYNC_HISTORY = 'wearable_sync_history';
+const String TABLE_EMAIL_VERIFICATION_TOKENS = 'email_verification_tokens';
 
 // ============================================================================
 // Users Table Columns
@@ -49,6 +50,7 @@ const String USERS_CREATED_AT = 'created_at';
 const String USERS_UPDATED_AT = 'updated_at';
 const String USERS_SYNCED_AT = 'synced_at';
 const String USERS_IS_DELETED = 'is_deleted';
+const String USERS_EMAIL_VERIFIED = 'email_verified';
 
 // ============================================================================
 // Sleep Records Table Columns
@@ -188,3 +190,15 @@ const String WEARABLE_SYNC_HISTORY_RECORDS_UPDATED = 'records_updated';
 const String WEARABLE_SYNC_HISTORY_RECORDS_SKIPPED = 'records_skipped';
 const String WEARABLE_SYNC_HISTORY_ERROR_CODE = 'error_code';
 const String WEARABLE_SYNC_HISTORY_ERROR_MESSAGE = 'error_message';
+
+// ============================================================================
+// Email Verification Tokens Table Columns
+// ============================================================================
+
+const String EMAIL_VERIFICATION_ID = 'id';
+const String EMAIL_VERIFICATION_EMAIL = 'email';
+const String EMAIL_VERIFICATION_CODE = 'code';
+const String EMAIL_VERIFICATION_CREATED_AT = 'created_at';
+const String EMAIL_VERIFICATION_EXPIRES_AT = 'expires_at';
+const String EMAIL_VERIFICATION_VERIFIED_AT = 'verified_at';
+const String EMAIL_VERIFICATION_IS_USED = 'is_used';

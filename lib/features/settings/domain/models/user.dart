@@ -27,6 +27,7 @@ class User {
   final bool takesSleepMedication;
   final String preferredUnitSystem; // 'metric' or 'imperial'
   final String language; // 'en', 'de', etc.
+  final bool emailVerified;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -46,6 +47,7 @@ class User {
     this.takesSleepMedication = false,
     this.preferredUnitSystem = 'metric',
     this.language = 'en',
+    this.emailVerified = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -79,6 +81,7 @@ class User {
       takesSleepMedication: (map[USERS_TAKES_SLEEP_MEDICATION] as int) == 1,
       preferredUnitSystem: map[USERS_PREFERRED_UNIT_SYSTEM] as String,
       language: map[USERS_LANGUAGE] as String,
+      emailVerified: (map[USERS_EMAIL_VERIFIED] as int?) == 1,
       createdAt: DatabaseDateUtils.fromString(map[USERS_CREATED_AT] as String),
       updatedAt: DatabaseDateUtils.fromString(map[USERS_UPDATED_AT] as String),
     );
@@ -107,6 +110,7 @@ class User {
       USERS_TAKES_SLEEP_MEDICATION: takesSleepMedication ? 1 : 0,
       USERS_PREFERRED_UNIT_SYSTEM: preferredUnitSystem,
       USERS_LANGUAGE: language,
+      USERS_EMAIL_VERIFIED: emailVerified ? 1 : 0,
       USERS_CREATED_AT: DatabaseDateUtils.toTimestamp(createdAt),
       USERS_UPDATED_AT: DatabaseDateUtils.toTimestamp(updatedAt),
       USERS_IS_DELETED: 0, // Always 0 for active users
@@ -133,6 +137,7 @@ class User {
     bool? takesSleepMedication,
     String? preferredUnitSystem,
     String? language,
+    bool? emailVerified,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -152,6 +157,7 @@ class User {
       takesSleepMedication: takesSleepMedication ?? this.takesSleepMedication,
       preferredUnitSystem: preferredUnitSystem ?? this.preferredUnitSystem,
       language: language ?? this.language,
+      emailVerified: emailVerified ?? this.emailVerified,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

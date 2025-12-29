@@ -12,6 +12,7 @@ import 'migrations/migration_v4.dart';
 import 'migrations/migration_v5.dart';
 // import 'migrations/migration_v6.dart'; // Disabled due to multi-statement issues
 import 'migrations/migration_v7.dart';
+import 'migrations/migration_v8.dart';
 
 /// Database Helper - Singleton for managing SQLite database lifecycle
 ///
@@ -64,13 +65,14 @@ class DatabaseHelper {
   /// Called when database is created for the first time.
   /// Executes all migrations up to the current version.
   ///
-  /// For fresh installs at V7:
+  /// For fresh installs at V8:
   /// - Executes MIGRATION_V1 (base schema)
   /// - Executes MIGRATION_V2 (daily_actions table)
   /// - Executes MIGRATION_V3 (sleep_records and user_sleep_baselines tables)
   /// - Executes MIGRATION_V4 (users table)
   /// - Executes MIGRATION_V5 (user_module_configurations table)
   /// - Executes MIGRATION_V7 (wearable_connections and wearable_sync_history tables)
+  /// - Executes MIGRATION_V8 (email_verification_tokens table and email_verified column)
   Future<void> _onCreate(Database db, int version) async {
     // Always execute V1 first (base schema)
     await db.execute(MIGRATION_V1);
@@ -98,6 +100,9 @@ class DatabaseHelper {
     // }
     if (version >= 7) {
       await db.execute(MIGRATION_V7);
+    }
+    if (version >= 8) {
+      await db.execute(MIGRATION_V8);
     }
   }
 
@@ -162,6 +167,9 @@ class DatabaseHelper {
     // }
     if (oldVersion < 7) {
       await db.execute(MIGRATION_V7);
+    }
+    if (oldVersion < 8) {
+      await db.execute(MIGRATION_V8);
     }
   }
 
