@@ -29,8 +29,8 @@ class AuthRepositoryImpl implements AuthRepository {
         throw EmailAlreadyExistsException(email);
       }
 
-      // Hash password using Argon2id
-      final passwordHash = PasswordHashService.hashPassword(password);
+      // Hash password using PBKDF2-HMAC-SHA256
+      final passwordHash = await PasswordHashService.hashPassword(password);
 
       // Create user
       final now = DateTime.now();

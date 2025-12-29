@@ -86,9 +86,6 @@ class DatabaseHelper {
     }
     if (version >= 4) {
       await db.execute(MIGRATION_V4);
-
-      // Insert default user after creating users table
-      await _createDefaultUser(db);
     }
     if (version >= 5) {
       await db.execute(MigrationV5.MIGRATION_V5);
@@ -102,7 +99,16 @@ class DatabaseHelper {
       await db.execute(MIGRATION_V7);
     }
     if (version >= 8) {
-      await db.execute(MIGRATION_V8);
+      await db.execute(MIGRATION_V8_CREATE_TABLE);
+      await db.execute(MIGRATION_V8_INDEX_EMAIL);
+      await db.execute(MIGRATION_V8_INDEX_EXPIRES);
+      await db.execute(MIGRATION_V8_ALTER_USERS);
+    }
+
+    // Insert default user only for versions before V8
+    // V8+ uses proper authentication with signup/email verification
+    if (version >= 4 && version < 8) {
+      await _createDefaultUser(db);
     }
   }
 
@@ -126,6 +132,7 @@ class DatabaseHelper {
       USERS_LANGUAGE: 'en',
       USERS_HAS_SLEEP_DISORDER: 0,
       USERS_TAKES_SLEEP_MEDICATION: 0,
+      USERS_EMAIL_VERIFIED: 1, // Default user is pre-verified
       USERS_CREATED_AT: DatabaseDateUtils.toTimestamp(now),
       USERS_UPDATED_AT: DatabaseDateUtils.toTimestamp(now),
       USERS_IS_DELETED: 0,
@@ -154,9 +161,6 @@ class DatabaseHelper {
     }
     if (oldVersion < 4) {
       await db.execute(MIGRATION_V4);
-
-      // Create default user if upgrading to V4
-      await _createDefaultUser(db);
     }
     if (oldVersion < 5) {
       await db.execute(MigrationV5.MIGRATION_V5);
@@ -169,8 +173,14 @@ class DatabaseHelper {
       await db.execute(MIGRATION_V7);
     }
     if (oldVersion < 8) {
-      await db.execute(MIGRATION_V8);
+      await db.execute(MIGRATION_V8_CREATE_TABLE);
+      await db.execute(MIGRATION_V8_INDEX_EMAIL);
+      await db.execute(MIGRATION_V8_INDEX_EXPIRES);
+      await db.execute(MIGRATION_V8_ALTER_USERS);
     }
+
+    // Note: Default user is only created for new installations (in _onCreate),
+    // not during upgrades, to avoid creating duplicate users
   }
 
   /// Close database connection

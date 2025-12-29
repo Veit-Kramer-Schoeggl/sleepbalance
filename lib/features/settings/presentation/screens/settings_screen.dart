@@ -24,6 +24,16 @@ class _SettingsState extends State<SettingsScreen> {
   bool _initialized = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Reload user every time Settings screen appears
+    // This ensures we have the latest user data after login/verification
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SettingsViewModel>().loadCurrentUser();
+    });
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 

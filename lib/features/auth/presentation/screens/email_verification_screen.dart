@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../shared/widgets/navigation/main_navigation.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
+import '../../../settings/domain/repositories/user_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/email_verification_repository.dart';
 import '../viewmodels/email_verification_viewmodel.dart';
@@ -45,11 +46,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     // Create ViewModel with email parameter
     final authRepository = context.read<AuthRepository>();
     final verificationRepository = context.read<EmailVerificationRepository>();
+    final userRepository = context.read<UserRepository>();
 
     _viewModel = EmailVerificationViewModel(
       email: widget.email,
       authRepository: authRepository,
       emailVerificationRepository: verificationRepository,
+      userRepository: userRepository,
     );
 
     // Load active verification and start timer

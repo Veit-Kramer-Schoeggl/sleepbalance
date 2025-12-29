@@ -59,7 +59,8 @@ class _SignupScreenState extends State<SignupScreen> {
   /// Detects device timezone using flutter_timezone package
   Future<void> _detectTimezone() async {
     try {
-      _timezone = await FlutterTimezone.getLocalTimezone();
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      _timezone = timezoneInfo.identifier;
       // Returns IANA timezone ID like "America/Los_Angeles", "Europe/Berlin", etc.
     } catch (e) {
       // Fallback to UTC if detection fails

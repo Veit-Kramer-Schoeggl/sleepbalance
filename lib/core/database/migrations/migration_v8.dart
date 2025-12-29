@@ -17,13 +17,10 @@ import '../../../shared/constants/database_constants.dart';
 /// - Codes are single-use (is_used flag)
 /// - Expired tokens cleaned up after 24 hours
 
-const String MIGRATION_V8 = '''
--- ============================================================================
--- Email Verification Tokens Table
--- ============================================================================
--- Stores verification codes for email verification during signup
--- Codes expire after 15 minutes for security
+// Migration V8 must be split into separate statements
+// because SQLite's execute() only runs the first statement in a multi-statement string
 
+const String MIGRATION_V8_CREATE_TABLE = '''
 CREATE TABLE IF NOT EXISTS $TABLE_EMAIL_VERIFICATION_TOKENS (
   $EMAIL_VERIFICATION_ID TEXT PRIMARY KEY,
   $EMAIL_VERIFICATION_EMAIL TEXT NOT NULL,
@@ -32,20 +29,19 @@ CREATE TABLE IF NOT EXISTS $TABLE_EMAIL_VERIFICATION_TOKENS (
   $EMAIL_VERIFICATION_EXPIRES_AT TEXT NOT NULL,
   $EMAIL_VERIFICATION_VERIFIED_AT TEXT,
   $EMAIL_VERIFICATION_IS_USED INTEGER NOT NULL DEFAULT 0
-);
+)
+''';
 
--- Index for quick email lookups
+const String MIGRATION_V8_INDEX_EMAIL = '''
 CREATE INDEX IF NOT EXISTS idx_email_verification_email
-  ON $TABLE_EMAIL_VERIFICATION_TOKENS($EMAIL_VERIFICATION_EMAIL);
+  ON $TABLE_EMAIL_VERIFICATION_TOKENS($EMAIL_VERIFICATION_EMAIL)
+''';
 
--- Index for cleanup of expired tokens
+const String MIGRATION_V8_INDEX_EXPIRES = '''
 CREATE INDEX IF NOT EXISTS idx_email_verification_expires
-  ON $TABLE_EMAIL_VERIFICATION_TOKENS($EMAIL_VERIFICATION_EXPIRES_AT);
+  ON $TABLE_EMAIL_VERIFICATION_TOKENS($EMAIL_VERIFICATION_EXPIRES_AT)
+''';
 
--- ============================================================================
--- Users Table Updates
--- ============================================================================
--- Add email_verified column to users table
-
-ALTER TABLE $TABLE_USERS ADD COLUMN $USERS_EMAIL_VERIFIED INTEGER NOT NULL DEFAULT 0;
+const String MIGRATION_V8_ALTER_USERS = '''
+ALTER TABLE $TABLE_USERS ADD COLUMN $USERS_EMAIL_VERIFIED INTEGER NOT NULL DEFAULT 0
 ''';

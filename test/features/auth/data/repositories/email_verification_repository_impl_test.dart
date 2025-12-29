@@ -29,7 +29,11 @@ void main() {
       )
     ''');
 
-    await db.execute(MIGRATION_V8);
+    // Execute Migration V8 (all 4 parts)
+    await db.execute(MIGRATION_V8_CREATE_TABLE);
+    await db.execute(MIGRATION_V8_INDEX_EMAIL);
+    await db.execute(MIGRATION_V8_INDEX_EXPIRES);
+    await db.execute(MIGRATION_V8_ALTER_USERS);
 
     // Create test database helper that returns our test database
     databaseHelper = _TestDatabaseHelper(db);

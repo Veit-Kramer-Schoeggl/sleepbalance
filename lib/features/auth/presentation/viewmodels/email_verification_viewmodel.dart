@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../settings/domain/repositories/user_repository.dart';
 import '../../domain/models/email_verification.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/email_verification_repository.dart';
@@ -16,18 +17,22 @@ import '../../domain/repositories/email_verification_repository.dart';
 /// - Manage countdown timer for code expiration
 /// - Handle code resend functionality
 /// - Mark email as verified after successful verification
+/// - Set newly verified user as current user
 /// - Manage loading and error states
 /// - Notify UI of state changes
 class EmailVerificationViewModel extends ChangeNotifier {
   final String email;
   final EmailVerificationRepository _emailVerificationRepository;
   final AuthRepository _authRepository;
+  final UserRepository _userRepository;
 
   EmailVerificationViewModel({
     required this.email,
     required EmailVerificationRepository emailVerificationRepository,
     required AuthRepository authRepository,
+    required UserRepository userRepository,
   })  : _emailVerificationRepository = emailVerificationRepository,
+        _userRepository = userRepository,
         _authRepository = authRepository;
 
   // State
@@ -128,6 +133,9 @@ class EmailVerificationViewModel extends ChangeNotifier {
 
       // Mark email as verified
       await _authRepository.markEmailVerified(email);
+
+      // Set newly verified user as current user
+      await _setCurrentUser(email);
 
       // Stop timer
       _stopExpirationTimer();
@@ -232,6 +240,30 @@ class EmailVerificationViewModel extends ChangeNotifier {
   void _stopExpirationTimer() {
     _expirationTimer?.cancel();
     _expirationTimer = null;
+  }
+
+  /// Sets the newly verified user as the current user
+  ///
+  /// Retrieves the user by email and stores their ID via UserRepository.
+  /// This ensures the user is logged in after email verification.
+  Future<void> _setCurrentUser(String email) async {
+    try {
+      // Get user by email
+      final user = await _userRepository.getUserByEmail(email);
+
+      if (user == null) {
+        debugPrint('EmailVerificationViewModel: User not found after verification: $email');
+        return;
+      }
+
+      // Set as current user via repository (handles SharedPreferences internally)
+      await _userRepository.setCurrentUserId(user.id);
+
+      debugPrint('EmailVerificationViewModel: Set current user: ${user.id}');
+    } catch (e) {
+      debugPrint('EmailVerificationViewModel: Error setting current user: $e');
+      // Don't throw - verification was successful, this is just a convenience
+    }
   }
 
   @override

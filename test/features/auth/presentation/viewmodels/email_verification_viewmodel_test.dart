@@ -4,20 +4,24 @@ import 'package:sleepbalance/features/auth/domain/repositories/auth_repository.d
 import 'package:sleepbalance/features/auth/domain/repositories/email_verification_repository.dart';
 import 'package:sleepbalance/features/auth/presentation/viewmodels/email_verification_viewmodel.dart';
 import 'package:sleepbalance/features/settings/domain/models/user.dart';
+import 'package:sleepbalance/features/settings/domain/repositories/user_repository.dart';
 
 void main() {
   late EmailVerificationViewModel viewModel;
   late _MockEmailVerificationRepository mockEmailVerificationRepository;
   late _MockAuthRepository mockAuthRepository;
+  late _MockUserRepository mockUserRepository;
   const testEmail = 'test@example.com';
 
   setUp(() {
     mockEmailVerificationRepository = _MockEmailVerificationRepository();
     mockAuthRepository = _MockAuthRepository();
+    mockUserRepository = _MockUserRepository();
     viewModel = EmailVerificationViewModel(
       email: testEmail,
       emailVerificationRepository: mockEmailVerificationRepository,
       authRepository: mockAuthRepository,
+      userRepository: mockUserRepository,
     );
   });
 
@@ -293,6 +297,7 @@ void main() {
         email: testEmail,
         emailVerificationRepository: mockEmailVerificationRepository,
         authRepository: mockAuthRepository,
+        userRepository: mockUserRepository,
       );
 
       final now = DateTime.now();
@@ -375,4 +380,61 @@ class _MockAuthRepository implements AuthRepository {
 
   @override
   Future<bool> isEmailRegistered(String email) async => false;
+}
+
+class _MockUserRepository implements UserRepository {
+  String? currentUserId;
+  final Map<String, User> _users = {};
+
+  @override
+  Future<User?> getUserById(String userId) async => _users[userId];
+
+  @override
+  Future<User?> getUserByEmail(String email) async {
+    return _users.values.firstWhere(
+      (user) => user.email == email,
+      orElse: () => User(
+        id: 'test-user-id',
+        email: email,
+        firstName: 'Test',
+        lastName: 'User',
+        birthDate: DateTime(1990, 1, 1),
+        timezone: 'UTC',
+        targetSleepDuration: 480,
+        preferredUnitSystem: 'metric',
+        language: 'en',
+        hasSleepDisorder: false,
+        takesSleepMedication: false,
+        emailVerified: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveUser(User user) async {
+    _users[user.id] = user;
+  }
+
+  @override
+  Future<void> updateUser(User user) async {
+    _users[user.id] = user;
+  }
+
+  @override
+  Future<void> deleteUser(String userId) async {
+    _users.remove(userId);
+  }
+
+  @override
+  Future<List<User>> getAllUsers() async => _users.values.toList();
+
+  @override
+  Future<String?> getCurrentUserId() async => currentUserId;
+
+  @override
+  Future<void> setCurrentUserId(String userId) async {
+    currentUserId = userId;
+  }
 }

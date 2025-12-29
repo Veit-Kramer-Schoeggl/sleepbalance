@@ -5,6 +5,14 @@ import 'package:sleepbalance/core/utils/database_date_utils.dart';
 import 'package:sleepbalance/core/utils/uuid_generator.dart';
 import 'package:sleepbalance/shared/constants/database_constants.dart';
 
+/// Helper function to execute all Migration V8 statements
+Future<void> executeMigrationV8(Database db) async {
+  await db.execute(MIGRATION_V8_CREATE_TABLE);
+  await db.execute(MIGRATION_V8_INDEX_EMAIL);
+  await db.execute(MIGRATION_V8_INDEX_EXPIRES);
+  await db.execute(MIGRATION_V8_ALTER_USERS);
+}
+
 void main() {
   setUpAll(() {
     // Initialize FFI
@@ -27,7 +35,7 @@ void main() {
       ''');
 
       // Execute Migration V8
-      expect(() async => await db.execute(MIGRATION_V8), returnsNormally);
+      expect(() async => await executeMigrationV8(db), returnsNormally);
 
       await db.close();
     });
@@ -44,7 +52,7 @@ void main() {
       ''');
 
       // Execute Migration V8
-      await db.execute(MIGRATION_V8);
+      await executeMigrationV8(db);
 
       // Verify table exists
       final tables = await db.rawQuery(
@@ -94,7 +102,7 @@ void main() {
       ''');
 
       // Execute Migration V8
-      await db.execute(MIGRATION_V8);
+      await executeMigrationV8(db);
 
       // Verify email_verified column exists
       final columns = await db.rawQuery('PRAGMA table_info($TABLE_USERS)');
@@ -122,7 +130,7 @@ void main() {
         )
       ''');
 
-      await db.execute(MIGRATION_V8);
+      await executeMigrationV8(db);
 
       // Verify indexes exist
       final indexes = await db.rawQuery(
@@ -147,7 +155,7 @@ void main() {
         )
       ''');
 
-      await db.execute(MIGRATION_V8);
+      await executeMigrationV8(db);
 
       // Insert a verification token
       final verificationId = UuidGenerator.generate();
@@ -200,7 +208,7 @@ void main() {
         )
       ''');
 
-      await db.execute(MIGRATION_V8);
+      await executeMigrationV8(db);
 
       // Insert a user
       final userId = UuidGenerator.generate();
@@ -241,7 +249,7 @@ void main() {
         )
       ''');
 
-      await db.execute(MIGRATION_V8);
+      await executeMigrationV8(db);
 
       // Insert an expired verification token
       final expiredId = UuidGenerator.generate();

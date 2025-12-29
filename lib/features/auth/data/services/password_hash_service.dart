@@ -2,79 +2,73 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:argon2_ffi_base/argon2_ffi_base.dart';
+import 'package:cryptography/cryptography.dart';
 
 /// Password Hash Service
 ///
-/// Provides secure password hashing using Argon2id algorithm.
-/// Uses native FFI implementation for optimal performance.
+/// Provides secure password hashing using PBKDF2-HMAC-SHA256 algorithm.
+/// Pure Dart implementation with no native dependencies.
 ///
 /// Security Parameters:
-/// - Algorithm: Argon2id (type=2, hybrid of Argon2i and Argon2d)
-/// - Time cost: 3 iterations
-/// - Memory cost: 65536 KB (64 MB)
-/// - Parallelism: 4 threads
+/// - Algorithm: PBKDF2-HMAC-SHA256
+/// - Iterations: 600,000 (OWASP 2023 recommendation)
 /// - Salt length: 16 bytes (auto-generated)
 /// - Hash length: 32 bytes
 ///
-/// Hash Format: PHC string format
+/// Hash Format: PHC-inspired string format
 /// ```
-/// $argon2id$v=19$m=65536,t=3,p=4$<base64_salt>$<base64_hash>
+/// $pbkdf2-sha256$v=1$i=600000$<base64_salt>$<base64_hash>
 /// ```
 class PasswordHashService {
-  // Argon2 parameters for password hashing
-  static const int _timeCost = 3; // iterations
-  static const int _memoryCost = 65536; // KB (64 MB)
-  static const int _parallelism = 4; // threads
+  // PBKDF2 parameters for password hashing
+  static const int _iterations = 600000; // OWASP 2023 recommendation
+  static const int _formatVersion = 1;
+  static const String _algorithmId = 'pbkdf2-sha256';
   static const int _hashLength = 32; // bytes
   static const int _saltLength = 16; // bytes
-  static const int _argon2Type = 2; // Argon2id
-  static const int _argon2Version = 19; // Version 1.3
 
-  static final _argon2 = Argon2FfiFlutter();
   static final _random = Random.secure();
 
-  /// Hashes a password using Argon2id
+  /// Hashes a password using PBKDF2-HMAC-SHA256
   ///
   /// Generates a secure hash with auto-generated random salt.
   /// The salt is embedded in the returned hash string.
   ///
-  /// Returns PHC format string containing algorithm parameters, salt, and hash.
+  /// Returns PHC-inspired format string containing algorithm parameters, salt, and hash.
   /// This string can be stored directly in the database.
   ///
   /// Example:
   /// ```dart
-  /// final hash = PasswordHashService.hashPassword('MySecurePassword123');
-  /// // Returns: $argon2id$v=19$m=65536,t=3,p=4$...
+  /// final hash = await PasswordHashService.hashPassword('MySecurePassword123');
+  /// // Returns: $pbkdf2-sha256$v=1$i=600000$...
   /// ```
   ///
   /// Note: Each call generates a different hash due to random salt,
-  /// even for the same password.
-  static String hashPassword(String password) {
+  /// even for the same password. This method is asynchronous due to the
+  /// computationally intensive nature of PBKDF2.
+  static Future<String> hashPassword(String password) async {
     try {
       // Generate random salt
       final salt = _generateSalt();
 
-      // Convert password to bytes
-      final passwordBytes = Uint8List.fromList(utf8.encode(password));
-
-      // Create Argon2 arguments
-      final args = Argon2Arguments(
-        passwordBytes,
-        salt,
-        _memoryCost,
-        _timeCost,
-        _hashLength,
-        _parallelism,
-        _argon2Type,
-        _argon2Version,
+      // Hash password using PBKDF2
+      final pbkdf2 = Pbkdf2(
+        macAlgorithm: Hmac.sha256(),
+        iterations: _iterations,
+        bits: _hashLength * 8, // 256 bits
       );
 
-      // Hash password
-      final hash = _argon2.argon2(args);
+      // Derive key from password
+      final secretKey = await pbkdf2.deriveKeyFromPassword(
+        password: password,
+        nonce: salt,
+      );
+
+      // Extract bytes from secret key
+      final hashBytes = await secretKey.extractBytes();
 
       // Encode to PHC format
-      return _encodePHC(salt, hash);
+      return _encodePHC(salt, Uint8List.fromList(hashBytes));
     } catch (e) {
       throw PasswordHashException(
         'Failed to hash password: ${e.toString()}',
@@ -96,7 +90,7 @@ class PasswordHashService {
   ///
   /// Example:
   /// ```dart
-  /// final isValid = PasswordHashService.verifyPassword(
+  /// final isValid = await PasswordHashService.verifyPassword(
   ///   'MySecurePassword123',
   ///   storedHash,
   /// );
@@ -106,8 +100,9 @@ class PasswordHashService {
   /// ```
   ///
   /// Note: This method is timing-safe - it takes approximately the same
-  /// time regardless of whether the password matches or not.
-  static bool verifyPassword(String password, String storedHash) {
+  /// time regardless of whether the password matches or not. This method
+  /// is asynchronous due to the computationally intensive nature of PBKDF2.
+  static Future<bool> verifyPassword(String password, String storedHash) async {
     try {
       // Parse PHC format hash
       final parsed = _parsePHC(storedHash);
@@ -117,27 +112,26 @@ class PasswordHashService {
 
       final salt = parsed['salt'] as Uint8List;
       final expectedHash = parsed['hash'] as Uint8List;
+      final iterations = parsed['iterations'] as int;
 
-      // Convert password to bytes
-      final passwordBytes = Uint8List.fromList(utf8.encode(password));
-
-      // Create Argon2 arguments with same parameters
-      final args = Argon2Arguments(
-        passwordBytes,
-        salt,
-        _memoryCost,
-        _timeCost,
-        _hashLength,
-        _parallelism,
-        _argon2Type,
-        _argon2Version,
+      // Hash password with same parameters
+      final pbkdf2 = Pbkdf2(
+        macAlgorithm: Hmac.sha256(),
+        iterations: iterations,
+        bits: _hashLength * 8,
       );
 
-      // Compute hash
-      final actualHash = _argon2.argon2(args);
+      // Derive key from password
+      final secretKey = await pbkdf2.deriveKeyFromPassword(
+        password: password,
+        nonce: salt,
+      );
+
+      // Extract bytes from secret key
+      final actualHashBytes = await secretKey.extractBytes();
 
       // Constant-time comparison
-      return _constantTimeCompare(expectedHash, actualHash);
+      return _constantTimeCompare(expectedHash, Uint8List.fromList(actualHashBytes));
     } catch (e) {
       // If verification fails due to malformed hash or other error,
       // return false rather than throwing
@@ -164,34 +158,26 @@ class PasswordHashService {
   /// ```
   static bool needsRehash(String storedHash) {
     try {
-      // Parse PHC format string to extract parameters
+      // Parse PHC format string
       final parts = storedHash.split('\$');
       if (parts.length < 5) return true;
 
-      // Check algorithm (should be argon2id)
-      if (parts[1] != 'argon2id') return true;
+      // Check algorithm (should be pbkdf2-sha256)
+      if (parts[1] != _algorithmId) return true;
 
       // Check version
       final versionPart = parts[2];
       if (!versionPart.startsWith('v=')) return true;
       final version = int.tryParse(versionPart.substring(2)) ?? 0;
-      if (version != _argon2Version) return true;
+      if (version != _formatVersion) return true;
 
-      // Parse parameters from format: m=65536,t=3,p=4
-      final params = parts[3];
-      final paramMap = <String, int>{};
+      // Parse iterations from format: i=600000
+      final iterationsPart = parts[3];
+      if (!iterationsPart.startsWith('i=')) return true;
+      final iterations = int.tryParse(iterationsPart.substring(2)) ?? 0;
 
-      for (final param in params.split(',')) {
-        final keyValue = param.split('=');
-        if (keyValue.length == 2) {
-          paramMap[keyValue[0]] = int.tryParse(keyValue[1]) ?? 0;
-        }
-      }
-
-      // Check if any parameter differs from current configuration
-      return paramMap['m'] != _memoryCost ||
-          paramMap['t'] != _timeCost ||
-          paramMap['p'] != _parallelism;
+      // Check if iterations differ from current configuration
+      return iterations != _iterations;
     } catch (e) {
       // If parsing fails, assume rehash is needed
       return true;
@@ -209,31 +195,36 @@ class PasswordHashService {
     return salt;
   }
 
-  /// Encodes salt and hash to PHC format string
+  /// Encodes salt and hash to PHC-inspired format string
   static String _encodePHC(Uint8List salt, Uint8List hash) {
     final saltEncoded = base64.encode(salt).replaceAll('=', '');
     final hashEncoded = base64.encode(hash).replaceAll('=', '');
 
-    return '\$argon2id\$v=$_argon2Version\$'
-        'm=$_memoryCost,t=$_timeCost,p=$_parallelism\$'
+    return '\$$_algorithmId\$v=$_formatVersion\$'
+        'i=$_iterations\$'
         '$saltEncoded\$$hashEncoded';
   }
 
-  /// Parses PHC format string to extract salt and hash
+  /// Parses PHC format string to extract salt, hash, and iterations
   static Map<String, dynamic>? _parsePHC(String phcString) {
     try {
       final parts = phcString.split('\$');
-      if (parts.length < 5) return null;
+      if (parts.length < 6) return null;
 
       // parts[0] is empty (before first $)
-      // parts[1] is algorithm (argon2id)
-      // parts[2] is version (v=19)
-      // parts[3] is parameters (m=65536,t=3,p=4)
+      // parts[1] is algorithm (pbkdf2-sha256)
+      // parts[2] is version (v=1)
+      // parts[3] is iterations (i=600000)
       // parts[4] is salt (base64)
       // parts[5] is hash (base64)
 
-      if (parts[1] != 'argon2id') return null;
-      if (parts.length < 6) return null;
+      if (parts[1] != _algorithmId) return null;
+
+      // Extract iterations
+      final iterationsPart = parts[3];
+      if (!iterationsPart.startsWith('i=')) return null;
+      final iterations = int.tryParse(iterationsPart.substring(2));
+      if (iterations == null) return null;
 
       // Decode salt and hash (add padding if needed)
       final saltB64 = _addBase64Padding(parts[4]);
@@ -245,6 +236,7 @@ class PasswordHashService {
       return {
         'salt': Uint8List.fromList(salt),
         'hash': Uint8List.fromList(hash),
+        'iterations': iterations,
       };
     } catch (e) {
       return null;

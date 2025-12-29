@@ -3,8 +3,8 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  argon2_ffi
   desktop_webview_window
+  flutter_timezone
   url_launcher_linux
   window_to_front
 )
