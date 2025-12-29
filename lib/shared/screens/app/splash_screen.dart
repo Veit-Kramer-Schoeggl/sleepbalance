@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../features/auth/presentation/screens/signup_screen.dart';
+import '../../../features/auth/presentation/screens/auth_choice_screen.dart';
 import '../../../features/onboarding/presentation/screens/questionnaire_screen.dart';
 import '../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../services/storage/preferences_service.dart';
@@ -44,9 +44,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Check if user exists and email is verified
     if (user == null || !user.emailVerified) {
-      // Navigate to signup (user doesn't exist or email not verified)
+      // Navigate to auth choice screen (user doesn't exist or email not verified)
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const SignupScreen()),
+        MaterialPageRoute(builder: (context) => const AuthChoiceScreen()),
       );
       return;
     }

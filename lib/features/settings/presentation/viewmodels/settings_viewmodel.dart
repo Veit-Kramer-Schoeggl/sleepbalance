@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../../domain/models/user.dart';
 import '../../domain/repositories/user_repository.dart';
 
@@ -138,12 +139,16 @@ class SettingsViewModel extends ChangeNotifier {
   ///
   /// Clears current user ID from SharedPreferences and resets state.
   /// Does NOT delete user from database (user data persists).
+  /// Terminates the app after successful logout.
   Future<void> logout() async {
     try {
       await _repository.setCurrentUserId('');
       _currentUser = null;
       _errorMessage = null;
       notifyListeners();
+
+      // Terminate app after successful logout
+      SystemNavigator.pop();
     } catch (e) {
       _errorMessage = 'Failed to logout: $e';
       debugPrint('SettingsViewModel: Error during logout: $e');

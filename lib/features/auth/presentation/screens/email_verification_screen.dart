@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../shared/widgets/navigation/main_navigation.dart';
+import '../../../../features/onboarding/presentation/screens/questionnaire_screen.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../settings/domain/repositories/user_repository.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -74,10 +74,11 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     if (!mounted) return;
 
     if (success) {
-      // Navigate to main navigation (clear all previous routes)
+      // Navigate to questionnaire (clear all previous routes)
+      // First-time users always see questionnaire after email verification
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
+        MaterialPageRoute(builder: (_) => const QuestionnaireScreen()),
         (route) => false,
       );
     } else {

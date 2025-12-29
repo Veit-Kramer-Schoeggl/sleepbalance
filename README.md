@@ -9,8 +9,12 @@ SleepBalance helps people fall and stay asleep through data-driven, personalized
 ## Key Features
 
 ### Authentication
-- Placeholder implementation (skipped during initial development)
-- Basic auth flow for future integration
+- ✅ **FR-1 Completed**: User registration with email verification (PBKDF2 password hashing)
+- ✅ **FR-2 Completed**: User login with local password verification
+- Email verification with 6-digit codes (15-minute expiration)
+- Secure password storage using PBKDF2-HMAC-SHA256 (600,000 iterations)
+- Local-first authentication (offline-capable, no backend required in Phase 1)
+- See [AUTH_DOCUMENTATION.md](documentation/authentication/AUTH_DOCUMENTATION.md) for complete details
 
 ### Onboarding Questionnaire
 - 3-4 questions on first launch
@@ -431,4 +435,5 @@ json_serializable: ^6.7.1
 
 ### Documentation
 
+- [AUTH_DOCUMENTATION.md](documentation/authentication/AUTH_DOCUMENTATION.md) - Complete authentication system documentation with flow diagrams, security details, and implementation guide
 - [DATABASE.md](documentation/database/DATABASE.md) - Complete database schema, design decisions, and migration strategy
