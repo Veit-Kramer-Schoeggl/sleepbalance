@@ -288,6 +288,13 @@ void main() {
     });
 
     test('Dispose stops timer', () async {
+      // Create a separate viewModel instance for this test to avoid double dispose
+      final testViewModel = EmailVerificationViewModel(
+        email: testEmail,
+        emailVerificationRepository: mockEmailVerificationRepository,
+        authRepository: mockAuthRepository,
+      );
+
       final now = DateTime.now();
       final expiresAt = now.add(const Duration(minutes: 15));
       mockEmailVerificationRepository.activeVerification = EmailVerification(
@@ -299,10 +306,10 @@ void main() {
         isUsed: false,
       );
 
-      await viewModel.loadActiveVerification();
-      expect(viewModel.secondsRemaining, greaterThan(0));
+      await testViewModel.loadActiveVerification();
+      expect(testViewModel.secondsRemaining, greaterThan(0));
 
-      viewModel.dispose();
+      testViewModel.dispose();
 
       // Timer should be stopped, no crashes
       await Future.delayed(const Duration(seconds: 2));
@@ -356,7 +363,7 @@ class _MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future registerUser({
+  Future<User> registerUser({
     required String email,
     required String password,
     required String firstName,
