@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -74,21 +75,33 @@ class DatabaseHelper {
   /// - Executes MIGRATION_V7 (wearable_connections and wearable_sync_history tables)
   /// - Executes MIGRATION_V8 (email_verification_tokens table and email_verified column)
   Future<void> _onCreate(Database db, int version) async {
+    debugPrint('DatabaseHelper: Creating database version $version');
+
     // Always execute V1 first (base schema)
-    await db.execute(MIGRATION_V1);
+    debugPrint('DatabaseHelper: Executing MIGRATION_V1...');
+    await _executeMultiStatement(db, MIGRATION_V1);
+    debugPrint('DatabaseHelper: MIGRATION_V1 completed ✓');
 
     // Execute subsequent migrations to reach target version
     if (version >= 2) {
-      await db.execute(MIGRATION_V2);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V2...');
+      await _executeMultiStatement(db, MIGRATION_V2);
+      debugPrint('DatabaseHelper: MIGRATION_V2 completed ✓');
     }
     if (version >= 3) {
-      await db.execute(MIGRATION_V3);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V3...');
+      await _executeMultiStatement(db, MIGRATION_V3);
+      debugPrint('DatabaseHelper: MIGRATION_V3 completed ✓');
     }
     if (version >= 4) {
-      await db.execute(MIGRATION_V4);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V4...');
+      await _executeMultiStatement(db, MIGRATION_V4);
+      debugPrint('DatabaseHelper: MIGRATION_V4 completed ✓');
     }
     if (version >= 5) {
-      await db.execute(MigrationV5.MIGRATION_V5);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V5...');
+      await _executeMultiStatement(db, MigrationV5.MIGRATION_V5);
+      debugPrint('DatabaseHelper: MIGRATION_V5 completed ✓');
     }
     // TODO: Fix Migration V6 - currently disabled due to multi-statement execution issues
     // The index and triggers are nice-to-have optimizations, not required for functionality
@@ -96,13 +109,17 @@ class DatabaseHelper {
     //   await executeMigrationV6(db);
     // }
     if (version >= 7) {
-      await db.execute(MIGRATION_V7);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V7...');
+      await _executeMultiStatement(db, MIGRATION_V7);
+      debugPrint('DatabaseHelper: MIGRATION_V7 completed ✓');
     }
     if (version >= 8) {
+      debugPrint('DatabaseHelper: Executing MIGRATION_V8...');
       await db.execute(MIGRATION_V8_CREATE_TABLE);
       await db.execute(MIGRATION_V8_INDEX_EMAIL);
       await db.execute(MIGRATION_V8_INDEX_EXPIRES);
       await db.execute(MIGRATION_V8_ALTER_USERS);
+      debugPrint('DatabaseHelper: MIGRATION_V8 completed ✓');
     }
 
     // Insert default user only for versions before V8
@@ -110,6 +127,8 @@ class DatabaseHelper {
     if (version >= 4 && version < 8) {
       await _createDefaultUser(db);
     }
+
+    debugPrint('DatabaseHelper: Database creation completed successfully!');
   }
 
   /// Create default user
@@ -152,32 +171,48 @@ class DatabaseHelper {
   /// - Then execute migration v3→v4
   /// - Then execute migration v4→v5
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    debugPrint('DatabaseHelper: Upgrading database from v$oldVersion to v$newVersion');
+
     // Execute migrations sequentially
     if (oldVersion < 2) {
-      await db.execute(MIGRATION_V2);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V2...');
+      await _executeMultiStatement(db, MIGRATION_V2);
+      debugPrint('DatabaseHelper: MIGRATION_V2 completed ✓');
     }
     if (oldVersion < 3) {
-      await db.execute(MIGRATION_V3);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V3...');
+      await _executeMultiStatement(db, MIGRATION_V3);
+      debugPrint('DatabaseHelper: MIGRATION_V3 completed ✓');
     }
     if (oldVersion < 4) {
-      await db.execute(MIGRATION_V4);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V4...');
+      await _executeMultiStatement(db, MIGRATION_V4);
+      debugPrint('DatabaseHelper: MIGRATION_V4 completed ✓');
     }
     if (oldVersion < 5) {
-      await db.execute(MigrationV5.MIGRATION_V5);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V5...');
+      await _executeMultiStatement(db, MigrationV5.MIGRATION_V5);
+      debugPrint('DatabaseHelper: MIGRATION_V5 completed ✓');
     }
     // TODO: Fix Migration V6 - currently disabled
     // if (oldVersion < 6) {
     //   await executeMigrationV6(db);
     // }
     if (oldVersion < 7) {
-      await db.execute(MIGRATION_V7);
+      debugPrint('DatabaseHelper: Executing MIGRATION_V7...');
+      await _executeMultiStatement(db, MIGRATION_V7);
+      debugPrint('DatabaseHelper: MIGRATION_V7 completed ✓');
     }
     if (oldVersion < 8) {
+      debugPrint('DatabaseHelper: Executing MIGRATION_V8...');
       await db.execute(MIGRATION_V8_CREATE_TABLE);
       await db.execute(MIGRATION_V8_INDEX_EMAIL);
       await db.execute(MIGRATION_V8_INDEX_EXPIRES);
       await db.execute(MIGRATION_V8_ALTER_USERS);
+      debugPrint('DatabaseHelper: MIGRATION_V8 completed ✓');
     }
+
+    debugPrint('DatabaseHelper: Database upgrade completed successfully!');
 
     // Note: Default user is only created for new installations (in _onCreate),
     // not during upgrades, to avoid creating duplicate users
@@ -208,5 +243,44 @@ class DatabaseHelper {
     final path = join(documentsDirectory.path, DATABASE_NAME);
     await databaseFactory.deleteDatabase(path);
     _database = null;
+  }
+
+  /// Execute multi-statement SQL string
+  ///
+  /// Splits SQL string by semicolons and executes each statement individually.
+  /// This is necessary because sqflite's execute() only handles single statements.
+  ///
+  /// Filters out:
+  /// - Empty statements
+  /// - Comment-only lines
+  /// - Whitespace-only lines
+  static Future<void> _executeMultiStatement(Database db, String sql) async {
+    // First, remove all comment lines (lines starting with --)
+    final lines = sql.split('\n');
+    final sqlWithoutComments = lines
+        .where((line) => !line.trim().startsWith('--'))
+        .join('\n');
+
+    // Split by semicolon and filter out empty statements
+    final statements = sqlWithoutComments
+        .split(';')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+
+    debugPrint('DatabaseHelper: Executing ${statements.length} SQL statements...');
+
+    for (int i = 0; i < statements.length; i++) {
+      final statement = statements[i];
+      try {
+        await db.execute(statement);
+        debugPrint('DatabaseHelper: Statement ${i + 1}/${statements.length} completed');
+      } catch (e) {
+        debugPrint('DatabaseHelper: Failed to execute statement ${i + 1}/${statements.length}:');
+        debugPrint('  ${statement.substring(0, statement.length > 100 ? 100 : statement.length)}...');
+        debugPrint('DatabaseHelper: Error: $e');
+        rethrow;
+      }
+    }
   }
 }
