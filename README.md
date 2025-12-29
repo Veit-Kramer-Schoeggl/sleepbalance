@@ -237,7 +237,7 @@ lib/
 - Hybrid schema: typed columns for common attributes + JSON for module-specific data
 - Individual user baselines: Calculate personal averages (7-day, 30-day rolling windows)
 - Future: PostgreSQL backend sync for cloud backup and multi-device support
-- See [DATABASE.md](DATABASE.md) for detailed schema and design decisions
+- See [DATABASE.md](documentation/database/DATABASE.md) for detailed schema and design decisions
 
 **Notifications:**
 - Module-driven push notifications (e.g., Light module: morning reminders, evening dimming alerts)
@@ -263,7 +263,7 @@ lib/
 - SQLite for local-first data persistence
 - Schema migrations for version management
 - Sync queue for future PostgreSQL backend integration
-- See [DATABASE.md](DATABASE.md) for complete schema details
+- See [DATABASE.md](documentation/database/DATABASE.md) for complete schema details
 
 **Wearable Integration** (`core/wearables/`)
 - OAuth 2.0 authentication with sleep tracking devices (Fitbit, Apple Health, Google Fit)
@@ -431,4 +431,4 @@ json_serializable: ^6.7.1
 
 ### Documentation
 
-- [DATABASE.md](DATABASE.md) - Complete database schema, design decisions, and migration strategy
+- [DATABASE.md](documentation/database/DATABASE.md) - Complete database schema, design decisions, and migration strategy
