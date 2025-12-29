@@ -96,11 +96,11 @@ SELECT configuration FROM user_module_configurations WHERE module_id = 'light';
    flutter test test/modules/light/
 - All tests passing
 
-we need to check if we need to update any other existing usages of  timezone with flutter_native_timezone
+we need to check if we need to update any other existing usages of  timezone with flutter_timezone
 within the existing code.
 
-these:  - created_at, expires_at (TEXT) - Timestamps (expires in 15 min)
-- verified_at (TEXT nullable) - When verified
-should not be TEXT but date, time and/or date time objects
-I want to use Argon2 right away. more complex but saves time later.
-pls use flutter_native_timezone package right away.
+within README.md update/create new references to the respective documentation documents within
+documentation/
+
+now pls create a dedicated detailed step by step implementation plan for **FR-2: User Login** 
+of the AUTH_PLAN.md
