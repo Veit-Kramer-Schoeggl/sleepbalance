@@ -866,6 +866,24 @@ flutter test --coverage
 - [ ] Create Account button navigates to SignupScreen
 - [ ] UI displays correctly (logo, tagline, buttons)
 
+### Troubleshooting Authentication Issues
+
+If you encounter authentication-related database errors (migration conflicts, schema issues, user verification problems):
+
+**See**: [Database Troubleshooting Guide](../database/DATABASE.md#troubleshooting)
+
+Common authentication database issues:
+- `duplicate column name: email_verified` → Database reset required
+- Email verification not working → Check database version (requires v8+)
+- Login fails with database errors → Clear database and reseed test data
+
+The database documentation provides methods for:
+1. **Uninstall/reinstall** (cleanest approach)
+2. **Clear DB button** (dev tools on auth screen)
+3. **Manual database deletion** (advanced)
+
+After resetting, use the "Seed DB" button to create test user: `testuser1@gmail.com` / `1234`
+
 ---
 
 ## File Structure

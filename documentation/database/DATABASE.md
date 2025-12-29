@@ -565,6 +565,68 @@ Migrations are split across multiple files for maintainability:
 
 ---
 
+## Troubleshooting
+
+### Database Reset / Clear Database
+
+If you encounter database-related issues (migration errors, schema conflicts, corrupted data), you can reset the database to start fresh:
+
+#### Method 1: Uninstall and Reinstall (Recommended)
+
+```bash
+adb uninstall com.sleepbalance.sleepbalance
+flutter run
+```
+
+**What this does:**
+- Completely removes the app and all its data
+- Creates a fresh database with the latest schema version on reinstall
+- Ensures clean state with no migration conflicts
+
+#### Method 2: Use "Clear DB" Button (Development Only)
+
+In debug mode, the Auth Choice screen includes dev tools:
+1. Launch the app
+2. On the login/signup screen, locate the "DEV TOOLS" section (amber-colored box)
+3. Click the "Clear DB" button (red)
+4. Confirm the deletion in the dialog
+5. App will log you out and clear all data
+
+**Note:** Dev tools buttons only appear in debug builds (`kDebugMode`).
+
+#### Method 3: Manual Database Deletion
+
+```bash
+# Delete database files directly
+adb shell run-as com.sleepbalance.sleepbalance rm -rf /data/data/com.sleepbalance.sleepbalance/app_flutter/
+```
+
+Then restart the app to create a fresh database.
+
+### Common Issues
+
+**Issue:** `duplicate column name: email_verified` during migration
+- **Cause:** Upgrading from older database version with conflicting schema
+- **Solution:** Use Method 1 (uninstall/reinstall) to start with latest schema
+
+**Issue:** `no such table: modules` when clicking "Seed DB"
+- **Cause:** Database version mismatch or incomplete migration
+- **Solution:** Use Method 1 to create fresh v8 database
+
+**Issue:** Migration fails with "table already exists"
+- **Cause:** Migration conflict between versions
+- **Solution:** Use Method 1 for clean install
+
+### Seeding Test Data
+
+After resetting the database, use the "Seed DB" button (green) in the DEV TOOLS section to populate the database with test data:
+- **Test User:** `testuser1@gmail.com` / `1234`
+- **Data Created:** 7 days of sleep records, 9 modules, 3 enabled module configs, daily actions, wearable connections, etc.
+
+See `database_seed_service.dart` for complete test data specification.
+
+---
+
 ## Resources
 
 - [SQLite JSON Functions](https://www.sqlite.org/json1.html)
