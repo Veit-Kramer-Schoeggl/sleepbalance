@@ -1,11 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-
-import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
-import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
-import 'package:sleepbalance/features/habits_lab/presentation/viewmodels/habits_viewmodel.dart';
-
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
 
@@ -31,26 +24,13 @@ class HabitsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Replace with real user id from auth/user profile
-    const userId = 'demo-user';
-
-    final repository = context.read<ModuleConfigRepository>();
-
-    return ChangeNotifierProvider(
-      create: (_) => HabitsViewModel(repository: repository)..loadModules(userId),
-      child: _HabitsScreenContent(userId: userId),
-    );
-  }
-}
-
-class _HabitsScreenContent extends StatelessWidget {
-  final String userId;
-
-  const _HabitsScreenContent({required this.userId});
-
-  @override
-  Widget build(BuildContext context) {
-    final viewModel = context.watch<HabitsViewModel>();
+    // TODO: Wrap with ChangeNotifierProvider when HabitsViewModel is ready
+    // return ChangeNotifierProvider(
+    //   create: (_) => HabitsViewModel(
+    //     repository: context.read<ModuleConfigRepository>(),
+    //   )..loadModules(userId),
+    //   child: _HabitsScreenContent(),
+    // );
 
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
@@ -58,10 +38,7 @@ class _HabitsScreenContent extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text(
-            'Habits Lab',
-            style: TextStyle(color: Colors.white),
-          ),
+          title: const Text('Habits Lab', style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
@@ -82,11 +59,7 @@ class _HabitsScreenContent extends StatelessWidget {
                     SizedBox(height: 16),
                     Text(
                       'Habits Lab',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     SizedBox(height: 8),
                     Text(
@@ -106,11 +79,11 @@ class _HabitsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Main content area
-            Expanded(
+            //neuen List (scroll)
+            const Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: _ModulesList(userId: userId),
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: _SimpleModulesList(),
               ),
             ),
 
@@ -119,10 +92,9 @@ class _HabitsScreenContent extends StatelessWidget {
               child: AcceptanceButton(
                 text: 'Save Habits',
                 onPressed: () {
-                  final viewModel = context.read<HabitsViewModel>();
-
-                  viewModel.saveModuleConfigs(userId);
-
+                  // TODO: Replace with actual save logic via ViewModel
+                  // Should call: viewModel.saveModuleConfigs(userId)
+                  // Handle save action
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Habits saved successfully!'),
@@ -130,10 +102,18 @@ class _HabitsScreenContent extends StatelessWidget {
                     ),
                   );
                 },
-
                 width: double.infinity,
               ),
             ),
+            // TODO: Remove this test button - replaced by proper wearable integration
+            // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/wearable-test');
+              },
+              child: const Text('Fitbit verbinden'),
+            ),
+
           ],
         ),
       ),
@@ -141,162 +121,144 @@ class _HabitsScreenContent extends StatelessWidget {
   }
 }
 
-/// List of modules backed by HabitsViewModel.
-/// No local state, all state comes from the ViewModel + database.
-class _ModulesList extends StatelessWidget {
-  final String userId;
+// TODO: Replace this widget with proper ViewModel-connected version
+// Simple list with local state (temporary implementation)
+// See: lib/features/habits_lab/REPORT.md for refactoring steps
+class _SimpleModulesList extends StatefulWidget {
+  const _SimpleModulesList();
 
-  const _ModulesList({required this.userId});
+  @override
+  State<_SimpleModulesList> createState() => _SimpleModulesListState();
+}
+
+class _SimpleModulesListState extends State<_SimpleModulesList> {
+  // TODO: Replace hardcoded module list with data from ModuleMetadata
+  // Should use: getAvailableModules() from module_metadata.dart
+  // Modules (German titles + emoji, as in screenshot)
+  final List<_Module> _modules = const [
+    _Module(id: 'light', title: 'Licht-Therapie', emoji: '🌞'),
+    _Module(id: 'sport', title: 'Sport & Bewegung', emoji: '🏃'),
+    _Module(id: 'temp', title: 'Temperatur-Exposition', emoji: '🌡️'),
+    _Module(id: 'food', title: 'Ernährung', emoji: '🍎'),
+    _Module(id: 'meal', title: 'Essenszeiten', emoji: '⏰'),
+    _Module(id: 'hyg', title: 'Schlafhygiene', emoji: '🛏️'),
+    _Module(id: 'med', title: 'Meditation', emoji: '🧘'),
+  ];
+
+  // TODO: Replace local state with ViewModel
+  // Should use: viewModel.isModuleActive(moduleId)
+  // Which are active (example: first two)
+  final Set<String> _active = {'light', 'sport'};
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<HabitsViewModel>();
     final controller = ScrollController();
 
-    // Loading state
-    if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    // Error state
-    if (viewModel.errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              viewModel.errorMessage!,
-              style: const TextStyle(color: Colors.white),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => viewModel.loadModules(userId),
-              child: const Text('Try again'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Use central module metadata instead of hardcoded list
-    final modules = viewModel.availableModules;
-
-    if (modules.isEmpty) {
-      return const Center(
-        child: Text(
-          'No modules available yet.',
-          style: TextStyle(color: Colors.white70),
-        ),
-      );
-    }
-
     return Scrollbar(
-      controller: controller,
-      thumbVisibility: true,
-      radius: const Radius.circular(10),
-      thickness: 6,
-      child: ListView.separated(
         controller: controller,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(top: 4, bottom: 8),
-        itemCount: modules.length,
-        separatorBuilder: (_, index) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final module = modules[index];
-          final isOn = viewModel.isModuleActive(module.id);
+        thumbVisibility: true, // la barra resta visibile
+        radius: const Radius.circular(10),
+        thickness: 6,
+        child: ListView.separated(
+          controller: controller,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(top: 4, bottom: 8),
+          itemCount: _modules.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
+          itemBuilder: (context, i) {
+            final m = _modules[i];
+            final isOn = _active.contains(m.id);
 
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              child: Row(
-                children: [
-                  // Left icon (from metadata)
-                  Icon(
-                    module.icon,
-                    size: 22,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Title (from metadata)
-                  Expanded(
-                    child: Text(
-                      module.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                  // Checkbox – state from ViewModel
-                  Transform.scale(
-                    scale: 1.2,
-                    child: Checkbox(
-                      value: isOn,
-                      onChanged: (_) {
-                        viewModel.toggleModule(userId, module.id);
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                      checkColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withOpacity(0.7),
-                        width: 2,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  // Settings button – placeholder for future config screens
-                  // TODO: Navigate to module-specific config screen
-                  // Should call: viewModel.openModuleConfig(context, userId, moduleId)
-
-                  _GearButton(onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        backgroundColor: const Color(0xFF2B2F3A),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        title: const Text(
-                          'Settings',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        content: Text(
-                          '"${module.displayName}" settings are coming soon.',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              'OK',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                ],
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
               ),
-            ),
-          );
-        },
-      ),
-    );
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                child: Row(
+                  children: [
+                    // Emoji/icon left
+                    Text(m.emoji, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 12),
+
+                    // Title
+                    Expanded(
+                      child: Text(
+                        m.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    // Checkbox stile einfach
+                    Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        value: isOn,
+                        onChanged: (_) {
+                          // TODO: Replace with ViewModel call
+                          // Should call: viewModel.toggleModule(userId, moduleId)
+                          setState(() {
+                            if (isOn) {
+                              _active.remove(m.id);
+                            } else {
+                              _active.add(m.id);
+                            }
+                          });
+                        },
+                        activeColor: Theme.of(context).colorScheme.primary,
+                        checkColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withOpacity(0.7),
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Settings button
+                    // TODO: Navigate to module-specific config screen
+                    // Should call: viewModel.openModuleConfig(context, userId, moduleId)
+                    _GearButton(onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          backgroundColor: const Color(0xFF2B2F3A),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: const Text(
+                            'Einstellungen',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          content: Text(
+                            '„${m.title}“ – Einstellungen kommen bald.',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('OK', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            );
+          },
+        ));
   }
 }
 
@@ -321,4 +283,13 @@ class _GearButton extends StatelessWidget {
       ),
     );
   }
+}
+
+// TODO: Remove this local model when using ModuleMetadata
+// Minimal model for the list
+class _Module {
+  final String id;
+  final String title;
+  final String emoji;
+  const _Module({required this.id, required this.title, required this.emoji});
 }

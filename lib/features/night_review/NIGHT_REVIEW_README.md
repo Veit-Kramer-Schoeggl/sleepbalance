@@ -1,6 +1,6 @@
 # Night Review Feature
 
-## Struktur (Clean Architecture + MVVM)
+## Struktur (Clean Architecture + MVVM) **COMPLETED**
 
 ```
 night_review/
@@ -26,7 +26,7 @@ night_review/
 
 ## Status
 
-### ✅ Phase 3 abgeschlossen (Data Layer)
+### ✅ Phase 3 abgeschlossen (Data Layer) **COMPLETED**
 
 **Implementierte Dateien:**
 - `lib/core/database/migrations/migration_v3.dart` - Sleep Records + Baselines Tabellen
@@ -53,9 +53,9 @@ Siehe `NIGHT_REVIEW_IMPLEMENTATION_PLAN.md` für:
 - NightScreen Refactoring (von StatefulWidget zu StatelessWidget)
 - QualityRatingWidget (3-Stufen Bewertung)
 
-## Domain Models
+## Domain Models **COMPLETED**
 
-### SleepRecord
+### SleepRecord **COMPLETED**
 
 **Schlafmetriken (16 Felder):**
 - `id`, `userId`, `date`
@@ -80,7 +80,7 @@ Siehe `NIGHT_REVIEW_IMPLEMENTATION_PLAN.md` für:
 - sleepEfficiency als Prozentsatz (0-100)
 - Nutzt DatabaseDateUtils für Konvertierung
 
-### SleepBaseline
+### SleepBaseline **COMPLETED**
 
 **Durchschnittswerte (11 Felder):**
 - `id`, `userId`, `baselineType` ('7_day', '30_day', 'all_time')
@@ -101,7 +101,7 @@ Siehe `NIGHT_REVIEW_IMPLEMENTATION_PLAN.md` für:
 - `30_day` - 30-Tage Durchschnitt
 - `all_time` - Gesamter Durchschnitt
 
-### SleepComparison
+### SleepComparison **COMPLETED**
 
 **DTO für Vergleiche (kein DB-Model!):**
 - `record` - Aktueller SleepRecord
@@ -127,7 +127,7 @@ if (comparison.isAboveAverage('avg_deep_sleep')) {
 }
 ```
 
-## Repository Methoden (verfügbar)
+## Repository Methoden (verfügbar) **COMPLETED**
 
 **Sleep Records:**
 ```dart
@@ -167,9 +167,9 @@ if (record != null && baseline != null) {
 await repo.updateQualityRating(record.id, 'good', 'Gut geschlafen!');
 ```
 
-## Besonderheiten
+## Besonderheiten **COMPLETED**
 
-### Berechnete Metriken
+### Berechnete Metriken **COMPLETED**
 
 **Sleep Efficiency (Schlafeffizienz):**
 - Formel: `(totalSleepTime / timeInBed) * 100`
@@ -183,7 +183,7 @@ await repo.updateQualityRating(record.id, 'good', 'Gut geschlafen!');
 - Nicht in Datenbank gespeichert
 - Typ: int (Minuten)
 
-### Baseline Calculation
+### Baseline Calculation **COMPLETED**
 
 **Automatische Berechnung:**
 - Baselines werden periodisch neu berechnet
@@ -196,7 +196,7 @@ await repo.updateQualityRating(record.id, 'good', 'Gut geschlafen!');
 - Farbcodierung: Grün wenn besser, Rot wenn schlechter
 - Prozent-Differenz: "+15% Schlafeffizienz"
 
-### Quality Rating
+### Quality Rating **COMPLETED** (Model only, UI not connected)
 
 **3-Stufen System:**
 - `'poor'` - Schlecht geschlafen
@@ -229,8 +229,8 @@ await repo.updateQualityRating(record.id, 'good', 'Gut geschlafen!');
 **1. UI Layer implementieren (siehe NIGHT_REVIEW_IMPLEMENTATION_PLAN.md):**
 - [ ] NightReviewViewModel erstellen
 - [ ] NightScreen refactoren (StatefulWidget → StatelessWidget)
-- [ ] QualityRatingWidget erstellen
-- [ ] Kalender-Navigation implementieren
+- [x] QualityRatingWidget erstellen (UI exists as `_RatingSection`, needs DB connection)
+- [x] Kalender-Navigation implementieren (UI exists, needs ViewModel connection)
 - [ ] Vergleich mit Baseline in UI anzeigen
 
 **2. Später erweitern:**

@@ -4,7 +4,7 @@ class PreferencesService {
   static const String _firstLaunchKey = 'is_first_launch';
 
   // Debug flag - set to true to force questionnaire
-  static const bool forceOnboarding = true;
+  static const bool forceOnboarding = false;
 
   static Future<bool> isFirstLaunch() async {
     // Force questionnaire if debug flag is true

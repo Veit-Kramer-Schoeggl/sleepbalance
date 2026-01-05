@@ -565,77 +565,95 @@ Nach dieser Implementierung hast du:
 
 ## Zusammenfassung: Was ist schon fertig vs. was musst du machen?
 
-### ✅ Bereits in Phase 4 implementiert (FERTIG!):
+### ✅ Bereits in Phase 4 implementiert - **COMPLETED**
 
 **Datenbank & Migration:**
-- ✅ Migration V4 mit users Tabelle
-- ✅ Database version auf 4 aktualisiert
-- ✅ Alle DatabaseConstants für User definiert
+- ✅ Migration V1 mit users Tabelle **COMPLETED**
+- ✅ Database version aktualisiert **COMPLETED**
+- ✅ Alle DatabaseConstants für User definiert **COMPLETED**
 
 **Domain Model (komplett fertig):**
-- ✅ `User` - Mit allen 17 Feldern
-  - ✅ fromDatabase/toDatabase Methoden
-  - ✅ fromJson/toJson für API
-  - ✅ Getter: `fullName`, `age`
-  - ✅ `copyWith()` für Updates
+- ✅ `User` - Mit allen 17 Feldern **COMPLETED**
+  - ✅ fromDatabase/toDatabase Methoden **COMPLETED**
+  - ✅ fromJson/toJson für API **COMPLETED**
+  - ✅ Getter: `fullName`, `age` **COMPLETED**
+  - ✅ `copyWith()` für Updates **COMPLETED**
 
 **Repository Pattern (komplett fertig):**
-- ✅ `UserRepository` Interface
-- ✅ `UserLocalDataSource` - SQLite Operationen
-- ✅ `UserRepositoryImpl` - Implementierung mit SharedPreferences
-- ✅ Provider in main.dart registriert
+- ✅ `UserRepository` Interface **COMPLETED**
+- ✅ `UserLocalDataSource` - SQLite Operationen **COMPLETED**
+- ✅ `UserRepositoryImpl` - Implementierung mit SharedPreferences **COMPLETED**
+- ✅ Provider in main.dart registriert **COMPLETED**
 
 **Default User Setup:**
-- ✅ Default User wird automatisch angelegt
-- ✅ User-ID in SharedPreferences gesetzt
+- ✅ Default User wird automatisch angelegt **COMPLETED**
+- ✅ User-ID in SharedPreferences gesetzt **COMPLETED**
 
 **Fertige Repository-Methoden die du nutzen kannst:**
-- ✅ `getCurrentUserId()`
-- ✅ `setCurrentUserId(userId)`
-- ✅ `getUserById(userId)`
-- ✅ `getUserByEmail(email)`
-- ✅ `saveUser(user)`
-- ✅ `updateUser(user)`
-- ✅ `deleteUser(userId)`
-- ✅ `getAllUsers()`
+- ✅ `getCurrentUserId()` **COMPLETED**
+- ✅ `setCurrentUserId(userId)` **COMPLETED**
+- ✅ `getUserById(userId)` **COMPLETED**
+- ✅ `getUserByEmail(email)` **COMPLETED**
+- ✅ `saveUser(user)` **COMPLETED**
+- ✅ `updateUser(user)` **COMPLETED**
+- ✅ `deleteUser(userId)` **COMPLETED**
+- ✅ `getAllUsers()` **COMPLETED**
 
-### ✅ Bereits in Phase 5 implementiert (FERTIG!):
+### ✅ Bereits in Phase 5 implementiert - **COMPLETED**
 
 **ViewModel & App Integration:**
-- ✅ `SettingsViewModel` komplett fertig
-  - ✅ State-Management (currentUser, isLoading, errorMessage)
-  - ✅ User laden via Repository (`loadCurrentUser()`)
-  - ✅ User aktualisieren (`updateUserProfile()`)
-  - ✅ Convenience-Methoden (`updateLanguage()`, `updateUnitSystem()`, `updateSleepTargets()`)
-  - ✅ Logout (`logout()`)
-  - ✅ Fehlerbehandlung komplett
-- ✅ ChangeNotifierProvider in main.dart registriert
-- ✅ SplashScreen lädt User beim App-Start
-- ✅ ActionScreen nutzt currentUser?.id
+- ✅ `SettingsViewModel` komplett fertig **COMPLETED**
+  - ✅ State-Management (currentUser, isLoading, errorMessage) **COMPLETED**
+  - ✅ User laden via Repository (`loadCurrentUser()`) **COMPLETED**
+  - ✅ User aktualisieren (`updateUserProfile()`) **COMPLETED**
+  - ✅ Convenience-Methoden (`updateLanguage()`, `updateUnitSystem()`, `updateSleepTargets()`) **COMPLETED**
+  - ✅ Logout (`logout()`) **COMPLETED**
+  - ✅ Fehlerbehandlung komplett **COMPLETED**
+- ✅ ChangeNotifierProvider in main.dart registriert **COMPLETED**
+- ✅ SplashScreen lädt User beim App-Start **COMPLETED**
+- ✅ ActionScreen nutzt currentUser?.id **COMPLETED**
+
+### ✅ Navigation Grundgerüst - **COMPLETED**
+
+- ✅ `SettingsNavigator` mit allen Routes **COMPLETED**
+- ✅ `SettingsScreen` Basis mit Navigation-Buttons **COMPLETED**
+- ✅ Placeholder-Screens für alle Sub-Settings **COMPLETED**
+  - ✅ `TimezoneScreen` (Placeholder) **COMPLETED**
+  - ✅ `UnitsScreen` (Placeholder) **COMPLETED**
+  - ✅ `DateTimeScreen` (Placeholder) **COMPLETED**
+  - ✅ `UserProfileScreen` (Placeholder) **COMPLETED**
 
 ### 📋 Was DU noch implementieren musst (UI Layer ONLY):
 
-**Presentation Layer - Screens:**
-- ❌ `SettingsScreen` erstellen
+**Presentation Layer - Screens mit ViewModel verbinden:**
+- ❌ `SettingsScreen` erweitern
   - User-Info Anzeige (Name, Email, Avatar)
   - Einstellungen-Liste (Schlafziel, Sprache, Einheiten)
   - Logout-Button
   - Consumer<SettingsViewModel> für UI-Updates
-- ❌ `UserProfileScreen` erstellen
+- ❌ `UserProfileScreen` erweitern
   - Formular mit allen User-Feldern
   - TextFields, DatePicker, Slider, Switches
   - Validierung
   - Speichern via SettingsViewModel.updateUserProfile()
+- ❌ `TimezoneScreen` erweitern
+  - Timezone Dropdown/Picker
+  - Speichern via SettingsViewModel
+- ❌ `UnitsScreen` erweitern
+  - Metric/Imperial Toggle
+  - Speichern via SettingsViewModel.updateUnitSystem()
+- ❌ `DateTimeScreen` erweitern
+  - Format-Auswahl (evtl. neues Feld im User Model nötig)
 
 **UI-Verbindungen:**
 - ❌ Consumer/watch für automatische Updates
-- ❌ Navigation zwischen Settings und Profile
 - ❌ Sprach- und Einheiten-Dialoge
 
 **Wichtig:**
 - ✅ ViewModel ist FERTIG - du rufst nur dessen Methoden auf!
 - ✅ Repository ist FERTIG - ViewModel kümmert sich darum!
-- ❌ Du baust NUR die UI-Screens!
+- ✅ Navigation ist FERTIG - Screens existieren bereits!
+- ❌ Du erweiterst NUR die bestehenden UI-Screens mit Funktionalität!
 
 ## Nächste Schritte
 

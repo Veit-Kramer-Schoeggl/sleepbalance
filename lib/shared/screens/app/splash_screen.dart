@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../features/auth/presentation/screens/auth_choice_screen.dart';
 import '../../../features/onboarding/presentation/screens/questionnaire_screen.dart';
 import '../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../../services/storage/preferences_service.dart';
@@ -38,9 +39,23 @@ class _SplashScreenState extends State<SplashScreen> {
     // Check if widget is still mounted before navigation
     if (!mounted) return;
 
-    // Check if this is the first launch
+    // Get current user
+    final user = settingsViewModel.currentUser;
+
+    // Check if user exists and email is verified
+    if (user == null || !user.emailVerified) {
+      // Navigate to auth choice screen (user doesn't exist or email not verified)
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const AuthChoiceScreen()),
+      );
+      return;
+    }
+
+    // Check if this is the first launch for questionnaire
     // Uses PreferencesService which respects the forceOnboarding debug flag
     final isFirstLaunch = await PreferencesService.isFirstLaunch();
+
+    if (!mounted) return;
 
     if (isFirstLaunch) {
       // Navigate to onboarding questionnaire
@@ -48,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen> {
         MaterialPageRoute(builder: (context) => const QuestionnaireScreen()),
       );
     } else {
-      // Navigate to main app (user already loaded)
+      // Navigate to main app (user already loaded and verified)
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainNavigation()),
       );
