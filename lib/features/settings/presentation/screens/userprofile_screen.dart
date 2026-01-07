@@ -187,12 +187,6 @@ class _UserProfileState extends State<UserProfileScreen> {
                     _datePicker(context),
                     const SizedBox(height: 24),
 
-                    sleepTargetSlider(_targetSleepMinutes, (value) => setState(() {
-                      _targetSleepMinutes = value.toInt();
-                    })),
-
-                    const SizedBox(height: 16),
-
                     SwitchListTile(
                       value: _hasSleepDisorder,
                       title: const Text('Schlafstörung vorhanden', style: TextStyle(color: Colors.white)),

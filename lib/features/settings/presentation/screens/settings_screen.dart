@@ -107,13 +107,9 @@ class _SettingsState extends State<SettingsScreen> {
   List<Widget> _middleSection(SettingsViewModel viewModel) {
     final user = viewModel.currentUser;
 
-    final targetDuration = _settingsItemTile(
-        Icon(Icons.bedtime),
-        "Schlafziel",
-        "${_sleepTarget ?? 360} Minuten (${((_sleepTarget ?? 360) / 60).toStringAsFixed(1)} h)",
-        enabled: user != null,
-        action: () => showDialog(context: context, builder: (context) => _sleepTargetDialog(context, viewModel))
-    );
+    final sleepTarget = sleepTargetSlider(_sleepTarget, (value) => setState(() {
+      _sleepTarget = value.toInt();
+    }));
 
     final languages = _settingsItemTile(
         Icon(Icons.language),
@@ -141,7 +137,7 @@ class _SettingsState extends State<SettingsScreen> {
     final spacer = const SizedBox(height: 16);
 
     return <Widget> [
-      targetDuration,
+      sleepTarget,
       spacer,
       languages,
       spacer,
@@ -265,68 +261,6 @@ class _SettingsState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Dialog _sleepTargetDialog(BuildContext context, SettingsViewModel viewModel) {
-    var tempTarget = _sleepTarget;
-
-    return Dialog(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white12)
-      ),
-      child: StatefulBuilder(
-        builder: (context, setDialogState) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  "Schlafziel Einstellen",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const Divider(height: 1),
-
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: sleepTargetSlider(tempTarget, (value) => setDialogState(() {
-                  tempTarget = value.toInt();
-                }), textColor: Colors.black),
-              ),
-              Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                          child: MaterialButton(
-                              child: Text("Cancel"),
-                              onPressed: () => Navigator.of(context).pop()
-                          ),
-                      ),
-                      Expanded(
-                        child: MaterialButton(
-                          child: Text("Save"),
-                          onPressed: () async {
-                            _saving = true;
-                            _sleepTarget = tempTarget;
-                            await viewModel.updateSleepTargets(targetSleepDuration: tempTarget);
-
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                        )
-                      )
-                    ],
-                  )
-              )
-            ],
-          );
-        },
-      )
     );
   }
 }
