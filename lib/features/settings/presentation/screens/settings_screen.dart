@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sleepbalance/features/settings/domain/models/user.dart';
@@ -117,17 +115,17 @@ class _SettingsState extends State<SettingsScreen> {
   List<Widget> _middleSection(SettingsViewModel viewModel) {
     final user = viewModel.currentUser;
 
-    final sleepTarget = sleepTargetSlider(_sleepTarget, (value) => setState(() {
+    final sleepTarget = sleepTargetSlider(user?.targetBedTime, user?.targetWakeTime, _sleepTarget, (start, end, duration) => setState(() {
         _saving = true;
-        _sleepTarget = value.toInt();
-        viewModel.updateSleepTargets(targetSleepDuration: _sleepTarget);
+        _sleepTarget = duration.toInt();
+        viewModel.updateSleepTargets(targetSleepDuration: _sleepTarget, targetBedTime: start, targetWakeTime: end);
       })
     );
 
     final languages = _settingsItemTile(
         Icon(Icons.language),
         "Sprachen",
-        user?.language?.toUpperCase() ?? "EN",
+        user?.language.toUpperCase() ?? "EN",
         enabled: user != null,
         action: () => showDialog(context: context, builder: (context) => _languageDialog(context, viewModel))
     );
@@ -164,7 +162,7 @@ class _SettingsState extends State<SettingsScreen> {
     return ListTile(
       leading: CircleAvatar(
           child: firstLetter != null
-              ? Text(firstLetter!)
+              ? Text(firstLetter)
               : const Icon(Icons.person)
       ),
       enabled: user != null,
