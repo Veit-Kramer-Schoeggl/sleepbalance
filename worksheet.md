@@ -96,5 +96,11 @@ SELECT configuration FROM user_module_configurations WHERE module_id = 'light';
    flutter test test/modules/light/
 - All tests passing
 
+we need to check if we need to update any other existing usages of  timezone with flutter_timezone
+within the existing code.
 
+within README.md update/create new references to the respective documentation documents within
+documentation/
 
+now pls create a dedicated detailed step by step implementation plan for **FR-2: User Login** 
+of the AUTH_PLAN.md

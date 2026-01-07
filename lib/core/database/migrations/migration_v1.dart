@@ -11,8 +11,6 @@ import '../../../shared/constants/database_constants.dart';
 /// - user_module_configurations: User-specific module settings
 /// - intervention_activities: Daily intervention tracking
 /// - user_sleep_baselines: Computed personal averages
-///
-/// Also pre-populates modules table with 9 intervention modules.
 
 const String MIGRATION_V1 = '''
 -- ============================================================================
@@ -151,20 +149,4 @@ CREATE INDEX idx_intervention_activities_user_date ON $TABLE_INTERVENTION_ACTIVI
 CREATE INDEX idx_intervention_activities_module ON $TABLE_INTERVENTION_ACTIVITIES($INTERVENTION_ACTIVITIES_MODULE_ID, $INTERVENTION_ACTIVITIES_ACTIVITY_DATE);
 CREATE INDEX idx_baselines_user ON $TABLE_USER_SLEEP_BASELINES($USER_SLEEP_BASELINES_USER_ID, $USER_SLEEP_BASELINES_BASELINE_TYPE, $USER_SLEEP_BASELINES_METRIC_NAME);
 CREATE INDEX idx_user_modules_user ON $TABLE_USER_MODULE_CONFIGURATIONS($USER_MODULE_CONFIGS_USER_ID);
-
--- ============================================================================
--- Pre-populate Modules Table
--- ============================================================================
-
-INSERT INTO $TABLE_MODULES ($MODULES_ID, $MODULES_NAME, $MODULES_DISPLAY_NAME, $MODULES_DESCRIPTION, $MODULES_IS_ACTIVE, $MODULES_CREATED_AT)
-VALUES
-  ('light', 'light', 'Light Therapy', 'Morning and evening light exposure optimization', 1, datetime('now')),
-  ('sport', 'sport', 'Exercise & Movement', 'Physical activity and exercise routines', 1, datetime('now')),
-  ('temperature', 'temperature', 'Temperature Exposure', 'Sauna, heat and cold exposure protocols', 1, datetime('now')),
-  ('nutrition', 'nutrition', 'Sleep-Promoting Nutrition', 'Foods and supplements for better sleep', 1, datetime('now')),
-  ('mealtime', 'mealtime', 'Meal Timing', 'Eating schedule optimization', 1, datetime('now')),
-  ('sleep_hygiene', 'sleep_hygiene', 'Sleep Hygiene', 'Bedtime routine and environment optimization', 1, datetime('now')),
-  ('meditation', 'meditation', 'Meditation & Relaxation', 'Mindfulness and relaxation techniques', 1, datetime('now')),
-  ('journaling', 'journaling', 'Sleep Journaling', 'Progress tracking and reflection', 1, datetime('now')),
-  ('medication', 'medication', 'Medication Tracking', 'Track medication and effects on sleep', 1, datetime('now'));
 ''';

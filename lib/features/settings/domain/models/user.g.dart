@@ -22,6 +22,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   takesSleepMedication: json['takesSleepMedication'] as bool? ?? false,
   preferredUnitSystem: json['preferredUnitSystem'] as String? ?? 'metric',
   language: json['language'] as String? ?? 'en',
+  emailVerified: json['emailVerified'] as bool? ?? false,
   createdAt: DateTime.parse(json['createdAt'] as String),
   updatedAt: DateTime.parse(json['updatedAt'] as String),
 );
@@ -42,6 +43,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'takesSleepMedication': instance.takesSleepMedication,
   'preferredUnitSystem': instance.preferredUnitSystem,
   'language': instance.language,
+  'emailVerified': instance.emailVerified,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt.toIso8601String(),
 };

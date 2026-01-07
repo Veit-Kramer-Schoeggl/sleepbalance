@@ -17,7 +17,7 @@ const String MIGRATION_V3 = '''
 -- ============================================================================
 -- Sleep Records Table
 -- ============================================================================
-CREATE TABLE $TABLE_SLEEP_RECORDS (
+CREATE TABLE IF NOT EXISTS $TABLE_SLEEP_RECORDS (
   $SLEEP_RECORDS_ID TEXT PRIMARY KEY,
   $SLEEP_RECORDS_USER_ID TEXT NOT NULL,
   $SLEEP_RECORDS_SLEEP_DATE TEXT NOT NULL,
@@ -47,12 +47,12 @@ CREATE TABLE $TABLE_SLEEP_RECORDS (
 );
 
 -- Index for user+date queries (most common query pattern)
-CREATE INDEX idx_sleep_records_user_date ON $TABLE_SLEEP_RECORDS($SLEEP_RECORDS_USER_ID, $SLEEP_RECORDS_SLEEP_DATE);
+CREATE INDEX IF NOT EXISTS idx_sleep_records_user_date ON $TABLE_SLEEP_RECORDS($SLEEP_RECORDS_USER_ID, $SLEEP_RECORDS_SLEEP_DATE);
 
 -- ============================================================================
 -- User Sleep Baselines Table
 -- ============================================================================
-CREATE TABLE $TABLE_USER_SLEEP_BASELINES (
+CREATE TABLE IF NOT EXISTS $TABLE_USER_SLEEP_BASELINES (
   $USER_SLEEP_BASELINES_ID TEXT PRIMARY KEY,
   $USER_SLEEP_BASELINES_USER_ID TEXT NOT NULL,
   $USER_SLEEP_BASELINES_BASELINE_TYPE TEXT NOT NULL,
@@ -65,5 +65,5 @@ CREATE TABLE $TABLE_USER_SLEEP_BASELINES (
 );
 
 -- Index for baseline lookups by user and type
-CREATE INDEX idx_user_sleep_baselines_user_type ON $TABLE_USER_SLEEP_BASELINES($USER_SLEEP_BASELINES_USER_ID, $USER_SLEEP_BASELINES_BASELINE_TYPE);
+CREATE INDEX IF NOT EXISTS idx_user_sleep_baselines_user_type ON $TABLE_USER_SLEEP_BASELINES($USER_SLEEP_BASELINES_USER_ID, $USER_SLEEP_BASELINES_BASELINE_TYPE);
 ''';
