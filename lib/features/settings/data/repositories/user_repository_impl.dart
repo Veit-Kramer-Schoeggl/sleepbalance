@@ -68,7 +68,6 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<String?> getCurrentUserId() async {
-    _prefs.setString(_currentUserIdKey, '31edb759-1fab-4ffe-b701-e8b0c69e911c');
     return _prefs.getString(_currentUserIdKey);
   }
 

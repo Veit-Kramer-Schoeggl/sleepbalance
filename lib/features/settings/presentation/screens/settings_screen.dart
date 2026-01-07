@@ -118,8 +118,11 @@ class _SettingsState extends State<SettingsScreen> {
     final user = viewModel.currentUser;
 
     final sleepTarget = sleepTargetSlider(_sleepTarget, (value) => setState(() {
-      _sleepTarget = value.toInt();
-    }));
+        _saving = true;
+        _sleepTarget = value.toInt();
+        viewModel.updateSleepTargets(targetSleepDuration: _sleepTarget);
+      })
+    );
 
     final languages = _settingsItemTile(
         Icon(Icons.language),
