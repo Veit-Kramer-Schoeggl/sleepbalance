@@ -53,7 +53,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
         startDate ?? now.subtract(Duration(days: _defaultSyncDays));
 
     // Create initial sync record
-    final syncRecord = WearableSyncRecord(
+    var syncRecord = WearableSyncRecord(
       id: _uuid.v4(),
       userId: userId,
       provider: provider,
@@ -86,7 +86,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
       // Sync based on provider
       switch (provider) {
         case WearableProvider.fitbit:
-          await _syncFitbitSleepData(
+          syncRecord = await _syncFitbitSleepData(
             credentials: validCredentials,
             startDate: syncStartDate,
             endDate: syncEndDate,
@@ -257,7 +257,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
   ///
   /// Fetches data for date range, transforms to SleepRecords, and saves with
   /// smart conflict resolution.
-  Future<void> _syncFitbitSleepData({
+  Future<WearableSyncRecord> _syncFitbitSleepData({
     required WearableCredentials credentials,
     required DateTime startDate,
     required DateTime endDate,
@@ -278,6 +278,10 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
           accessToken: credentials.accessToken,
           date: currentDate,
         );
+
+        if (currentDate.day == DateTime.now().day) {
+          recordsFetched = recordsFetched;
+        }
 
         recordsFetched++;
 
@@ -319,6 +323,8 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
         recordsSkipped: recordsSkipped,
       );
       await _syncRecordDataSource.updateSyncRecord(updatedSyncRecord);
+
+      syncRecord = updatedSyncRecord;
     }
 
     // Update last sync time in credentials
@@ -326,6 +332,8 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
       lastSyncAt: DateTime.now(),
     );
     await _credentialsDataSource.updateConnection(updatedCredentials);
+
+    return syncRecord;
   }
 
   /// Save sleep record with smart conflict resolution
@@ -360,7 +368,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
         createdAt: existing.createdAt, // Preserve creation time
         updatedAt: DateTime.now(),
       );
-      await _sleepRecordDataSource.insertRecord(updatedRecord);
+      await _sleepRecordDataSource.updateRecord(updatedRecord);
       return true;
     } else if (existing.dataSource == 'manual') {
       // Manual entry - merge Fitbit metrics with user's quality notes
