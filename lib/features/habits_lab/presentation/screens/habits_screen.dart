@@ -35,7 +35,7 @@ class HabitsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
 
     final settingsViewModel = context.read<SettingsViewModel>();
-    final userId = settingsViewModel.currentUser?.id ?? 'demo-user';
+    final userId = settingsViewModel.currentUser!.id;
 
     final repository = context.read<ModuleConfigRepository>();
 

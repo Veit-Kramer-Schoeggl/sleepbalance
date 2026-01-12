@@ -241,12 +241,13 @@ class DatabaseSeedService {
     debugPrint('DatabaseSeedService: Seeded ${modules.length} modules');
   }
 
-  /// Seeds 3 user module configurations (light, sport, meditation)
+  /// Seeds all 9 user module configurations (3 enabled, 6 disabled)
   static Future<void> _seedUserModuleConfigs(String userId) async {
     final db = await DatabaseHelper.instance.database;
     final now = DateTime.now().toIso8601String();
 
     final configs = [
+      // Enabled modules
       {
         USER_MODULE_CONFIGS_ID: _uuid.v4(),
         USER_MODULE_CONFIGS_USER_ID: userId,
@@ -271,6 +272,61 @@ class DatabaseSeedService {
         USER_MODULE_CONFIGS_MODULE_ID: 'meditation',
         USER_MODULE_CONFIGS_IS_ENABLED: 1,
         USER_MODULE_CONFIGS_CONFIGURATION: '{"type": "mindfulness", "duration_minutes": 15}',
+        USER_MODULE_CONFIGS_ENROLLED_AT: now,
+        USER_MODULE_CONFIGS_UPDATED_AT: now,
+      },
+      // Disabled modules
+      {
+        USER_MODULE_CONFIGS_ID: _uuid.v4(),
+        USER_MODULE_CONFIGS_USER_ID: userId,
+        USER_MODULE_CONFIGS_MODULE_ID: 'temperature',
+        USER_MODULE_CONFIGS_IS_ENABLED: 0,
+        USER_MODULE_CONFIGS_CONFIGURATION: '{}',
+        USER_MODULE_CONFIGS_ENROLLED_AT: now,
+        USER_MODULE_CONFIGS_UPDATED_AT: now,
+      },
+      {
+        USER_MODULE_CONFIGS_ID: _uuid.v4(),
+        USER_MODULE_CONFIGS_USER_ID: userId,
+        USER_MODULE_CONFIGS_MODULE_ID: 'nutrition',
+        USER_MODULE_CONFIGS_IS_ENABLED: 0,
+        USER_MODULE_CONFIGS_CONFIGURATION: '{}',
+        USER_MODULE_CONFIGS_ENROLLED_AT: now,
+        USER_MODULE_CONFIGS_UPDATED_AT: now,
+      },
+      {
+        USER_MODULE_CONFIGS_ID: _uuid.v4(),
+        USER_MODULE_CONFIGS_USER_ID: userId,
+        USER_MODULE_CONFIGS_MODULE_ID: 'mealtime',
+        USER_MODULE_CONFIGS_IS_ENABLED: 0,
+        USER_MODULE_CONFIGS_CONFIGURATION: '{}',
+        USER_MODULE_CONFIGS_ENROLLED_AT: now,
+        USER_MODULE_CONFIGS_UPDATED_AT: now,
+      },
+      {
+        USER_MODULE_CONFIGS_ID: _uuid.v4(),
+        USER_MODULE_CONFIGS_USER_ID: userId,
+        USER_MODULE_CONFIGS_MODULE_ID: 'sleep_hygiene',
+        USER_MODULE_CONFIGS_IS_ENABLED: 0,
+        USER_MODULE_CONFIGS_CONFIGURATION: '{}',
+        USER_MODULE_CONFIGS_ENROLLED_AT: now,
+        USER_MODULE_CONFIGS_UPDATED_AT: now,
+      },
+      {
+        USER_MODULE_CONFIGS_ID: _uuid.v4(),
+        USER_MODULE_CONFIGS_USER_ID: userId,
+        USER_MODULE_CONFIGS_MODULE_ID: 'journaling',
+        USER_MODULE_CONFIGS_IS_ENABLED: 0,
+        USER_MODULE_CONFIGS_CONFIGURATION: '{}',
+        USER_MODULE_CONFIGS_ENROLLED_AT: now,
+        USER_MODULE_CONFIGS_UPDATED_AT: now,
+      },
+      {
+        USER_MODULE_CONFIGS_ID: _uuid.v4(),
+        USER_MODULE_CONFIGS_USER_ID: userId,
+        USER_MODULE_CONFIGS_MODULE_ID: 'medication',
+        USER_MODULE_CONFIGS_IS_ENABLED: 0,
+        USER_MODULE_CONFIGS_CONFIGURATION: '{}',
         USER_MODULE_CONFIGS_ENROLLED_AT: now,
         USER_MODULE_CONFIGS_UPDATED_AT: now,
       },
