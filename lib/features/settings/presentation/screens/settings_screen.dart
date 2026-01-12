@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sleepbalance/features/settings/domain/models/user.dart';
@@ -117,18 +115,17 @@ class _SettingsState extends State<SettingsScreen> {
   List<Widget> _middleSection(SettingsViewModel viewModel) {
     final user = viewModel.currentUser;
 
-    final targetDuration = _settingsItemTile(
-        Icon(Icons.bedtime),
-        "Schlafziel",
-        "${_sleepTarget ?? 360} Minuten (${((_sleepTarget ?? 360) / 60).toStringAsFixed(1)} h)",
-        enabled: user != null,
-        action: () => showDialog(context: context, builder: (context) => _sleepTargetDialog(context, viewModel))
+    final sleepTarget = sleepTargetSlider(user?.targetBedTime, user?.targetWakeTime, _sleepTarget, (start, end, duration) => setState(() {
+        _saving = true;
+        _sleepTarget = duration.toInt();
+        viewModel.updateSleepTargets(targetSleepDuration: _sleepTarget, targetBedTime: start, targetWakeTime: end);
+      })
     );
 
     final languages = _settingsItemTile(
         Icon(Icons.language),
         "Sprachen",
-        user?.language?.toUpperCase() ?? "EN",
+        user?.language.toUpperCase() ?? "EN",
         enabled: user != null,
         action: () => showDialog(context: context, builder: (context) => _languageDialog(context, viewModel))
     );
@@ -151,7 +148,7 @@ class _SettingsState extends State<SettingsScreen> {
     final spacer = const SizedBox(height: 16);
 
     return <Widget> [
-      targetDuration,
+      sleepTarget,
       spacer,
       languages,
       spacer,
@@ -165,7 +162,7 @@ class _SettingsState extends State<SettingsScreen> {
     return ListTile(
       leading: CircleAvatar(
           child: firstLetter != null
-              ? Text(firstLetter!)
+              ? Text(firstLetter)
               : const Icon(Icons.person)
       ),
       enabled: user != null,
@@ -275,68 +272,6 @@ class _SettingsState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Dialog _sleepTargetDialog(BuildContext context, SettingsViewModel viewModel) {
-    var tempTarget = _sleepTarget;
-
-    return Dialog(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white12)
-      ),
-      child: StatefulBuilder(
-        builder: (context, setDialogState) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  "Schlafziel Einstellen",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const Divider(height: 1),
-
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: sleepTargetSlider(tempTarget, (value) => setDialogState(() {
-                  tempTarget = value.toInt();
-                }), textColor: Colors.black),
-              ),
-              Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                          child: MaterialButton(
-                              child: Text("Cancel"),
-                              onPressed: () => Navigator.of(context).pop()
-                          ),
-                      ),
-                      Expanded(
-                        child: MaterialButton(
-                          child: Text("Save"),
-                          onPressed: () async {
-                            _saving = true;
-                            _sleepTarget = tempTarget;
-                            await viewModel.updateSleepTargets(targetSleepDuration: tempTarget);
-
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                            }
-                          },
-                        )
-                      )
-                    ],
-                  )
-              )
-            ],
-          );
-        },
-      )
     );
   }
 }

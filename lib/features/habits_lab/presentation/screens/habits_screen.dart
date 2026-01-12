@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
+import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
 
 
 import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
@@ -31,8 +33,9 @@ class HabitsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Replace with real user id from auth/user profile
-    const userId = 'demo-user';
+
+    final settingsViewModel = context.read<SettingsViewModel>();
+    final userId = settingsViewModel.currentUser!.id;
 
     final repository = context.read<ModuleConfigRepository>();
 
@@ -134,6 +137,15 @@ class _HabitsScreenContent extends StatelessWidget {
                 width: double.infinity,
               ),
             ),
+
+            // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/wearable-test');
+              },
+              child: const Text('Fitbit verbinden'),
+            ),
+
           ],
         ),
       ),
