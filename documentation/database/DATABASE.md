@@ -7,6 +7,13 @@ This document describes the database architecture for SleepBalance, including sc
 **Database Type:** SQLite (local-first) → PostgreSQL (future backend sync)
 **Design Pattern:** Hybrid approach (typed columns + JSON flexibility)
 **Architecture:** Local-first with offline-first capabilities
+**Current Version:** 8
+
+### Schema Diagram
+
+![Database Schema V8](./schema_v8.png)
+
+*Complete database schema showing all tables and relationships. [View PlantUML source](./schema_v8.puml)*
 
 ## Design Philosophy
 
@@ -60,6 +67,9 @@ CREATE TABLE users (
   -- Preferences
   preferred_unit_system TEXT DEFAULT 'metric',  -- 'metric' or 'imperial'
   language TEXT DEFAULT 'en',             -- 'en', 'de', etc.
+
+  -- Authentication (added in V8)
+  email_verified BOOLEAN DEFAULT FALSE,   -- Email verification status
 
   -- Sync metadata
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -351,6 +361,115 @@ CREATE INDEX idx_daily_actions_user_date ON daily_actions(user_id, action_date);
 
 ---
 
+### 8. Wearable Connections Table
+
+**Added in Migration V7.** Stores OAuth credentials and connection metadata for wearable devices.
+
+```sql
+CREATE TABLE wearable_connections (
+  id TEXT PRIMARY KEY,                    -- UUID
+  user_id TEXT NOT NULL,
+  provider TEXT NOT NULL CHECK(provider IN ('fitbit', 'apple_health', 'google_fit', 'garmin')),
+
+  -- OAuth tokens
+  access_token TEXT NOT NULL,             -- OAuth access token (encrypted in production)
+  refresh_token TEXT,                     -- OAuth refresh token (encrypted in production)
+  token_expires_at TIMESTAMP,
+
+  -- Provider-specific metadata
+  user_external_id TEXT,                  -- Provider's user ID
+  granted_scopes TEXT,                    -- Comma-separated OAuth scopes
+
+  -- Connection status
+  is_active BOOLEAN DEFAULT TRUE,
+  connected_at TIMESTAMP NOT NULL,
+  last_sync_at TIMESTAMP,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE(user_id, provider)               -- One connection per provider per user
+);
+
+CREATE INDEX idx_wearable_connections_user ON wearable_connections(user_id);
+CREATE INDEX idx_wearable_connections_provider_active ON wearable_connections(provider, is_active);
+```
+
+**Purpose:** Manages wearable device connections and OAuth credentials. Supports Fitbit, Apple Health, Google Fit, and Garmin. Enables automatic sleep data syncing from wearable devices.
+
+**Security Note:** In production, `access_token` and `refresh_token` must be encrypted before storage.
+
+---
+
+### 9. Wearable Sync History Table
+
+**Added in Migration V7.** Logs all sync attempts for debugging, transparency, and analytics.
+
+```sql
+CREATE TABLE wearable_sync_history (
+  id TEXT PRIMARY KEY,                    -- UUID
+  user_id TEXT NOT NULL,
+  provider TEXT NOT NULL,
+
+  -- Sync window
+  sync_date_from DATE NOT NULL,           -- Start of sync window
+  sync_date_to DATE NOT NULL,             -- End of sync window
+
+  -- Timing
+  sync_started_at TIMESTAMP NOT NULL,
+  sync_completed_at TIMESTAMP,
+
+  -- Results
+  status TEXT NOT NULL CHECK(status IN ('success', 'failed', 'partial')),
+  records_fetched INTEGER DEFAULT 0,
+  records_inserted INTEGER DEFAULT 0,
+  records_updated INTEGER DEFAULT 0,
+  records_skipped INTEGER DEFAULT 0,
+
+  -- Error information
+  error_code TEXT,
+  error_message TEXT,
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_sync_history_user_time ON wearable_sync_history(user_id, sync_started_at);
+CREATE INDEX idx_sync_history_status ON wearable_sync_history(status);
+```
+
+**Purpose:** Tracks all sync attempts from wearable devices. Provides transparency to users about when data was last synced and helps developers debug sync failures. Essential for understanding data freshness and identifying patterns in sync issues.
+
+---
+
+### 10. Email Verification Tokens Table
+
+**Added in Migration V8.** Stores 6-digit email verification codes for user registration.
+
+```sql
+CREATE TABLE email_verification_tokens (
+  id TEXT PRIMARY KEY,                    -- UUID
+  email TEXT NOT NULL,                    -- Email address being verified
+  code TEXT NOT NULL,                     -- 6-digit verification code
+  created_at TIMESTAMP NOT NULL,
+  expires_at TIMESTAMP NOT NULL,          -- 15 minutes after creation
+  verified_at TIMESTAMP,                  -- When successfully verified
+  is_used BOOLEAN DEFAULT FALSE           -- Single-use flag
+);
+
+CREATE INDEX idx_email_verification_email ON email_verification_tokens(email);
+CREATE INDEX idx_email_verification_expires ON email_verification_tokens(expires_at);
+```
+
+**Purpose:** Implements local-first email verification for secure user registration. Codes expire after 15 minutes and are single-use. Expired tokens are cleaned up after 24 hours.
+
+**Security Features:**
+- Time-limited codes (15-minute expiration)
+- Single-use enforcement (`is_used` flag)
+- Cryptographically secure code generation recommended
+
+---
+
 ## Optional: Future Tables
 
 ### Sleep Stages Time-Series (Future)
@@ -500,31 +619,58 @@ WHERE sr.user_id = 'user123'
 
 ## Schema Migrations
 
-### Actual Implementation
+### Migration Files
 
-Migrations are split across multiple files for maintainability:
+Migrations are split across multiple files for maintainability. Each migration is documented in detail in dedicated files:
 
-**Migration V1** (`migration_v1.dart`) - Core schema
-- All 6 core tables (users, sleep_records, modules, user_module_configurations, intervention_activities, user_sleep_baselines)
-- All indexes for performance
-- Pre-populated modules table with 9 modules
+| Version | File | Status | Purpose | Documentation |
+|---------|------|--------|---------|---------------|
+| V1 | `migration_v1.dart` | ✅ Active | Core schema (users, sleep_records, modules, etc.) | [MIGRATION_V1.md](./MIGRATION_V1.md) |
+| V2 | `migration_v2.dart` | ✅ Active | Daily actions table | [MIGRATION_V2.md](./MIGRATION_V2.md) |
+| V3 | `migration_v3.dart` | ✅ Active | Sleep tables (compatibility mode) | [MIGRATION_V3.md](./MIGRATION_V3.md) |
+| V4 | `migration_v4.dart` | ✅ Active | Users table (compatibility mode) | [MIGRATION_V4.md](./MIGRATION_V4.md) |
+| V5 | `migration_v5.dart` | ✅ Active | Module configurations indexes | [MIGRATION_V5.md](./MIGRATION_V5.md) |
+| V6 | `migration_v6.dart` | ⚠️ Disabled | Light module optimizations (triggers) | [MIGRATION_V6.md](./MIGRATION_V6.md) |
+| V7 | `migration_v7.dart` | ✅ Active | Wearables integration tables | [MIGRATION_V7.md](./MIGRATION_V7.md) |
+| V8 | `migration_v8.dart` | ✅ **Current** | Email verification support | [MIGRATION_V8.md](./MIGRATION_V8.md) |
 
-**Migration V2** (`migration_v2.dart`) - Daily actions
-- `daily_actions` table for Action Center feature
-- Index for user+date queries
+**Current Database Version:** 8
 
-**Migration V3** (`migration_v3.dart`) - Sleep tracking (duplicate removed in v1)
-- Note: Sleep tables moved to v1, v3 kept for compatibility
+### Migration Overview
 
-**Migration V4** (`migration_v4.dart`) - Users (duplicate removed in v1)
-- Note: Users table moved to v1, v4 kept for compatibility
+**V1 - Core Schema (Foundation)**
+- Creates all 6 core tables: users, sleep_records, modules, user_module_configurations, intervention_activities, user_sleep_baselines
+- Establishes foundational relationships and indexes
+- Enables basic sleep tracking and intervention correlation
 
-**Migration V5** (`migration_v5.dart`) - Module configurations framework (PHASE 7)
-- `user_module_configurations` table (already in v1, but v5 ensures it exists)
-- Unique index for one config per user per module
-- Indexes for efficient queries
+**V2 - Action Center**
+- Adds `daily_actions` table for user habit tracking
+- Supports Action Center feature with daily task completion
 
-**Current Database Version:** 5
+**V3 & V4 - Compatibility Migrations**
+- Originally separate migrations for sleep and user tables
+- Now use `CREATE TABLE IF NOT EXISTS` for backward compatibility
+- Tables already created in V1, these ensure they exist for upgraded databases
+
+**V5 - Module System Optimization**
+- Adds critical indexes for `user_module_configurations`
+- Ensures one config per user per module (UNIQUE constraint)
+- Enables fast queries for active modules
+
+**V6 - Light Module Optimizations (DISABLED)**
+- Intended: Partial index + validation triggers for Light module
+- Status: Disabled due to sqflite multi-statement execution limitations
+- Impact: None - optimizations are nice-to-have, not required
+
+**V7 - Wearables Integration**
+- Adds `wearable_connections` table for OAuth credentials
+- Adds `wearable_sync_history` table for sync logging
+- Supports Fitbit, Apple Health, Google Fit, Garmin
+
+**V8 - Email Verification (Current)**
+- Adds `email_verification_tokens` table for 6-digit codes
+- Adds `email_verified` column to users table
+- Removes default user creation (production-ready auth)
 
 **Note:** Migrations v1, v3, and v4 have overlapping tables due to refactoring. The database helper applies them sequentially, using `CREATE TABLE IF NOT EXISTS` to prevent conflicts.
 
@@ -546,22 +692,46 @@ Migrations are split across multiple files for maintainability:
 
 ## Implementation Status
 
+### Database Infrastructure
 - ✅ Create `database_helper.dart` with version management
 - ✅ Implement Migration v1 (all core tables)
 - ✅ Implement Migration v2 (daily_actions)
-- ✅ Implement Migration v3 (sleep_records, user_sleep_baselines)
-- ✅ Implement Migration v4 (users)
+- ✅ Implement Migration v3 (sleep_records, user_sleep_baselines - compatibility)
+- ✅ Implement Migration v4 (users - compatibility)
 - ✅ Implement Migration v5 (module configurations framework)
+- ⚠️ Migration v6 (light module optimizations - DISABLED)
+- ✅ Implement Migration v7 (wearables integration)
+- ✅ Implement Migration v8 (email verification) - **CURRENT**
+
+### Repository Layer
 - ✅ Create repository interfaces in domain layer
 - ✅ Implement SQLite repositories in data layer (Action Center, Night Review, Settings)
 - ✅ Add UUID generator utility
 - ✅ Add database constants file
+- ✅ User authentication repository with email verification
+
+### Module System
 - ✅ Module system framework (PHASE 7) - ModuleInterface, ModuleRegistry, ModuleConfigRepository
 - ✅ Light module as reference implementation
-- [ ] Build sync queue infrastructure (basic)
-- [ ] Implement baseline calculation service
 - [ ] Complete Light module repository with activity tracking
 - [ ] Implement remaining modules (Sport, Meditation, Temperature, Mealtime, Nutrition, Journaling)
+
+### Wearables Integration
+- ✅ Wearable connections table and repository interface
+- ✅ Wearable sync history table for logging
+- [ ] Implement OAuth flow for Fitbit
+- [ ] Implement OAuth flow for Apple Health
+- [ ] Implement OAuth flow for Google Fit
+- [ ] Implement OAuth flow for Garmin
+- [ ] Implement sync service for automatic data fetching
+
+### Future Enhancements
+- [ ] Build sync queue infrastructure for backend sync
+- [ ] Implement baseline calculation service
+- [ ] Add sleep stages time-series table for granular data
+- [ ] Implement rate limiting for email verification
+- [ ] Add password reset functionality
+- [ ] Encrypt OAuth tokens in production
 
 ---
 
