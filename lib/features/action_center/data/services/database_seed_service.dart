@@ -542,7 +542,7 @@ class DatabaseSeedService {
       WEARABLE_CONNECTIONS_REFRESH_TOKEN: 'fake_refresh_token',
       WEARABLE_CONNECTIONS_TOKEN_EXPIRES_AT: expiresAt.toIso8601String(),
       WEARABLE_CONNECTIONS_USER_EXTERNAL_ID: 'test_fitbit_user_123',
-      WEARABLE_CONNECTIONS_GRANTED_SCOPES: 'sleep,heartrate,activity',
+      WEARABLE_CONNECTIONS_GRANTED_SCOPES: '["sleep", "heartrate", "activity"]',
       WEARABLE_CONNECTIONS_IS_ACTIVE: 1,
       WEARABLE_CONNECTIONS_CONNECTED_AT: now.toIso8601String(),
       WEARABLE_CONNECTIONS_LAST_SYNC_AT: now.toIso8601String(),
