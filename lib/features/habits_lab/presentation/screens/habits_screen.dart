@@ -137,6 +137,15 @@ class _HabitsScreenContent extends StatelessWidget {
                 width: double.infinity,
               ),
             ),
+
+            // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/wearable-test');
+              },
+              child: const Text('Fitbit verbinden'),
+            ),
+
           ],
         ),
       ),
