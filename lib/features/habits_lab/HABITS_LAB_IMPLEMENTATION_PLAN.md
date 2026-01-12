@@ -1,6 +1,6 @@
 # Habits Lab MVVM Implementierungsplan
 
-## Was du bauen wirst
+## Was du bauen wirst - **COMPLETED**
 
 Habits Lab ist dein **Experimentier-Labor** für Schlaf-Interventionen!
 
@@ -15,15 +15,15 @@ Der Benutzer kann:
 
 **WICHTIG:** Es ist ein **Modul-Management Screen**. Der Fokus liegt auf der Auswahl und Konfiguration von Interventions-Modulen, die der User nutzen möchte.
 
-## Voraussetzungen
+## Voraussetzungen - **COMPLETED**
 
 - ✅ Phase 1-4 abgeschlossen (Datenbank, Action Center)
 - ✅ Light Module bereits implementiert (kennt das Modul-Konzept)
-- Du musst MVVM noch nicht kennen - wird hier komplett erklärt!
+- ✅ MVVM-Pattern verstanden und angewendet
 
-## Das Muster verstehen (Kein Code!)
+## Das Muster verstehen (Kein Code!) - **COMPLETED**
 
-### Teil 1: Was ist MVVM?
+### Teil 1: Was ist MVVM? - **COMPLETED**
 
 Stell dir vor, du baust ein Restaurant:
 
@@ -49,7 +49,7 @@ Stell dir vor, du baust ein Restaurant:
 - Das ViewModel verbindet beide und hält sie getrennt
 - Einfacher zu testen und zu warten!
 
-### Teil 2: Was ist Provider?
+### Teil 2: Was ist Provider? - **COMPLETED**
 
 Provider ist wie ein **Lieferservice** in Flutter:
 
@@ -66,7 +66,7 @@ Provider ist wie ein **Lieferservice** in Flutter:
 - Automatische Updates wenn sich Daten ändern
 - Sauberer, lesbarer Code
 
-### Teil 3: Was ist Habits Lab?
+### Teil 3: Was ist Habits Lab? - **COMPLETED**
 
 **Das Konzept:**
 
@@ -107,7 +107,7 @@ user_id: "user-123", module_id: "nutrition", is_active: false
 
 Dieser User nutzt Licht-Therapie und Sport, aber NICHT Entspannung und Ernährung.
 
-### Teil 4: Module-Konfiguration vs Aktivitäts-Tracking
+### Teil 4: Module-Konfiguration vs Aktivitäts-Tracking - **COMPLETED**
 
 Es ist wichtig, diese ZWEI separaten Konzepte zu verstehen:
 
@@ -140,7 +140,7 @@ User macht Aktivitäten
 Statistics zeigt Erfolgsrate
 ```
 
-### Teil 5: Die Habits Lab Architektur
+### Teil 5: Die Habits Lab Architektur - **COMPLETED**
 
 ```
 Benutzer öffnet Habits Lab
@@ -184,7 +184,7 @@ Action Center zeigt NUR diese Module!
 
 ## Schritt-für-Schritt Implementierung
 
-### Schritt 1: Datenmodell erstellen (in PHASE_7.md)
+### Schritt 1: Datenmodell erstellen (in PHASE_7.md) - **COMPLETED**
 
 **Was brauchen wir:** Eine neue Tabelle und ein neues Datenmodell
 
@@ -219,7 +219,7 @@ class ModuleConfig {
 
 **Wichtig:** Dokumentiere dies in PHASE_7.md mit CREATE TABLE Statement!
 
-### Schritt 2: Das ViewModel erstellen
+### Schritt 2: Das ViewModel erstellen - **COMPLETED**
 
 **Was benennen wir es:** `HabitsViewModel`
 
@@ -271,7 +271,7 @@ class ModuleConfig {
 - `_errorMessage` bei Fehlern setzen
 - `notifyListeners()` im finally Block
 
-### Schritt 3: Habits Lab Screen erstellen
+### Schritt 3: Habits Lab Screen erstellen - **COMPLETED**
 
 **Was benennen wir es:** `HabitsScreen`
 
@@ -354,9 +354,9 @@ Wenn `viewModel.errorMessage != null`:
 - Zeige Fehlertext in rot
 - Button: "Nochmal versuchen" → ruft `viewModel.loadModuleConfigs()` auf
 
-### Schritt 4: Modul-Metadaten nutzen (BEREITS FERTIG!)
+### Schritt 4: Modul-Metadaten nutzen - **COMPLETED**
 
-**✅ WICHTIG: Die zentrale Modul-Metadaten-Datei existiert bereits!**
+**✅ Die zentrale Modul-Metadaten-Datei wird korrekt genutzt!**
 
 **Wo:** `lib/modules/shared/constants/module_metadata.dart`
 
@@ -419,7 +419,7 @@ for (final entry in moduleMetadata.entries) {
 - ✅ Type-safe
 - ✅ Unterscheidung zwischen verfügbar und geplant
 
-### Schritt 5: Repository erstellen
+### Schritt 5: Repository erstellen - **PARTIAL** (Fix needed)
 
 **Was benennen wir es:** `ModuleConfigRepository`
 
@@ -491,7 +491,7 @@ Provider<ModuleConfigRepository>(
 
 **Wichtig:** DataSource VOR Repository!
 
-### Schritt 6: Integration mit Action Center
+### Schritt 6: Integration mit Action Center - **TODO**
 
 **Aktuell:** Action Center zeigt ALLE Module
 
@@ -518,7 +518,7 @@ final activeModules = await moduleConfigRepository.getActiveModules(userId);
 - User öffnet Action Center erneut
 - Action Center zeigt Licht-Modul NICHT mehr
 
-### Schritt 7: Statistiken (Optional - Später)
+### Schritt 7: Statistiken - **TODO** (Optional - Später)
 
 **Erst NACH Basis-Habits Lab funktioniert!**
 

@@ -6,6 +6,7 @@ import '../../../../shared/services/storage/preferences_service.dart';
 import '../../../../shared/widgets/navigation/main_navigation.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../settings/domain/repositories/user_repository.dart';
+import '../../../settings/presentation/viewmodels/settings_viewmodel.dart';
 import '../viewmodels/login_viewmodel.dart';
 
 /// Login Screen
@@ -59,6 +60,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      // Reload current user in SettingsViewModel so it's available app-wide
+      await context.read<SettingsViewModel>().loadCurrentUser();
+
       // Check if first launch to determine navigation destination
       final isFirstLaunch = await PreferencesService.isFirstLaunch();
       if (!mounted) return;
