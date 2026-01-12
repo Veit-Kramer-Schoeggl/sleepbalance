@@ -116,6 +116,30 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  Future<Map<DateTime, String?>> getQualityForRange(
+      String userId,
+      DateTime from,
+      DateTime to,
+      ) async {
+    final startString = DatabaseDateUtils.toDateString(from);
+    final endString = DatabaseDateUtils.toDateString(to);
+
+    final results = await database.query(
+      TABLE_SLEEP_RECORDS,
+      columns: [SLEEP_RECORDS_SLEEP_DATE, SLEEP_RECORDS_QUALITY_RATING],
+      where: '$SLEEP_RECORDS_USER_ID = ? AND $SLEEP_RECORDS_SLEEP_DATE BETWEEN ? AND ?',
+      whereArgs: [userId, startString, endString],
+      orderBy: '$SLEEP_RECORDS_SLEEP_DATE DESC',
+    );
+
+    return {
+      for (final row in results)
+        DatabaseDateUtils.fromString(
+            row[SLEEP_RECORDS_SLEEP_DATE] as String
+        ): row[SLEEP_RECORDS_QUALITY_RATING] as String?,
+    };
+  }
+
   /// Gets baselines by type
   ///
   /// Queries user_sleep_baselines table for all metrics of a specific baseline type.

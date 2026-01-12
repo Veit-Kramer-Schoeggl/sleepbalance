@@ -77,4 +77,9 @@ class SleepRecordRepositoryImpl implements SleepRecordRepository {
       metricName,
     );
   }
+
+  @override
+  Future<Map<DateTime, String?>> getPreviousQualityRatings(String userId, DateTime upUntil) async {
+    return await _dataSource.getQualityForRange(userId, upUntil.subtract(Duration(days: 6)), upUntil);
+  }
 }

@@ -1,10 +1,13 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:sleepbalance/features/night_review/presentation/viewmodels/night_review_viewmodel.dart';
 
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/expandable_calendar.dart';
+import '../../domain/models/sleep_record.dart';
 
 /// Night Review screen for reviewing a specific night's sleep (UI + simple in-memory logic only).
 class NightScreen extends StatefulWidget {
@@ -21,50 +24,47 @@ class _NightScreenState extends State<NightScreen> {
   /// Whether the calendar is expanded or collapsed.
   bool _isCalendarExpanded = false;
 
-  /// Subjective rating for the currently selected date ("bad", "average", "good").
-  String? _selectedRating;
-
-  /// In-memory store of ratings by calendar day (normalized date → rating).
-  final Map<DateTime, String> _ratingsByDate = {};
-
   @override
   void initState() {
     super.initState();
     _currentDate = _normalizeDate(_currentDate);
-    _loadRatingForCurrentDate();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NightReviewViewmodel>().setDateAndFetchRecord(_currentDate);
+    });
   }
 
   /// Strip time component so only year/month/day are kept.
   DateTime _normalizeDate(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 
-  /// Load rating for _currentDate from the map into _selectedRating.
-  void _loadRatingForCurrentDate() {
-    final normalized = _normalizeDate(_currentDate);
-    setState(() {
-      _currentDate = normalized;
-      _selectedRating = _ratingsByDate[normalized];
-    });
-  }
-
   /// Centralized handler when the user changes the date (via nav or calendar).
   void _onDateChanged(DateTime newDate) {
-    _currentDate = _normalizeDate(newDate);
-    _loadRatingForCurrentDate();
+    final normalized = _normalizeDate(newDate);
+
+    setState(() {
+      _currentDate = normalized;
+    });
+
+    context.read<NightReviewViewmodel>().setDateAndFetchRecord(normalized);
   }
 
   /// Save a rating for the current date and update the UI.
   void _onRatingSelected(String rating) {
     final normalized = _normalizeDate(_currentDate);
+    final viewModel = context.read<NightReviewViewmodel>();
+
     setState(() {
-      _selectedRating = rating;
-      _ratingsByDate[normalized] = rating;
+      viewModel.updateRating(rating);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = DateFormat('EEE, MMM d').format(_currentDate);
+    final viewModel = context.watch<NightReviewViewmodel>();
+    final currentRecord = viewModel.currentRecord;
+    final previousRatings = viewModel.previousRatings;
+    final loading = viewModel.isLoading;
 
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
@@ -127,50 +127,67 @@ class _NightScreenState extends State<NightScreen> {
               const SizedBox(height: 8),
 
               // --- Main content ---
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _NightSummaryCard(dateLabel: dateLabel),
-
-                      const SizedBox(height: 24),
-
-                      const _SleepStageSummaryRow(),
-
-                      const SizedBox(height: 16),
-
-                      const _HeartRateSummaryCard(),
-
-                      const SizedBox(height: 24),
-
-                      _RatingSection(
-                        selectedRating: _selectedRating,
-                        onRatingSelected: _onRatingSelected,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Comparison is intentionally at the very bottom
-                      _ComparisonCard(
-                        currentDate: _currentDate,
-                        currentRating: _selectedRating,
-                        ratingsByDate: _ratingsByDate,
-                      ),
-
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
+              mainContent(currentRecord, previousRatings, loading)
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget mainContent(SleepRecord? sleepRecord, Map<DateTime, String?>? previousRatings, bool loading) {
+    if (loading) {
+      return CircularProgressIndicator();
+    }
+
+    if (sleepRecord == null) {
+      return Text("No Data available...");
+    }
+
+    final dateLabel = DateFormat('EEE, MMM d').format(_currentDate);
+
+    previousRatings ??= {};
+
+    return
+      Expanded(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _NightSummaryCard(dateLabel: dateLabel, sleepRecord: sleepRecord),
+
+              const SizedBox(height: 24),
+
+              _SleepStageSummaryRow(sleepRecord: sleepRecord),
+
+              const SizedBox(height: 16),
+
+              const _HeartRateSummaryCard(),
+
+              const SizedBox(height: 24),
+
+              _RatingSection(
+                selectedRating: sleepRecord.qualityRating,
+                onRatingSelected: _onRatingSelected,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Comparison is intentionally at the very bottom
+              _ComparisonCard(
+                currentDate: _currentDate,
+                currentRating: sleepRecord.qualityRating,
+                ratingsByDate: previousRatings,
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      );
   }
 }
 
@@ -178,12 +195,15 @@ class _NightScreenState extends State<NightScreen> {
 /// NIGHT SUMMARY CARD – total duration, timeline-style stages, legend
 /// ------------------------------------------------------------
 class _NightSummaryCard extends StatelessWidget {
-  const _NightSummaryCard({required this.dateLabel});
+  const _NightSummaryCard({required this.dateLabel, required this.sleepRecord});
 
   final String dateLabel;
+  final SleepRecord sleepRecord;
 
   @override
   Widget build(BuildContext context) {
+    final sleepDuration = formatTime(sleepRecord.totalSleepTime);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.06),
@@ -201,8 +221,8 @@ class _NightSummaryCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '7h 45m', // Placeholder total sleep duration
+                  Text(
+                    sleepDuration,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -452,30 +472,36 @@ class _LegendDot extends StatelessWidget {
 /// SMALL STAGE CARDS: Awake / REM / Deep
 /// ------------------------------------------------------------
 class _SleepStageSummaryRow extends StatelessWidget {
-  const _SleepStageSummaryRow();
+  const _SleepStageSummaryRow({ required this.sleepRecord });
+
+  final SleepRecord sleepRecord;
 
   @override
   Widget build(BuildContext context) {
+    final awake = formatTime(sleepRecord.awakeDuration);
+    final rem = formatTime(sleepRecord.remSleepDuration);
+    final deep = formatTime(sleepRecord.deepSleepDuration);
+
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: _StageStat(
             title: 'Awake',
-            value: '45m',
+            value: awake,
           ),
         ),
         SizedBox(width: 12),
         Expanded(
           child: _StageStat(
             title: 'REM',
-            value: '1h 30m',
+            value: rem,
           ),
         ),
         SizedBox(width: 12),
         Expanded(
           child: _StageStat(
             title: 'Deep',
-            value: '3h 10m',
+            value: deep,
           ),
         ),
       ],
@@ -810,7 +836,7 @@ class _ComparisonCard extends StatelessWidget {
 
   final DateTime currentDate;
   final String? currentRating;
-  final Map<DateTime, String> ratingsByDate;
+  final Map<DateTime, String?> ratingsByDate;
 
   int? _ratingToScore(String? rating) {
     switch (rating) {
@@ -935,7 +961,7 @@ class _WeekRatingChart extends StatelessWidget {
   });
 
   final List<DateTime> weekDays; // length == 7, chronological
-  final Map<DateTime, String> ratingsByDate;
+  final Map<DateTime, String?> ratingsByDate;
   final DateTime currentDate;
 
   @override
@@ -962,7 +988,7 @@ class _WeekRatingPainter extends CustomPainter {
   });
 
   final List<DateTime> weekDays;
-  final Map<DateTime, String> ratingsByDate;
+  final Map<DateTime, String?> ratingsByDate;
   final DateTime currentDate;
 
   int? _ratingToScore(String? rating) {
@@ -1126,4 +1152,19 @@ class _WeekRatingPainter extends CustomPainter {
       oldDelegate.weekDays != weekDays ||
           oldDelegate.ratingsByDate != ratingsByDate ||
           oldDelegate.currentDate != currentDate;
+}
+
+String formatTime(int? timeInMinutes) {
+  if (timeInMinutes == null) {
+    return "0m";
+  }
+
+  final hours = (timeInMinutes / 60).floor();
+  final minutes = timeInMinutes % 60;
+
+  if (hours == 0) {
+    return "${minutes}m";
+  }
+
+  return "${hours}h ${minutes}m";
 }
