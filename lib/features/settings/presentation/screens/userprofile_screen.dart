@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sleepbalance/features/settings/presentation/widgets/sleep_target_slider.dart';
 
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../viewmodels/settings_viewmodel.dart';
@@ -20,8 +19,9 @@ class _UserProfileState extends State<UserProfileScreen> {
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
 
+  final exp = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+
   DateTime? _selectedBirthDate;
-  int? _targetSleepMinutes;
   bool _hasSleepDisorder = false;
   bool _takesSleepMedication = false;
 
@@ -39,12 +39,21 @@ class _UserProfileState extends State<UserProfileScreen> {
       _lastNameController.text = user.lastName;
       _emailController.text = user.email;
       _selectedBirthDate = user.birthDate;
-      _targetSleepMinutes = user.targetSleepDuration;
       _hasSleepDisorder = user.hasSleepDisorder;
       _takesSleepMedication = user.takesSleepMedication;
     }
 
     _initialized = true;
+  }
+
+  void setupListeners() {
+    _firstNameController.removeListener(_saveProfile);
+    _lastNameController.removeListener(_saveProfile);
+    _emailController.removeListener(_saveProfile);
+
+    _firstNameController.addListener(_saveProfile);
+    _lastNameController.addListener(_saveProfile);
+    _emailController.addListener(_saveProfile);
   }
 
   void _saveProfile() {
@@ -63,16 +72,11 @@ class _UserProfileState extends State<UserProfileScreen> {
         lastName: _lastNameController.text.trim(),
         email: _emailController.text.trim(),
         birthDate: _selectedBirthDate ?? DateTime.now(),
-        targetSleepDuration: _targetSleepMinutes,
         hasSleepDisorder: _hasSleepDisorder,
         takesSleepMedication: _takesSleepMedication,
     );
 
     context.read<SettingsViewModel>().updateUserProfile(updatedUser);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profil gespeichert')),
-    );
   }
 
   Widget _datePicker(BuildContext context) {
@@ -97,6 +101,7 @@ class _UserProfileState extends State<UserProfileScreen> {
         if (picked != null) {
           setState(() {
             _selectedBirthDate = picked;
+            _saveProfile();
           });
         }
       },
@@ -113,9 +118,14 @@ class _UserProfileState extends State<UserProfileScreen> {
     );
   }
 
+  bool emailValid() {
+    return exp.hasMatch(_emailController.text.trim());
+  }
 
   @override
   Widget build(BuildContext context) {
+    setupListeners();
+
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
       overlayOpacity: 0.3,
@@ -175,8 +185,9 @@ class _UserProfileState extends State<UserProfileScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Pflichtfeld';
                         }
-                        if (!value.contains('@')) {
-                          return 'Ungültige E-Mail-Adresse';
+
+                        if (!emailValid()) {
+                          return 'Invalid email address';
                         }
                         return null;
                       },
@@ -187,12 +198,6 @@ class _UserProfileState extends State<UserProfileScreen> {
                     _datePicker(context),
                     const SizedBox(height: 24),
 
-                    sleepTargetSlider(_targetSleepMinutes, (value) => setState(() {
-                      _targetSleepMinutes = value.toInt();
-                    })),
-
-                    const SizedBox(height: 16),
-
                     SwitchListTile(
                       value: _hasSleepDisorder,
                       title: const Text('Schlafstörung vorhanden', style: TextStyle(color: Colors.white)),
@@ -200,6 +205,8 @@ class _UserProfileState extends State<UserProfileScreen> {
                         setState(() {
                           _hasSleepDisorder = value ?? false;
                         });
+
+                        _saveProfile();
                       },
                     ),
 
@@ -210,15 +217,12 @@ class _UserProfileState extends State<UserProfileScreen> {
                         setState(() {
                           _takesSleepMedication = value ?? false;
                         });
+
+                        _saveProfile();
                       },
                     ),
 
                     const SizedBox(height: 24),
-
-                    FloatingActionButton(
-                      onPressed: _saveProfile,
-                      child: const Icon(Icons.save),
-                    ),
                   ],
                 ),
               ),
@@ -227,5 +231,14 @@ class _UserProfileState extends State<UserProfileScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+
+    super.dispose();
   }
 }
