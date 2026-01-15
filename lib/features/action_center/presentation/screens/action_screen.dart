@@ -18,8 +18,9 @@ class ActionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get current user from SettingsViewModel
-    final settingsViewModel = context.read<SettingsViewModel>();
+    // Watch SettingsViewModel to rebuild when user changes
+    // This ensures ActionScreen updates after login/verification
+    final settingsViewModel = context.watch<SettingsViewModel>();
     final currentUserId = settingsViewModel.currentUser?.id;
 
     // Handle case where user is not loaded

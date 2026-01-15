@@ -15,6 +15,12 @@ import 'core/wearables/presentation/screens/wearable_connection_test_screen.dart
 import 'core/wearables/presentation/viewmodels/wearable_connection_viewmodel.dart';
 import 'core/wearables/presentation/viewmodels/wearable_sync_viewmodel.dart';
 import 'features/action_center/data/datasources/action_local_datasource.dart';
+import 'features/auth/data/datasources/email_verification_local_datasource.dart';
+import 'features/auth/data/repositories/auth_repository_impl.dart';
+import 'features/auth/data/repositories/email_verification_repository_impl.dart';
+import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/auth/domain/repositories/email_verification_repository.dart';
+import 'features/auth/presentation/viewmodels/signup_viewmodel.dart';
 import 'features/action_center/data/repositories/action_repository_impl.dart';
 import 'features/action_center/domain/repositories/action_repository.dart';
 import 'features/night_review/data/datasources/sleep_record_local_datasource.dart';
@@ -132,6 +138,31 @@ void main() async {
         ),
 
         // ============================================================================
+        // Authentication - Data Layer
+        // ============================================================================
+
+        // Email Verification DataSource
+        Provider<EmailVerificationLocalDataSource>(
+          create: (_) => EmailVerificationLocalDataSource(
+            DatabaseHelper.instance,
+          ),
+        ),
+
+        // Email Verification Repository
+        Provider<EmailVerificationRepository>(
+          create: (context) => EmailVerificationRepositoryImpl(
+            context.read<EmailVerificationLocalDataSource>(),
+          ),
+        ),
+
+        // Auth Repository
+        Provider<AuthRepository>(
+          create: (context) => AuthRepositoryImpl(
+            context.read<UserRepository>(),
+          ),
+        ),
+
+        // ============================================================================
         // Module Configuration Repository
         // ============================================================================
 
@@ -225,6 +256,15 @@ void main() async {
         ChangeNotifierProvider<LightModuleViewModel>(
           create: (context) => LightModuleViewModel(
             repository: context.read<LightRepository>(),
+          ),
+        ),
+
+        // Signup ViewModel - manages user registration flow
+        // Important: Registered AFTER AuthRepository and EmailVerificationRepository
+        ChangeNotifierProvider<SignupViewModel>(
+          create: (context) => SignupViewModel(
+            authRepository: context.read<AuthRepository>(),
+            emailVerificationRepository: context.read<EmailVerificationRepository>(),
           ),
         ),
 

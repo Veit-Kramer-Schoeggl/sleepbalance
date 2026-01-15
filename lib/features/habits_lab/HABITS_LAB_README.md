@@ -1,6 +1,6 @@
 # Habits Lab Feature
 
-## Struktur (Clean Architecture + MVVM)
+## Struktur (Clean Architecture + MVVM) - **COMPLETED**
 
 ```
 habits_lab/
@@ -11,26 +11,30 @@ habits_lab/
 │   ├── models/             # Aggregierte Models (falls nötig)
 │   └── repositories/       # (leer - nutzt shared module)
 └── presentation/           # UI Layer
-    ├── screens/            # Screens (HabitsScreen)
-    └── viewmodels/         # ViewModels (HabitsViewModel)
+    ├── screens/            # Screens (HabitsScreen) ✅
+    └── viewmodels/         # ViewModels (HabitsViewModel) ✅
 ```
 
 ## Implementierung
 
-### Phase 7 (Data Layer) - JETZT
+### Phase 7 (Data Layer) - **COMPLETED**
 Siehe `PHASE_7.md` für:
-- Shared Intervention Repository (in lib/modules/shared/)
-- Onboarding Question Models
-- Questionnaire Data
+- ✅ Shared Intervention Repository (in lib/modules/shared/)
+- ✅ Onboarding Question Models
+- ✅ Questionnaire Data
 
-### UI Layer - SPÄTER (für Kollegen)
+### UI Layer - **COMPLETED**
 Siehe `HABITS_LAB_IMPLEMENTATION_PLAN.md` für:
-- ViewModel (habits_viewmodel.dart)
-- Screen Implementierung (habits_screen.dart)
-- Modul-Cards und Statistiken
+- ✅ ViewModel (habits_viewmodel.dart)
+- ✅ Screen Implementierung (habits_screen.dart)
+- ⏳ Modul-Cards und Statistiken (geplant für später)
 
 ## Besonderheiten
 
-- Nutzt **shared/intervention_repository** für modul-übergreifende Queries
-- Zeigt Aktivitäten aus ALLEN Modulen (Light, Sport, etc.)
-- Reine Lese-Operationen (keine Creates/Updates diese passieren in den jeweiligen modulen)
+- Nutzt **shared/module_config_repository** für Modul-Konfigurationen
+- Nutzt **shared/constants/module_metadata** für zentrale Modul-Definitionen
+- ViewModel-basiertes State Management mit Provider
+
+## Offene Punkte
+
+Siehe `REPORT.md` für verbleibende Aufgaben (Repository-Fix, Action Center Integration)

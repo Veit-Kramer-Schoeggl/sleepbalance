@@ -1,6 +1,6 @@
 # Night Review MVVM Implementierungsplan
 
-## ⚠️ WICHTIG: Daten-Layer ist bereits fertig!
+## ⚠️ WICHTIG: Daten-Layer ist bereits fertig! **COMPLETED**
 
 **Phase 3 ist abgeschlossen** - Die komplette Daten-Schicht (Data Layer) ist bereits implementiert:
 
@@ -42,9 +42,9 @@ Die Night Review Funktion zeigt dem Benutzer seine Schlafdaten für eine bestimm
 - ✅ Du verstehst das Action Center Beispiel (wenn nicht, schau es dir zuerst an!)
 - ✅ Du weißt, dass die Repositories bereits in `main.dart` registriert sind
 
-## Das Muster verstehen (Kein Code!)
+## Das Muster verstehen (Kein Code!) **COMPLETED** (Documentation)
 
-### Teil 1: Was ist MVVM?
+### Teil 1: Was ist MVVM? **COMPLETED** (Documentation)
 
 Stell dir vor, du baust ein Restaurant:
 
@@ -70,7 +70,7 @@ Stell dir vor, du baust ein Restaurant:
 - Das ViewModel verbindet beide und hält sie getrennt
 - Einfacher zu testen und zu warten!
 
-### Teil 2: Was ist Provider?
+### Teil 2: Was ist Provider? **COMPLETED** (Documentation)
 
 Provider ist wie ein **Lieferservice** in Flutter:
 
@@ -87,7 +87,7 @@ Provider ist wie ein **Lieferservice** in Flutter:
 - Automatische Updates wenn sich Daten ändern
 - Sauberer, lesbarer Code
 
-### Teil 3: Die Night Review Architektur
+### Teil 3: Die Night Review Architektur **COMPLETED** (Documentation)
 
 ```
 Benutzer tippt "Vorheriger Tag" Button
@@ -118,7 +118,7 @@ Benutzer tippt "Vorheriger Tag" Button
 
 ## Schritt-für-Schritt Implementierung
 
-### Schritt 1: Das ViewModel erstellen
+### Schritt 1: Das ViewModel erstellen ❌ NOT IMPLEMENTED
 
 **Was macht ein ViewModel?**
 
@@ -200,7 +200,7 @@ Jede Methode, die Daten lädt, muss folgendes Muster haben:
 
 **Referenz:** Schau dir `ActionViewModel` an - es ist identisch, nur mit anderen Daten!
 
-### Schritt 2: ViewModel mit Screen verbinden
+### Schritt 2: ViewModel mit Screen verbinden ❌ NOT IMPLEMENTED
 
 **Was passiert hier?**
 
@@ -220,7 +220,7 @@ Wir verwenden **Provider**, um das ViewModel an den Screen zu "liefern".
 
 **Referenz:** Action Center macht es genauso!
 
-### Schritt 3: StatefulWidget zu StatelessWidget umwandeln
+### Schritt 3: StatefulWidget zu StatelessWidget umwandeln ❌ NOT IMPLEMENTED
 
 **Was entfernen wir aus NightScreen:**
 
@@ -242,7 +242,7 @@ Wir verwenden **Provider**, um das ViewModel an den Screen zu "liefern".
 - Logik ist im ViewModel (testbar!)
 - Screen ist nur noch "dumme" Anzeige
 
-### Schritt 4: ViewModel in der UI nutzen
+### Schritt 4: ViewModel in der UI nutzen ❌ NOT IMPLEMENTED
 
 **Wie greifst du auf Daten zu?**
 
@@ -290,7 +290,7 @@ final viewModel = context.watch<NightReviewViewModel>();
 
 **Magisch:** Immer wenn das ViewModel `notifyListeners()` ruft, baut sich `_NightScreenContent` automatisch neu! Keine `setState()` Aufrufe nötig!
 
-### Schritt 5: Quality Rating Widget hinzufügen
+### Schritt 5: Quality Rating Widget hinzufügen ⚠️ PARTIAL (UI exists, not connected to DB)
 
 **Was ist das?**
 
@@ -324,7 +324,7 @@ onRatingSelected: (rating) {
 }
 ```
 
-### Schritt 6: Kalender-Funktionalität
+### Schritt 6: Kalender-Funktionalität ⚠️ PARTIAL (UI exists, not connected to ViewModel)
 
 **Was haben wir:**
 - DateNavigationHeader (Pfeile links/rechts + Datum in der Mitte)
@@ -471,7 +471,7 @@ Nach dieser Implementierung hast du:
 
 ## Zusammenfassung: Was ist schon fertig vs. was musst du machen?
 
-### ✅ Bereits in Phase 3 implementiert (FERTIG!):
+### ✅ Bereits in Phase 3 implementiert (FERTIG!): **COMPLETED**
 
 **Datenbank & Migration:**
 - ✅ Migration V3 mit sleep_records und user_sleep_baselines Tabellen
@@ -505,7 +505,7 @@ Nach dieser Implementierung hast du:
 - ✅ `getBaselines(userId, baselineType)`
 - ✅ `getBaselineValue(userId, baselineType, metricName)`
 
-### 📋 Was DU noch implementieren musst (UI Layer):
+### 📋 Was DU noch implementieren musst (UI Layer): ❌ NOT IMPLEMENTED
 
 **Presentation Layer:**
 - ❌ `NightReviewViewModel` erstellen

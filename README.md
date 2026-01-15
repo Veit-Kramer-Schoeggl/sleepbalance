@@ -9,8 +9,12 @@ SleepBalance helps people fall and stay asleep through data-driven, personalized
 ## Key Features
 
 ### Authentication
-- Placeholder implementation (skipped during initial development)
-- Basic auth flow for future integration
+- ✅ **FR-1 Completed**: User registration with email verification (PBKDF2 password hashing)
+- ✅ **FR-2 Completed**: User login with local password verification
+- Email verification with 6-digit codes (15-minute expiration)
+- Secure password storage using PBKDF2-HMAC-SHA256 (600,000 iterations)
+- Local-first authentication (offline-capable, no backend required in Phase 1)
+- See [AUTH_DOCUMENTATION.md](documentation/authentication/AUTH_DOCUMENTATION.md) for complete details
 
 ### Onboarding Questionnaire
 - 3-4 questions on first launch
@@ -237,7 +241,7 @@ lib/
 - Hybrid schema: typed columns for common attributes + JSON for module-specific data
 - Individual user baselines: Calculate personal averages (7-day, 30-day rolling windows)
 - Future: PostgreSQL backend sync for cloud backup and multi-device support
-- See [DATABASE.md](DATABASE.md) for detailed schema and design decisions
+- See [DATABASE.md](documentation/database/DATABASE.md) for detailed schema and design decisions
 
 **Notifications:**
 - Module-driven push notifications (e.g., Light module: morning reminders, evening dimming alerts)
@@ -263,7 +267,7 @@ lib/
 - SQLite for local-first data persistence
 - Schema migrations for version management
 - Sync queue for future PostgreSQL backend integration
-- See [DATABASE.md](DATABASE.md) for complete schema details
+- See [DATABASE.md](documentation/database/DATABASE.md) for complete schema details
 
 **Wearable Integration** (`core/wearables/`)
 - OAuth 2.0 authentication with sleep tracking devices (Fitbit, Apple Health, Google Fit)
@@ -431,4 +435,5 @@ json_serializable: ^6.7.1
 
 ### Documentation
 
-- [DATABASE.md](DATABASE.md) - Complete database schema, design decisions, and migration strategy
+- [AUTH_DOCUMENTATION.md](documentation/authentication/AUTH_DOCUMENTATION.md) - Complete authentication system documentation with flow diagrams, security details, and implementation guide
+- [DATABASE.md](documentation/database/DATABASE.md) - Complete database schema, design decisions, and migration strategy

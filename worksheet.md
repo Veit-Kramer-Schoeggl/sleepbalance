@@ -95,6 +95,3 @@ SELECT configuration FROM user_module_configurations WHERE module_id = 'light';
 6. Run All Tests:
    flutter test test/modules/light/
 - All tests passing
-
-
-

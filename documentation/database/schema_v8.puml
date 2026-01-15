@@ -1,0 +1,225 @@
+@startuml SleepBalance Database Schema V8
+
+!define TABLE(x) class x << (T,#FFAAAA) >>
+!define PK(x) <b><color:red>PK:</color> x</b>
+!define FK(x) <color:blue>FK:</color> x
+!define UNIQUE(x) <color:green>UNIQUE:</color> x
+
+skinparam class {
+  BackgroundColor<<Table>> LightYellow
+  BorderColor<<Table>> Black
+  ArrowColor Black
+}
+
+' Users Table
+TABLE(users) {
+  PK(id: TEXT)
+  UNIQUE(email: TEXT)
+  password_hash: TEXT
+  first_name: TEXT
+  last_name: TEXT
+  birth_date: TEXT
+  timezone: TEXT
+  target_sleep_duration: INTEGER
+  target_bed_time: TEXT
+  target_wake_time: TEXT
+  has_sleep_disorder: INTEGER
+  sleep_disorder_type: TEXT
+  takes_sleep_medication: INTEGER
+  preferred_unit_system: TEXT
+  language: TEXT
+  email_verified: INTEGER
+  created_at: TEXT
+  updated_at: TEXT
+  synced_at: TEXT
+  is_deleted: INTEGER
+}
+
+' Sleep Records Table
+TABLE(sleep_records) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  sleep_date: TEXT
+  bed_time: TEXT
+  sleep_start_time: TEXT
+  sleep_end_time: TEXT
+  wake_time: TEXT
+  total_sleep_time: INTEGER
+  deep_sleep_duration: INTEGER
+  rem_sleep_duration: INTEGER
+  light_sleep_duration: INTEGER
+  awake_duration: INTEGER
+  avg_heart_rate: REAL
+  min_heart_rate: REAL
+  max_heart_rate: REAL
+  avg_hrv: REAL
+  avg_breathing_rate: REAL
+  quality_rating: TEXT
+  quality_notes: TEXT
+  data_source: TEXT
+  created_at: TEXT
+  updated_at: TEXT
+  synced_at: TEXT
+  is_deleted: INTEGER
+}
+
+' Modules Table
+TABLE(modules) {
+  PK(id: TEXT)
+  UNIQUE(name: TEXT)
+  display_name: TEXT
+  description: TEXT
+  icon: TEXT
+  is_active: INTEGER
+  created_at: TEXT
+}
+
+' User Module Configurations Table
+TABLE(user_module_configurations) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  FK(module_id: TEXT)
+  is_enabled: INTEGER
+  configuration: TEXT (JSON)
+  enrolled_at: TEXT
+  updated_at: TEXT
+  synced_at: TEXT
+}
+
+' Intervention Activities Table
+TABLE(intervention_activities) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  FK(module_id: TEXT)
+  activity_date: TEXT
+  was_completed: INTEGER
+  completed_at: TEXT
+  duration_minutes: INTEGER
+  time_of_day: TEXT
+  intensity: TEXT
+  module_specific_data: TEXT (JSON)
+  notes: TEXT
+  created_at: TEXT
+  updated_at: TEXT
+  synced_at: TEXT
+  is_deleted: INTEGER
+}
+
+' User Sleep Baselines Table
+TABLE(user_sleep_baselines) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  baseline_type: TEXT
+  metric_name: TEXT
+  metric_value: REAL
+  data_range_start: TEXT
+  data_range_end: TEXT
+  computed_at: TEXT
+}
+
+' Daily Actions Table (V2)
+TABLE(daily_actions) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  title: TEXT
+  icon_name: TEXT
+  is_completed: INTEGER
+  action_date: TEXT
+  created_at: TEXT
+  completed_at: TEXT
+}
+
+' Wearable Connections Table (V7)
+TABLE(wearable_connections) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  provider: TEXT
+  access_token: TEXT
+  refresh_token: TEXT
+  token_expires_at: TEXT
+  user_external_id: TEXT
+  granted_scopes: TEXT
+  is_active: INTEGER
+  connected_at: TEXT
+  last_sync_at: TEXT
+  created_at: TEXT
+  updated_at: TEXT
+}
+
+' Wearable Sync History Table (V7)
+TABLE(wearable_sync_history) {
+  PK(id: TEXT)
+  FK(user_id: TEXT)
+  provider: TEXT
+  sync_date_from: TEXT
+  sync_date_to: TEXT
+  sync_started_at: TEXT
+  sync_completed_at: TEXT
+  status: TEXT
+  records_fetched: INTEGER
+  records_inserted: INTEGER
+  records_updated: INTEGER
+  records_skipped: INTEGER
+  error_code: TEXT
+  error_message: TEXT
+}
+
+' Email Verification Tokens Table (V8)
+TABLE(email_verification_tokens) {
+  PK(id: TEXT)
+  email: TEXT
+  code: TEXT
+  created_at: TEXT
+  expires_at: TEXT
+  verified_at: TEXT
+  is_used: INTEGER
+}
+
+' Relationships
+users "1" -- "0..*" sleep_records : has
+users "1" -- "0..*" user_module_configurations : configures
+users "1" -- "0..*" intervention_activities : performs
+users "1" -- "0..*" user_sleep_baselines : has
+users "1" -- "0..*" daily_actions : creates
+users "1" -- "0..*" wearable_connections : connects
+users "1" -- "0..*" wearable_sync_history : syncs
+
+modules "1" -- "0..*" user_module_configurations : configured_by
+modules "1" -- "0..*" intervention_activities : tracks
+
+note right of users
+  **Core User Profile**
+  - Authentication & preferences
+  - Sleep goals & health context
+  - V8: Added email_verified
+end note
+
+note right of sleep_records
+  **Nightly Sleep Data**
+  - Aggregated metrics from wearables
+  - Biometric data (HR, HRV, breathing)
+  - Subjective quality rating
+end note
+
+note right of intervention_activities
+  **Core Correlation Table**
+  - Tracks all module interventions
+  - Hybrid: typed fields + JSON
+  - Links interventions to sleep outcomes
+end note
+
+note right of wearable_connections
+  **V7: Wearables Integration**
+  - OAuth credentials (encrypted in prod)
+  - Supports: Fitbit, Apple Health,
+    Google Fit, Garmin
+end note
+
+note right of email_verification_tokens
+  **V8: Email Verification**
+  - 6-digit codes
+  - 15-minute expiration
+  - Single-use tokens
+end note
+
+@enduml
