@@ -1,5 +1,6 @@
 import '../../domain/models/sleep_baseline.dart';
 import '../../domain/models/sleep_record.dart';
+import '../../domain/models/sleep_record_sleep_phase.dart';
 import '../../domain/repositories/sleep_record_repository.dart';
 import '../datasources/sleep_record_local_datasource.dart';
 
@@ -81,5 +82,10 @@ class SleepRecordRepositoryImpl implements SleepRecordRepository {
   @override
   Future<Map<DateTime, String?>> getPreviousQualityRatings(String userId, DateTime upUntil) async {
     return await _dataSource.getQualityForRange(userId, upUntil.subtract(Duration(days: 6)), upUntil);
+  }
+
+  @override
+  Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId) async {
+    return await _dataSource.getSleepPhasesForRecord(sleepRecordId);
   }
 }

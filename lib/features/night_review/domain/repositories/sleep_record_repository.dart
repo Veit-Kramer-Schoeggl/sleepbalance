@@ -1,5 +1,6 @@
 import '../models/sleep_baseline.dart';
 import '../models/sleep_record.dart';
+import '../models/sleep_record_sleep_phase.dart';
 
 /// Sleep Record Repository Interface
 ///
@@ -116,4 +117,6 @@ abstract class SleepRecordRepository {
     String baselineType,
     String metricName,
   );
+
+  Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId);
 }

@@ -2,7 +2,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
 import 'package:sleepbalance/features/night_review/presentation/viewmodels/night_review_viewmodel.dart';
+import 'package:sleepbalance/shared/constants/database_constants.dart';
 
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
@@ -64,6 +66,7 @@ class _NightScreenState extends State<NightScreen> {
     final viewModel = context.watch<NightReviewViewmodel>();
     final currentRecord = viewModel.currentRecord;
     final previousRatings = viewModel.previousRatings;
+    final sleepRecordSleepPhases = viewModel.currentRecordSleepPhases;
     final loading = viewModel.isLoading;
 
     return BackgroundWrapper(
@@ -127,7 +130,12 @@ class _NightScreenState extends State<NightScreen> {
               const SizedBox(height: 8),
 
               // --- Main content ---
-              mainContent(currentRecord, previousRatings, loading)
+              mainContent(
+                currentRecord,
+                previousRatings,
+                sleepRecordSleepPhases,
+                loading
+              )
             ],
           ),
         ),
@@ -135,7 +143,12 @@ class _NightScreenState extends State<NightScreen> {
     );
   }
 
-  Widget mainContent(SleepRecord? sleepRecord, Map<DateTime, String?>? previousRatings, bool loading) {
+  Widget mainContent(
+    SleepRecord? sleepRecord,
+    Map<DateTime, String?>? previousRatings,
+    List<SleepRecordSleepPhase>? sleepRecordSleepPhases,
+    bool loading
+  ) {
     if (loading) {
       return CircularProgressIndicator();
     }
@@ -157,7 +170,11 @@ class _NightScreenState extends State<NightScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _NightSummaryCard(dateLabel: dateLabel, sleepRecord: sleepRecord),
+              _NightSummaryCard(
+                dateLabel: dateLabel,
+                sleepRecord: sleepRecord,
+                sleepRecordSleepPhases: sleepRecordSleepPhases
+              ),
 
               const SizedBox(height: 24),
 
@@ -195,10 +212,15 @@ class _NightScreenState extends State<NightScreen> {
 /// NIGHT SUMMARY CARD – total duration, timeline-style stages, legend
 /// ------------------------------------------------------------
 class _NightSummaryCard extends StatelessWidget {
-  const _NightSummaryCard({required this.dateLabel, required this.sleepRecord});
+  const _NightSummaryCard({
+    required this.dateLabel,
+    required this.sleepRecord,
+    required this.sleepRecordSleepPhases
+  });
 
   final String dateLabel;
   final SleepRecord sleepRecord;
+  final List<SleepRecordSleepPhase>? sleepRecordSleepPhases;
 
   @override
   Widget build(BuildContext context) {
@@ -258,46 +280,18 @@ class _NightSummaryCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Timeline-style sleep stages (no vertical bars)
-          const SizedBox(
+          SizedBox(
             height: 140,
-            child: _SleepStageTimeline(),
+            child: _SleepStageTimeline(sleepRecord: sleepRecord, sleepRecordSleepPhases: sleepRecordSleepPhases)
           ),
 
           const SizedBox(height: 8),
 
           // Time labels at the bottom of the chart
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '22:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                '02:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                '06:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                '08:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-            ],
+          SleepHourlyAxis(
+            start: sleepRecord.sleepStartTime!,
+            end: sleepRecord.sleepEndTime!,
+            maxLabels: 4,
           ),
 
           const SizedBox(height: 16),
@@ -336,32 +330,66 @@ class _SleepSegment {
 
 /// Timeline widget that uses a CustomPainter to draw stage blocks.
 class _SleepStageTimeline extends StatelessWidget {
-  const _SleepStageTimeline();
+  const _SleepStageTimeline({ required this.sleepRecord, required this.sleepRecordSleepPhases });
+
+  final SleepRecord sleepRecord;
+  final List<SleepRecordSleepPhase>? sleepRecordSleepPhases;
 
   @override
   Widget build(BuildContext context) {
+    if (sleepRecordSleepPhases == null) {
+      return Text("Not Available");
+    }
+
     return CustomPaint(
-      painter: _SleepTimelinePainter(),
+      painter: _SleepTimelinePainter(sleepRecord: sleepRecord, sleepRecordSleepPhases: sleepRecordSleepPhases!),
       child: const SizedBox.expand(),
     );
   }
 }
 
-/// Painter that draws horizontal blocks for each sleep stage – similar to your reference screenshot.
 class _SleepTimelinePainter extends CustomPainter {
-  // Fake segments spanning the night (fractions of total width).
-  static const List<_SleepSegment> _segments = [
-    _SleepSegment(start: 0.00, end: 0.10, type: _SleepStageType.light),
-    _SleepSegment(start: 0.10, end: 0.18, type: _SleepStageType.deep),
-    _SleepSegment(start: 0.18, end: 0.25, type: _SleepStageType.rem),
-    _SleepSegment(start: 0.25, end: 0.40, type: _SleepStageType.light),
-    _SleepSegment(start: 0.40, end: 0.50, type: _SleepStageType.deep),
-    _SleepSegment(start: 0.50, end: 0.60, type: _SleepStageType.light),
-    _SleepSegment(start: 0.60, end: 0.70, type: _SleepStageType.rem),
-    _SleepSegment(start: 0.70, end: 0.80, type: _SleepStageType.light),
-    _SleepSegment(start: 0.80, end: 0.90, type: _SleepStageType.deep),
-    _SleepSegment(start: 0.90, end: 1.00, type: _SleepStageType.awake),
-  ];
+  _SleepTimelinePainter({
+    required this.sleepRecord,
+    required List<SleepRecordSleepPhase> sleepRecordSleepPhases,
+  }) : sleepRecordSleepPhases = List.of(sleepRecordSleepPhases) {
+    final sleepStart = sleepRecord.sleepStartTime!;
+    final totalSeconds = sleepRecord.totalSleepTime! * 60; // minutes -> seconds
+    final step = 1.0 / totalSeconds;
+
+    // Ensure correct order (prevents overlaps / weird rendering)
+    this.sleepRecordSleepPhases.sort((a, b) => a.startedAt.compareTo(b.startedAt));
+
+    _segments = <_SleepSegment>[];
+    for (final srsp in this.sleepRecordSleepPhases) {
+      final startSeconds = srsp.startedAt.difference(sleepStart).inSeconds;
+      final durationSeconds = srsp.duration; // already seconds
+
+      var start = (startSeconds * step).clamp(0.0, 1.0);
+      var end = ((startSeconds + durationSeconds) * step).clamp(0.0, 1.0);
+
+      // Skip invalid/empty segments
+      if (end <= start) continue;
+
+      _segments.add(_SleepSegment(
+        start: start,
+        end: end,
+        type: getStageType(srsp),
+      ));
+    }
+  }
+
+  static _SleepStageType getStageType(SleepRecordSleepPhase p) => switch (p.sleepPhaseId) {
+    SLEEP_PHASE_DEEP => _SleepStageType.deep,
+    SLEEP_PHASE_LIGHT => _SleepStageType.light,
+    SLEEP_PHASE_REM => _SleepStageType.rem,
+    SLEEP_PHASE_WAKE => _SleepStageType.awake,
+    _ => throw Exception("Sleep Stage Type not implemented"),
+  };
+
+  final SleepRecord sleepRecord;
+  final List<SleepRecordSleepPhase> sleepRecordSleepPhases;
+  late final List<_SleepSegment> _segments;
 
   Color _colorForStage(_SleepStageType type) {
     switch (type) {
@@ -376,7 +404,6 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
-  /// Each stage is drawn on a slightly different vertical level (like steps).
   double _centerYForStage(_SleepStageType type, double height) {
     switch (type) {
       case _SleepStageType.awake:
@@ -397,39 +424,125 @@ class _SleepTimelinePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
-    // Draw subtle horizontal grid lines.
     const gridLines = 4;
     for (int i = 0; i <= gridLines; i++) {
       final dy = size.height * (i / gridLines);
       canvas.drawLine(Offset(0, dy), Offset(size.width, dy), backgroundPaint);
     }
 
-    // Draw each sleep segment as a rounded horizontal block.
     for (final segment in _segments) {
-      final paint = Paint()
-        ..color = _colorForStage(segment.type)
-        ..style = PaintingStyle.fill;
-
       final x1 = segment.start * size.width;
       final x2 = segment.end * size.width;
+
+      // Make tiny segments still visible (optional but helps)
+      final width = (x2 - x1).clamp(1.0, size.width);
+
       final centerY = _centerYForStage(segment.type, size.height);
       final blockHeight = size.height * 0.18;
 
       final rect = RRect.fromRectAndRadius(
         Rect.fromCenter(
-          center: Offset((x1 + x2) / 2, centerY),
-          width: (x2 - x1),
+          center: Offset(x1 + width / 2, centerY),
+          width: width,
           height: blockHeight,
         ),
         const Radius.circular(6),
       );
+
+      final paint = Paint()
+        ..color = _colorForStage(segment.type)
+        ..style = PaintingStyle.fill;
 
       canvas.drawRRect(rect, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SleepTimelinePainter old) {
+    // important: repaint when new record/phases are provided
+    return old.sleepRecord != sleepRecord ||
+        old.sleepRecordSleepPhases.length != sleepRecordSleepPhases.length;
+  }
+}
+
+class SleepHourlyAxis extends StatelessWidget {
+  const SleepHourlyAxis({
+    super.key,
+    required this.start,
+    required this.end,
+    this.maxLabels = 6,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final int maxLabels;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = _hourTicks(start, end, maxLabels);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: labels
+          .map(
+            (t) => Text(
+          _fmtHHmm(t),
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withOpacity(0.6),
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+      )
+          .toList(),
+    );
+  }
+
+  static List<DateTime> _hourTicks(DateTime start, DateTime end, int maxLabels) {
+    if (!end.isAfter(start)) return [start, end];
+
+    final ticks = <DateTime>[start];
+
+    final firstFullHour = DateTime(start.year, start.month, start.day, start.hour)
+        .add(const Duration(hours: 1));
+
+    for (var t = firstFullHour; t.isBefore(end); t = t.add(const Duration(hours: 1))) {
+      ticks.add(t);
+    }
+
+    ticks.add(end);
+
+    if (ticks.length <= maxLabels) return ticks;
+
+    final desiredMiddle = maxLabels - 2;
+    if (desiredMiddle <= 0) return [start, end];
+
+    final middle = ticks.sublist(1, ticks.length - 1);
+
+    final sampled = <DateTime>[start];
+    for (int i = 0; i < desiredMiddle; i++) {
+      final idx = ((i + 1) * (middle.length) / (desiredMiddle + 1)).round() - 1;
+      final clamped = idx.clamp(0, middle.length - 1);
+      final candidate = middle[clamped];
+
+      if (sampled.last != candidate) sampled.add(candidate);
+    }
+
+    if (sampled.last != end) sampled.add(end);
+
+    final result = <DateTime>[];
+    for (final t in sampled) {
+      if (result.isEmpty || result.last != t) result.add(t);
+    }
+    return result;
+  }
+
+
+  static String _fmtHHmm(DateTime t) {
+    final h = t.hour.toString().padLeft(2, '0');
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 }
 
 /// Legend dot + label for the chart.

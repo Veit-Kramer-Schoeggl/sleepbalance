@@ -26,4 +26,21 @@ class SleepRecordSleepPhase {
       SLEEP_RECORD_SLEEP_PHASES_RECORD_ID: sleepRecordId,
     };
   }
+
+  static SleepRecordSleepPhase fromDatabase(Map<String, dynamic> data) {
+    final id = data[SLEEP_RECORD_SLEEP_PHASES_ID] as String;
+    final sleepRecordId = data[SLEEP_RECORD_SLEEP_PHASES_RECORD_ID] as String;
+    final sleepPhaseId = data[SLEEP_RECORD_SLEEP_PHASES_SLEEP_PHASE_ID] as int;
+    final startedAtString = data[SLEEP_RECORD_SLEEP_PHASES_STARTED_AT] as String;
+    final startedAt = DateTime.parse(startedAtString);
+    final duration = data[SLEEP_RECORD_SLEEP_PHASES_DURATION] as int;
+
+    return SleepRecordSleepPhase(
+        id: id,
+        sleepRecordId: sleepRecordId,
+        sleepPhaseId: sleepPhaseId,
+        startedAt: startedAt,
+        duration: duration
+    );
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:sleepbalance/features/night_review/domain/models/sleep_record.dart';
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
 import 'package:sleepbalance/features/night_review/domain/repositories/sleep_record_repository.dart';
 import 'package:sleepbalance/features/settings/domain/repositories/user_repository.dart';
 
@@ -24,6 +25,7 @@ class NightReviewViewmodel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Map<DateTime, String?>? previousRatings;
+  List<SleepRecordSleepPhase>? currentRecordSleepPhases;
 
   /// Clears any error message
   ///
@@ -51,6 +53,7 @@ class NightReviewViewmodel extends ChangeNotifier {
 
       _currentRecord = await _repository.getRecordForDate(userId, _currentDate!);
       await _loadPreviousRatings();
+      await _loadSleepPhasesForRecord(_currentRecord!.id);
     } catch (e) {
       _errorMessage = e.toString();
       _currentRecord = null;
@@ -77,5 +80,10 @@ class NightReviewViewmodel extends ChangeNotifier {
     final userId = await _userRepository.getCurrentUserId();
 
     previousRatings = await _repository.getPreviousQualityRatings(userId!, _currentDate!);
+  }
+
+  Future<void> _loadSleepPhasesForRecord(String recordId) async {
+    final sleepPhases = await _repository.getSleepPhasesForRecord(recordId);
+    currentRecordSleepPhases = sleepPhases;
   }
 }

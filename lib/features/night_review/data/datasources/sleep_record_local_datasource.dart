@@ -89,6 +89,16 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId) async {
+    final data = await database.query(
+      TABLE_SLEEP_RECORD_SLEEP_PHASES,
+      where: '$SLEEP_RECORD_SLEEP_PHASES_RECORD_ID = ?',
+      whereArgs: [sleepRecordId]
+    );
+
+    return data.map(SleepRecordSleepPhase.fromDatabase).toList();
+  }
+
   /// Updates an existing sleep record
   ///
   /// Updates the record with the matching ID.
