@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
-import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
-
+import 'package:sleepbalance/features/action_center/domain/repositories/action_repository.dart';
 
 import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
-import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 import 'package:sleepbalance/features/habits_lab/presentation/viewmodels/habits_viewmodel.dart';
 
 import '../../../../shared/widgets/ui/background_wrapper.dart';
@@ -53,7 +51,10 @@ class HabitsScreen extends StatelessWidget {
     final repository = context.read<ModuleConfigRepository>();
 
     return ChangeNotifierProvider(
-      create: (_) => HabitsViewModel(repository: repository)..loadModules(userId),
+      create: (_) => HabitsViewModel(
+          repository: repository,
+          actionRepository: context.read<ActionRepository>(),
+      )..loadModules(userId),
       child: _HabitsScreenContent(userId: userId),
     );
   }

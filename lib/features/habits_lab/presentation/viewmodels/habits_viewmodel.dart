@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
 import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 import 'package:sleepbalance/modules/shared/domain/models/user_module_config.dart';
+import 'package:sleepbalance/shared/notifiers/action_refresh_notifier.dart';
+
+import 'package:sleepbalance/features/action_center/domain/models/daily_action.dart';
+import 'package:sleepbalance/features/action_center/domain/repositories/action_repository.dart';
+import '../../../../core/utils/uuid_generator.dart';
 
 class HabitsViewModel extends ChangeNotifier {
   final ModuleConfigRepository repository;
+  final ActionRepository actionRepository;
 
-  HabitsViewModel({required this.repository});
+  HabitsViewModel({
+    required this.repository,
+    required this.actionRepository,
+  });
 
   List<ModuleMetadata> _availableModules = [];
   List<UserModuleConfig> _userConfigs = [];
@@ -42,36 +51,85 @@ class HabitsViewModel extends ChangeNotifier {
 
   Future<void> toggleModule(String userId, String moduleId) async {
     try {
-      final isActive = isModuleActive(moduleId);
+      _errorMessage = null;
 
-      await repository.setModuleEnabled(
-        userId,
-        moduleId,
-        !isActive,
-      );
+      // Toggle only in local state. Persist happens on Save Habits.
+      final index = _userConfigs.indexWhere((c) => c.moduleId == moduleId);
 
-      await loadModules(userId);
+      if (index >= 0) {
+        final current = _userConfigs[index];
+        _userConfigs[index] = UserModuleConfig(
+          id: current.id,
+          userId: current.userId,
+          moduleId: current.moduleId,
+          isEnabled: !current.isEnabled,
+          configuration: current.configuration,
+          enrolledAt: current.enrolledAt,
+          updatedAt: DateTime.now(),
+        );
+      } else {
+        final now = DateTime.now();
+        _userConfigs.add(
+          UserModuleConfig(
+            id: '${userId}_$moduleId',
+            userId: userId,
+            moduleId: moduleId,
+            isEnabled: true,
+            configuration: <String, dynamic>{},
+            enrolledAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+
+      notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
     }
   }
+
 
   Future<void> saveModuleConfigs(String userId) async {
     try {
+      _errorMessage = null;
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
       for (final module in _availableModules) {
         final isActive = isModuleActive(module.id);
 
+        // Persist selection
         await repository.setModuleEnabled(
-          userId,
-          module.id,
-          isActive,
-        );
+            userId,
+            module.id,
+            isActive);
+
+        // Create an action for every active module (simple generic logic)
+        if (isActive) {
+          final action = DailyAction(
+            id: UuidGenerator.generate(),
+            userId: userId,
+            title: module.displayName,  // same label as in Habits
+            iconName: module.id,        // store module id
+            isCompleted: false,
+            actionDate: today,
+            createdAt: now,
+          );
+
+          await actionRepository.saveAction(action);
+        }
       }
+
+      triggerActionRefresh();
+
+      notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
     }
   }
+
 
 }

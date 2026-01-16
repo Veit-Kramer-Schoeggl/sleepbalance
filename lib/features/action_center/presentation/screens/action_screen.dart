@@ -7,6 +7,8 @@ import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/checkbox_button.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
 import '../viewmodels/action_viewmodel.dart';
+import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+import 'package:sleepbalance/shared/notifiers/action_refresh_notifier.dart';
 
 /// Action Center screen for actionable sleep recommendations and tasks
 ///
@@ -61,9 +63,32 @@ class ActionScreen extends StatelessWidget {
 /// Private content widget that watches ActionViewModel
 ///
 /// Rebuilds automatically when ViewModel state changes via notifyListeners().
-class _ActionScreenContent extends StatelessWidget {
+class _ActionScreenContent extends StatefulWidget {
   const _ActionScreenContent();
 
+  @override
+  State<_ActionScreenContent> createState() => _ActionScreenContentState();
+}
+
+class _ActionScreenContentState extends State<_ActionScreenContent> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Reload actions when Habits triggers a refresh
+    actionRefreshTick.addListener(_onRefresh);
+  }
+
+  void _onRefresh() {
+    if (!mounted) return;
+    context.read<ActionViewModel>().loadActions();
+  }
+
+  @override
+  void dispose() {
+    actionRefreshTick.removeListener(_onRefresh);
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ActionViewModel>();
@@ -143,11 +168,15 @@ class _ActionScreenContent extends StatelessWidget {
                             itemCount: viewModel.actions.length,
                             itemBuilder: (context, index) {
                               final action = viewModel.actions[index];
+
+                              //get module metadata to keep UI consistent with Habits
+                              final meta = getModuleMetadata(action.iconName);
+
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: CheckboxButton(
-                                  text: action.title,
-                                  icon: action.icon,
+                                  text: meta.displayName,  //same name as in Habits
+                                  icon: meta.icon,        //same icon as in Habits
                                   isChecked: action.isCompleted,
                                   onChanged: (_) =>
                                       viewModel.toggleAction(action.id),
