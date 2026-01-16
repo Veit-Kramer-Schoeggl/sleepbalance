@@ -67,6 +67,7 @@ class _NightScreenState extends State<NightScreen> {
     final currentRecord = viewModel.currentRecord;
     final previousRatings = viewModel.previousRatings;
     final sleepRecordSleepPhases = viewModel.currentRecordSleepPhases;
+    final targetSleepTime = viewModel.sleepTarget;
     final loading = viewModel.isLoading;
 
     return BackgroundWrapper(
@@ -134,6 +135,7 @@ class _NightScreenState extends State<NightScreen> {
                 currentRecord,
                 previousRatings,
                 sleepRecordSleepPhases,
+                targetSleepTime,
                 loading
               )
             ],
@@ -147,6 +149,7 @@ class _NightScreenState extends State<NightScreen> {
     SleepRecord? sleepRecord,
     Map<DateTime, String?>? previousRatings,
     List<SleepRecordSleepPhase>? sleepRecordSleepPhases,
+    int? targetSleepTime,
     bool loading
   ) {
     if (loading) {
@@ -173,7 +176,8 @@ class _NightScreenState extends State<NightScreen> {
               _NightSummaryCard(
                 dateLabel: dateLabel,
                 sleepRecord: sleepRecord,
-                sleepRecordSleepPhases: sleepRecordSleepPhases
+                sleepRecordSleepPhases: sleepRecordSleepPhases,
+                targetSleeptime: targetSleepTime,
               ),
 
               const SizedBox(height: 24),
@@ -215,16 +219,30 @@ class _NightSummaryCard extends StatelessWidget {
   const _NightSummaryCard({
     required this.dateLabel,
     required this.sleepRecord,
-    required this.sleepRecordSleepPhases
+    required this.sleepRecordSleepPhases,
+    required this.targetSleeptime
   });
 
   final String dateLabel;
   final SleepRecord sleepRecord;
   final List<SleepRecordSleepPhase>? sleepRecordSleepPhases;
+  final int? targetSleeptime;
 
   @override
   Widget build(BuildContext context) {
     final sleepDuration = formatTime(sleepRecord.totalSleepTime);
+    final difference = targetSleeptime != null && sleepRecord.totalSleepTime != null
+        ? targetSleeptime! - sleepRecord.totalSleepTime!
+        : 0;
+
+    final differenceText = Text(
+      '${difference > 0 ? "-" : '+'}${formatTime(difference.abs())}',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: difference > 0 ? Colors.red : Colors.green,
+      ),
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -250,6 +268,19 @@ class _NightSummaryCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                          'Zielschlaf-Differenz: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                      ),
+                      differenceText,
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(

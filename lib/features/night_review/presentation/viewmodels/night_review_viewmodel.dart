@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:sleepbalance/features/night_review/domain/models/sleep_record.dart';
 import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
@@ -18,6 +20,10 @@ class NightReviewViewmodel extends ChangeNotifier {
   SleepRecord? _currentRecord;
   bool _isLoading = false;
   String? _errorMessage;
+
+  int? sleepTarget;
+  DateTime? bedTime;
+  DateTime? wakeTime;
 
   // Getters - expose state to UI
   SleepRecord? get currentRecord => _currentRecord;
@@ -48,6 +54,7 @@ class NightReviewViewmodel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await setTargets();
       final userId = await _userRepository.getCurrentUserId();
       if (userId == null) throw Exception("User not found");
 
@@ -85,5 +92,24 @@ class NightReviewViewmodel extends ChangeNotifier {
   Future<void> _loadSleepPhasesForRecord(String recordId) async {
     final sleepPhases = await _repository.getSleepPhasesForRecord(recordId);
     currentRecordSleepPhases = sleepPhases;
+  }
+
+  Future setTargets() async {
+    final userId = await _userRepository.getCurrentUserId();
+
+    if (userId == null) {
+      return;
+    }
+
+    final user =  await _userRepository.getUserById(userId);
+
+    final bedTimeString =  user?.targetBedTime;
+    final wakeTimeString = user?.targetWakeTime;
+
+    sleepTarget = user?.targetSleepDuration;
+    bedTime = bedTimeString != null ? DateTime.tryParse(bedTimeString) : null;
+    wakeTime = wakeTimeString != null ? DateTime.tryParse(wakeTimeString) : null;
+
+    return;
   }
 }
