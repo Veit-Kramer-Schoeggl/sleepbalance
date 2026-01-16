@@ -3,6 +3,9 @@ import '../../../../core/utils/uuid_generator.dart';
 import '../../domain/models/daily_action.dart';
 import '../../domain/repositories/action_repository.dart';
 
+import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
+import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+
 /// ViewModel for Action Center screen
 ///
 /// Manages state and business logic for daily actions feature.
@@ -15,12 +18,15 @@ import '../../domain/repositories/action_repository.dart';
 /// - Notify UI of state changes
 class ActionViewModel extends ChangeNotifier {
   final ActionRepository _repository;
+  final ModuleConfigRepository _moduleConfigRepository;
   final String userId;
 
   ActionViewModel({
     required ActionRepository repository,
+    required ModuleConfigRepository moduleConfigRepository,
     required this.userId,
-  }) : _repository = repository;
+  }) : _repository = repository,
+        _moduleConfigRepository = moduleConfigRepository;
 
   // State
   List<DailyAction> _actions = [];
@@ -45,7 +51,23 @@ class ActionViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _actions = await _repository.getActionsForDate(userId, _currentDate);
+      final loaded = await _repository.getActionsForDate(userId, _currentDate);
+
+// Get currently active module ids for this user
+      final activeModuleIds = await _moduleConfigRepository.getActiveModuleIds(userId);
+      final activeSet = activeModuleIds.toSet();
+
+// Show:
+// - non-module actions always
+// - module actions only if the module is currently active
+      _actions = loaded.where((a) {
+        final meta = getModuleMetadata(a.iconName);
+        final isModuleAction = meta.id != 'unknown';
+
+        if (!isModuleAction) return true;
+        return activeSet.contains(a.iconName);
+      }).toList();
+
     } catch (e) {
       _errorMessage = 'Failed to load actions: $e';
     } finally {

@@ -97,6 +97,8 @@ class HabitsViewModel extends ChangeNotifier {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
 
+      final existing = await actionRepository.getActionsForDate(userId, today);
+
       for (final module in _availableModules) {
         final isActive = isModuleActive(module.id);
 
@@ -106,20 +108,26 @@ class HabitsViewModel extends ChangeNotifier {
             module.id,
             isActive);
 
-        // Create an action for every active module (simple generic logic)
+        // Create an action for every active module
         if (isActive) {
-          final action = DailyAction(
-            id: UuidGenerator.generate(),
-            userId: userId,
-            title: module.displayName,  // same label as in Habits
-            iconName: module.id,        // store module id
-            isCompleted: false,
-            actionDate: today,
-            createdAt: now,
-          );
+          // Avoid creating duplicates: only one action per module per day
+          final alreadyExists = existing.any((a) => a.iconName == module.id);
 
-          await actionRepository.saveAction(action);
+          if (!alreadyExists) {
+            final action = DailyAction(
+              id: UuidGenerator.generate(),
+              userId: userId,
+              title: module.displayName,
+              iconName: module.id,
+              isCompleted: false,
+              actionDate: today,
+              createdAt: now,
+            );
+
+            await actionRepository.saveAction(action);
+          }
         }
+
       }
 
       triggerActionRefresh();

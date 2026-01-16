@@ -9,6 +9,7 @@ import '../../../../shared/widgets/ui/acceptance_button.dart';
 import '../viewmodels/action_viewmodel.dart';
 import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 import 'package:sleepbalance/shared/notifiers/action_refresh_notifier.dart';
+import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
 
 /// Action Center screen for actionable sleep recommendations and tasks
 ///
@@ -53,6 +54,7 @@ class ActionScreen extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => ActionViewModel(
         repository: context.read(), // Reads ActionRepository from parent MultiProvider
+        moduleConfigRepository: context.read<ModuleConfigRepository>(),
         userId: currentUserId, // Use actual user ID from SettingsViewModel
       )..loadActions(),
       child: const _ActionScreenContent(),
