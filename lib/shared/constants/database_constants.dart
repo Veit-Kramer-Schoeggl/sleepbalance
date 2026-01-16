@@ -11,7 +11,7 @@ library;
 // ============================================================================
 
 const String DATABASE_NAME = 'sleepbalance.db';
-const int DATABASE_VERSION = 8;
+const int DATABASE_VERSION = 9;
 
 // ============================================================================
 // Table Names
@@ -26,6 +26,8 @@ const String TABLE_USER_SLEEP_BASELINES = 'user_sleep_baselines';
 const String TABLE_WEARABLE_CONNECTIONS = 'wearable_connections';
 const String TABLE_WEARABLE_SYNC_HISTORY = 'wearable_sync_history';
 const String TABLE_EMAIL_VERIFICATION_TOKENS = 'email_verification_tokens';
+const String TABLE_SLEEP_PHASES = 'sleep_phases';
+const String TABLE_SLEEP_RECORD_SLEEP_PHASES = 'sleep_record_sleep_phases';
 
 // ============================================================================
 // Users Table Columns
@@ -202,3 +204,28 @@ const String EMAIL_VERIFICATION_CREATED_AT = 'created_at';
 const String EMAIL_VERIFICATION_EXPIRES_AT = 'expires_at';
 const String EMAIL_VERIFICATION_VERIFIED_AT = 'verified_at';
 const String EMAIL_VERIFICATION_IS_USED = 'is_used';
+
+
+// ============================================================================
+// Sleep Phases Table Columns
+// ============================================================================
+const String SLEEP_PHASES_ID = 'id';
+const String SLEEP_PHASES_NAME = 'name';
+
+// ============================================================================
+// Sleep Phases Constants
+// ============================================================================
+const int SLEEP_PHASE_DEEP = 1;
+const int SLEEP_PHASE_LIGHT = 2;
+const int SLEEP_PHASE_REM = 3;
+const int SLEEP_PHASE_WAKE = 4;
+
+// ============================================================================
+// Sleep Record Sleep Phases Table Columns
+// ============================================================================
+
+const String SLEEP_RECORD_SLEEP_PHASES_ID = 'id';
+const String SLEEP_RECORD_SLEEP_PHASES_STARTED_AT = 'start';
+const String SLEEP_RECORD_SLEEP_PHASES_DURATION = 'duration';
+const String SLEEP_RECORD_SLEEP_PHASES_SLEEP_PHASE_ID = 'sleep_phase_id';
+const String SLEEP_RECORD_SLEEP_PHASES_RECORD_ID = 'sleep_record_id';

@@ -1,4 +1,5 @@
 import 'package:fitbitter/fitbitter.dart';
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/config/wearable_config.dart';
 import '../../../../features/night_review/data/datasources/sleep_record_local_datasource.dart';
@@ -293,10 +294,17 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
 
         if (sleepRecord != null) {
           // Save with smart conflict resolution
-          final wasUpdate = await _saveSleepRecord(
+          final (wasUpdate, recordId) = await _saveSleepRecord(
             newRecord: sleepRecord,
             userId: credentials.userId,
           );
+
+          final sleepPhases = FitbitSleepTransformer.transformSleepPhases(
+              fitbitData,
+              recordId
+          );
+
+          await _saveSleepPhases(sleepPhases, recordId);
 
           if (wasUpdate) {
             recordsUpdated++;
@@ -344,7 +352,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
   /// - Existing manual record → Merge (preserve user's quality notes)
   ///
   /// Returns true if an existing record was updated, false if new record inserted.
-  Future<bool> _saveSleepRecord({
+  Future<(bool, String)> _saveSleepRecord({
     required SleepRecord newRecord,
     required String userId,
   }) async {
@@ -357,7 +365,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
     if (existing == null) {
       // No conflict - insert new record
       await _sleepRecordDataSource.insertRecord(newRecord);
-      return false;
+      return (false, newRecord.id);
     }
 
     // Record exists - apply smart merge strategy
@@ -369,7 +377,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
         updatedAt: DateTime.now(),
       );
       await _sleepRecordDataSource.updateRecord(updatedRecord);
-      return true;
+      return (true, updatedRecord.id);
     } else if (existing.dataSource == 'manual') {
       // Manual entry - merge Fitbit metrics with user's quality notes
       final mergedRecord = newRecord.copyWith(
@@ -380,7 +388,7 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
         updatedAt: DateTime.now(),
       );
       await _sleepRecordDataSource.insertRecord(mergedRecord);
-      return true;
+      return (true, mergedRecord.id);
     }
 
     // Unknown data source - default to replace
@@ -390,6 +398,17 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
       updatedAt: DateTime.now(),
     );
     await _sleepRecordDataSource.insertRecord(updatedRecord);
-    return true;
+    return (true, updatedRecord.id);
+  }
+
+  Future _saveSleepPhases(
+    List<SleepRecordSleepPhase> phases,
+    String sleepRecordId
+  ) async {
+    await _sleepRecordDataSource.clearPhasesForRecord(sleepRecordId);
+
+    for (final phase in phases) {
+      await _sleepRecordDataSource.insertSleepPhase(phase);
+    }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../../core/utils/database_date_utils.dart';
 import '../../../../shared/constants/database_constants.dart';
@@ -69,6 +70,22 @@ class SleepRecordLocalDataSource {
       TABLE_SLEEP_RECORDS,
       record.toDatabase(),
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> insertSleepPhase(SleepRecordSleepPhase sleepPhase) async {
+    await database.insert(
+      TABLE_SLEEP_RECORD_SLEEP_PHASES,
+      sleepPhase.toDatabase(),
+      conflictAlgorithm: ConflictAlgorithm.replace
+    );
+  }
+
+  Future<void> clearPhasesForRecord(String sleepRecordId) async {
+    await database.delete(
+      TABLE_SLEEP_RECORD_SLEEP_PHASES,
+      where: '$SLEEP_RECORD_SLEEP_PHASES_RECORD_ID = ?',
+      whereArgs: [sleepRecordId]
     );
   }
 
