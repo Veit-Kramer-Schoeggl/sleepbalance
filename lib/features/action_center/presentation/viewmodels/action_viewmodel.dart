@@ -1,10 +1,12 @@
 import 'package:flutter/foundation.dart';
+
+import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
+
 import '../../../../core/utils/uuid_generator.dart';
 import '../../domain/models/daily_action.dart';
 import '../../domain/repositories/action_repository.dart';
 
-import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
-import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 
 /// ViewModel for Action Center screen
 ///
@@ -20,6 +22,16 @@ class ActionViewModel extends ChangeNotifier {
   final ActionRepository _repository;
   final ModuleConfigRepository _moduleConfigRepository;
   final String userId;
+
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  String _dateKey(DateTime d) {
+    final dd = _dateOnly(d);
+    final y = dd.year.toString().padLeft(4, '0');
+    final m = dd.month.toString().padLeft(2, '0');
+    final day = dd.day.toString().padLeft(2, '0');
+    return '$y$m$day';
+  }
 
   ActionViewModel({
     required ActionRepository repository,
@@ -56,6 +68,32 @@ class ActionViewModel extends ChangeNotifier {
 // Get currently active module ids for this user
       final activeModuleIds = await _moduleConfigRepository.getActiveModuleIds(userId);
       final activeSet = activeModuleIds.toSet();
+
+      final date = _dateOnly(_currentDate);
+
+// Ensure there is one module action per active module for this date
+      for (final moduleId in activeSet) {
+        final exists = loaded.any((a) =>
+        a.iconName == moduleId && _dateOnly(a.actionDate) == date);
+
+        if (!exists) {
+          final meta = getModuleMetadata(moduleId);
+
+          // Deterministic id prevents duplicates across reloads
+          final action = DailyAction(
+            id: '${userId}_${moduleId}_${_dateKey(date)}',
+            userId: userId,
+            title: meta.displayName,
+            iconName: moduleId,
+            isCompleted: false,
+            actionDate: date,
+            createdAt: DateTime.now(),
+          );
+
+          await _repository.saveAction(action);
+          loaded.add(action);
+        }
+      }
 
 // Show:
 // - non-module actions always

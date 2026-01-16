@@ -4,17 +4,15 @@ import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 import 'package:sleepbalance/modules/shared/domain/models/user_module_config.dart';
 import 'package:sleepbalance/shared/notifiers/action_refresh_notifier.dart';
 
-import 'package:sleepbalance/features/action_center/domain/models/daily_action.dart';
 import 'package:sleepbalance/features/action_center/domain/repositories/action_repository.dart';
-import '../../../../core/utils/uuid_generator.dart';
+
 
 class HabitsViewModel extends ChangeNotifier {
   final ModuleConfigRepository repository;
-  final ActionRepository actionRepository;
+
 
   HabitsViewModel({
-    required this.repository,
-    required this.actionRepository,
+    required this.repository
   });
 
   List<ModuleMetadata> _availableModules = [];
@@ -94,11 +92,6 @@ class HabitsViewModel extends ChangeNotifier {
     try {
       _errorMessage = null;
 
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-
-      final existing = await actionRepository.getActionsForDate(userId, today);
-
       for (final module in _availableModules) {
         final isActive = isModuleActive(module.id);
 
@@ -108,28 +101,9 @@ class HabitsViewModel extends ChangeNotifier {
             module.id,
             isActive);
 
-        // Create an action for every active module
-        if (isActive) {
-          // Avoid creating duplicates: only one action per module per day
-          final alreadyExists = existing.any((a) => a.iconName == module.id);
-
-          if (!alreadyExists) {
-            final action = DailyAction(
-              id: UuidGenerator.generate(),
-              userId: userId,
-              title: module.displayName,
-              iconName: module.id,
-              isCompleted: false,
-              actionDate: today,
-              createdAt: now,
-            );
-
-            await actionRepository.saveAction(action);
-          }
-        }
-
       }
 
+      //Trigger Action Center reload after saving habits
       triggerActionRefresh();
 
       notifyListeners();
