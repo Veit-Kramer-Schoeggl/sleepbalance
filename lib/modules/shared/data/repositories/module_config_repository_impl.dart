@@ -57,9 +57,21 @@ class ModuleConfigRepositoryImpl implements ModuleConfigRepository {
   @override
   Future<void> setModuleEnabled(String userId, String moduleId, bool isEnabled) async {
     // Get current config to pass to lifecycle hooks
-    final currentConfig = await dataSource.getModuleConfig(userId, moduleId);
+    var currentConfig = await dataSource.getModuleConfig(userId, moduleId);
     if (currentConfig == null) {
-      throw Exception('Cannot enable/disable non-existent module config');
+     final now = DateTime.now();
+     await dataSource.insertModuleConfig(
+       UserModuleConfig(
+           id:'${userId}_$moduleId',
+           userId: userId,
+           moduleId: moduleId,
+           isEnabled: false,
+           configuration: <String, dynamic>{},
+           enrolledAt: now,
+          updatedAt: now,
+       ),
+     );
+     currentConfig = await dataSource.getModuleConfig(userId, moduleId);
     }
 
     // Update database
@@ -71,7 +83,7 @@ class ModuleConfigRepositoryImpl implements ModuleConfigRepository {
       if (isEnabled) {
         await module.onModuleActivated(
           userId: userId,
-          config: currentConfig.configuration,
+          config: currentConfig!.configuration,
         );
       } else {
         await module.onModuleDeactivated(userId: userId);
