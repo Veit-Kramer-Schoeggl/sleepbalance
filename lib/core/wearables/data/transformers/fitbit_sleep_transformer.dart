@@ -1,3 +1,6 @@
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
+import 'package:sleepbalance/shared/constants/database_constants.dart';
+import 'package:uuid/data.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../features/night_review/domain/models/sleep_record.dart';
 import '../../domain/exceptions/wearable_exception.dart';
@@ -164,4 +167,66 @@ class FitbitSleepTransformer {
 
     return stageData['minutes'] as int?;
   }
+
+  static List<SleepRecordSleepPhase> transformSleepPhases(
+      Map<String, dynamic> fitbitData,
+      String sleepRecordId
+    ) {
+    final sleep = fitbitData['sleep'] as List<dynamic>?;
+    final mainSleep = sleep?.firstWhere(
+      (s) => s['isMainSleep'] == true,
+      orElse: () => null
+    );
+
+    if (mainSleep == null) {
+      return [];
+    }
+
+    final data = mainSleep['levels']?['data'] as List<dynamic>?;
+
+    if (data == null || data.isEmpty) {
+      return [];
+    }
+
+    final sleepPhases = data
+        .map((d) => _extractSleepPhase(d, sleepRecordId))
+        .whereType<SleepRecordSleepPhase>()
+        .toList();
+
+    return sleepPhases;
+  }
+
+  static SleepRecordSleepPhase? _extractSleepPhase(
+    Map<String, dynamic> data,
+    String sleepRecordId
+  ) {
+    final duration = data['seconds'] as int?;
+    final start = data['dateTime'] as String?;
+    final level = data['level'] as String?;
+
+    if (duration == null || start == null || level == null) {
+      return null;
+    }
+
+    final startedAt = DateTime.parse(start);
+
+    final sleepPhaseId = switch (level) {
+      'deep' => SLEEP_PHASE_DEEP,
+      'light' => SLEEP_PHASE_LIGHT,
+      'rem' => SLEEP_PHASE_REM,
+      'wake' => SLEEP_PHASE_WAKE,
+      _ => throw Exception("Sleep phase $level not implemented!")
+    };
+
+    final v7Options = V7Options(startedAt.millisecondsSinceEpoch, null);
+
+    return SleepRecordSleepPhase(
+      id: _uuid.v7(config: v7Options),
+      sleepRecordId: sleepRecordId,
+      sleepPhaseId: sleepPhaseId,
+      startedAt: startedAt,
+      duration: duration
+    );
+  }
+
 }

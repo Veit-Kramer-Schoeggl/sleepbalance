@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sleepbalance/core/database/migrations/migration_v9.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../shared/constants/database_constants.dart';
@@ -121,6 +122,15 @@ class DatabaseHelper {
       await db.execute(MIGRATION_V8_ALTER_USERS);
       debugPrint('DatabaseHelper: MIGRATION_V8 completed ✓');
     }
+    if (version >= 9) {
+      debugPrint('DatabaseHelper: Executing MIGRATION_V9...');
+      await db.execute(MIGRATION_V9_CREATE_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_CREATE_RECORD_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_PHASES);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_RECORD_PHASES);
+      await db.execute(MIGRATION_V9_INSERT_SLEEP_PHASES);
+      debugPrint('DatabaseHelper: MIGRATION_V9 completed ✓');
+    }
 
     // Insert default user only for versions before V8
     // V8+ uses proper authentication with signup/email verification
@@ -210,6 +220,15 @@ class DatabaseHelper {
       await db.execute(MIGRATION_V8_INDEX_EXPIRES);
       await db.execute(MIGRATION_V8_ALTER_USERS);
       debugPrint('DatabaseHelper: MIGRATION_V8 completed ✓');
+    }
+    if (oldVersion < 9) {
+      debugPrint('DatabaseHelper: Executing MIGRATION_V9...');
+      await db.execute(MIGRATION_V9_CREATE_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_CREATE_RECORD_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_PHASES);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_RECORD_PHASES);
+      await db.execute(MIGRATION_V9_INSERT_SLEEP_PHASES);
+      debugPrint('DatabaseHelper: MIGRATION_V9 completed ✓');
     }
 
     debugPrint('DatabaseHelper: Database upgrade completed successfully!');

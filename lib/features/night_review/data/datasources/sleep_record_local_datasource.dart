@@ -1,3 +1,4 @@
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../../core/utils/database_date_utils.dart';
 import '../../../../shared/constants/database_constants.dart';
@@ -72,6 +73,32 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  Future<void> insertSleepPhase(SleepRecordSleepPhase sleepPhase) async {
+    await database.insert(
+      TABLE_SLEEP_RECORD_SLEEP_PHASES,
+      sleepPhase.toDatabase(),
+      conflictAlgorithm: ConflictAlgorithm.replace
+    );
+  }
+
+  Future<void> clearPhasesForRecord(String sleepRecordId) async {
+    await database.delete(
+      TABLE_SLEEP_RECORD_SLEEP_PHASES,
+      where: '$SLEEP_RECORD_SLEEP_PHASES_RECORD_ID = ?',
+      whereArgs: [sleepRecordId]
+    );
+  }
+
+  Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId) async {
+    final data = await database.query(
+      TABLE_SLEEP_RECORD_SLEEP_PHASES,
+      where: '$SLEEP_RECORD_SLEEP_PHASES_RECORD_ID = ?',
+      whereArgs: [sleepRecordId]
+    );
+
+    return data.map(SleepRecordSleepPhase.fromDatabase).toList();
+  }
+
   /// Updates an existing sleep record
   ///
   /// Updates the record with the matching ID.
@@ -114,6 +141,30 @@ class SleepRecordLocalDataSource {
       where: '$SLEEP_RECORDS_ID = ?',
       whereArgs: [recordId],
     );
+  }
+
+  Future<Map<DateTime, String?>> getQualityForRange(
+      String userId,
+      DateTime from,
+      DateTime to,
+      ) async {
+    final startString = DatabaseDateUtils.toDateString(from);
+    final endString = DatabaseDateUtils.toDateString(to);
+
+    final results = await database.query(
+      TABLE_SLEEP_RECORDS,
+      columns: [SLEEP_RECORDS_SLEEP_DATE, SLEEP_RECORDS_QUALITY_RATING],
+      where: '$SLEEP_RECORDS_USER_ID = ? AND $SLEEP_RECORDS_SLEEP_DATE BETWEEN ? AND ?',
+      whereArgs: [userId, startString, endString],
+      orderBy: '$SLEEP_RECORDS_SLEEP_DATE DESC',
+    );
+
+    return {
+      for (final row in results)
+        DatabaseDateUtils.fromString(
+            row[SLEEP_RECORDS_SLEEP_DATE] as String
+        ): row[SLEEP_RECORDS_QUALITY_RATING] as String?,
+    };
   }
 
   /// Gets baselines by type

@@ -105,7 +105,7 @@ class SleepRecord {
       minHeartRate: map[SLEEP_RECORDS_MIN_HEART_RATE] as double?,
       maxHeartRate: map[SLEEP_RECORDS_MAX_HEART_RATE] as double?,
       avgHrv: map[SLEEP_RECORDS_AVG_HRV] as double?,
-      avgHeartRateVariability: map[SLEEP_RECORDS_AVG_HEART_RATE_VARIABILITY] as double?,
+      avgHeartRateVariability: null, // map[SLEEP_RECORDS_AVG_HEART_RATE_VARIABILITY] as double?,
       avgBreathingRate: map[SLEEP_RECORDS_AVG_BREATHING_RATE] as double?,
       qualityRating: map[SLEEP_RECORDS_QUALITY_RATING] as String?,
       qualityNotes: map[SLEEP_RECORDS_QUALITY_NOTES] as String?,
@@ -122,39 +122,39 @@ class SleepRecord {
   /// Handles Dart → SQLite conversions:
   /// - DateTime → TEXT (ISO 8601)
   /// - Preserves null values for nullable fields
-  Map<String, dynamic> toDatabase() {
-    return {
-      SLEEP_RECORDS_ID: id,
-      SLEEP_RECORDS_USER_ID: userId,
-      SLEEP_RECORDS_SLEEP_DATE: DatabaseDateUtils.toDateString(sleepDate),
-      SLEEP_RECORDS_BED_TIME:
-          bedTime != null ? DatabaseDateUtils.toTimestamp(bedTime!) : null,
-      SLEEP_RECORDS_SLEEP_START_TIME: sleepStartTime != null
-          ? DatabaseDateUtils.toTimestamp(sleepStartTime!)
-          : null,
-      SLEEP_RECORDS_SLEEP_END_TIME: sleepEndTime != null
-          ? DatabaseDateUtils.toTimestamp(sleepEndTime!)
-          : null,
-      SLEEP_RECORDS_WAKE_TIME:
-          wakeTime != null ? DatabaseDateUtils.toTimestamp(wakeTime!) : null,
-      SLEEP_RECORDS_TOTAL_SLEEP_TIME: totalSleepTime,
-      SLEEP_RECORDS_DEEP_SLEEP_DURATION: deepSleepDuration,
-      SLEEP_RECORDS_REM_SLEEP_DURATION: remSleepDuration,
-      SLEEP_RECORDS_LIGHT_SLEEP_DURATION: lightSleepDuration,
-      SLEEP_RECORDS_AWAKE_DURATION: awakeDuration,
-      SLEEP_RECORDS_AVG_HEART_RATE: avgHeartRate,
-      SLEEP_RECORDS_MIN_HEART_RATE: minHeartRate,
-      SLEEP_RECORDS_MAX_HEART_RATE: maxHeartRate,
-      SLEEP_RECORDS_AVG_HRV: avgHrv,
-      SLEEP_RECORDS_AVG_HEART_RATE_VARIABILITY: avgHeartRateVariability,
-      SLEEP_RECORDS_AVG_BREATHING_RATE: avgBreathingRate,
-      SLEEP_RECORDS_QUALITY_RATING: qualityRating,
-      SLEEP_RECORDS_QUALITY_NOTES: qualityNotes,
-      SLEEP_RECORDS_DATA_SOURCE: dataSource,
-      SLEEP_RECORDS_CREATED_AT: DatabaseDateUtils.toTimestamp(createdAt),
-      SLEEP_RECORDS_UPDATED_AT: DatabaseDateUtils.toTimestamp(updatedAt),
-    };
-  }
+Map<String, dynamic> toDatabase() {
+  return {
+    SLEEP_RECORDS_ID: id,
+    SLEEP_RECORDS_USER_ID: userId,
+    SLEEP_RECORDS_SLEEP_DATE: DatabaseDateUtils.toDateString(sleepDate),
+    SLEEP_RECORDS_BED_TIME:
+        bedTime != null ? DatabaseDateUtils.toTimestamp(bedTime!) : null,
+    SLEEP_RECORDS_SLEEP_START_TIME: sleepStartTime != null
+        ? DatabaseDateUtils.toTimestamp(sleepStartTime!)
+        : null,
+    SLEEP_RECORDS_SLEEP_END_TIME: sleepEndTime != null
+        ? DatabaseDateUtils.toTimestamp(sleepEndTime!)
+        : null,
+    SLEEP_RECORDS_WAKE_TIME:
+        wakeTime != null ? DatabaseDateUtils.toTimestamp(wakeTime!) : null,
+    SLEEP_RECORDS_TOTAL_SLEEP_TIME: totalSleepTime,
+    SLEEP_RECORDS_DEEP_SLEEP_DURATION: deepSleepDuration,
+    SLEEP_RECORDS_REM_SLEEP_DURATION: remSleepDuration,
+    SLEEP_RECORDS_LIGHT_SLEEP_DURATION: lightSleepDuration,
+    SLEEP_RECORDS_AWAKE_DURATION: awakeDuration,
+    SLEEP_RECORDS_AVG_HEART_RATE: avgHeartRate,
+    SLEEP_RECORDS_MIN_HEART_RATE: minHeartRate,
+    SLEEP_RECORDS_MAX_HEART_RATE: maxHeartRate,
+    SLEEP_RECORDS_AVG_HRV: avgHrv,
+    //SLEEP_RECORDS_AVG_HEART_RATE_VARIABILITY: avgHeartRateVariability,
+    SLEEP_RECORDS_AVG_BREATHING_RATE: avgBreathingRate,
+    SLEEP_RECORDS_QUALITY_RATING: qualityRating,
+    SLEEP_RECORDS_QUALITY_NOTES: qualityNotes,
+    SLEEP_RECORDS_DATA_SOURCE: dataSource,
+    SLEEP_RECORDS_CREATED_AT: DatabaseDateUtils.toTimestamp(createdAt),
+    SLEEP_RECORDS_UPDATED_AT: DatabaseDateUtils.toTimestamp(updatedAt),
+  };
+}
 
   // Immutable update helper
   /// Creates a copy of this SleepRecord with specified fields replaced

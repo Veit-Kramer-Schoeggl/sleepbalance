@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sleepbalance/features/night_review/presentation/viewmodels/night_review_viewmodel.dart';
 import 'core/config/wearable_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/wearables/data/datasources/fitbit_api_datasource.dart';
@@ -250,6 +251,13 @@ void main() async {
         ChangeNotifierProvider<SettingsViewModel>(
           create: (context) => SettingsViewModel(
             repository: context.read<UserRepository>(),
+          ),
+        ),
+
+        ChangeNotifierProvider(
+          create: (context) => NightReviewViewmodel(
+            repository: context.read<SleepRecordRepository>(),
+            userRepository: context.read<UserRepository>(),
           ),
         ),
 
