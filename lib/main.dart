@@ -41,6 +41,8 @@ import 'modules/shared/domain/repositories/module_config_repository.dart';
 import 'modules/shared/domain/services/module_registry.dart';
 import 'shared/constants/database_constants.dart';
 import 'shared/screens/app/splash_screen.dart';
+import 'features/auth/presentation/screens/privacy_gate.dart';
+
 
 void main() async {
   // Ensure Flutter binding is initialized before async operations
@@ -315,7 +317,9 @@ class SleepBalanceApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const SplashScreen(),
+      home: PrivacyGate(
+        child: const SplashScreen(),
+      ),
       routes: {
         '/wearable-test': (context) => const WearableConnectionTestScreen(),
         // TODO: Move to proper settings screen when implementing full wearables UI

@@ -6,6 +6,7 @@ import 'package:sleepbalance/main.dart' as app;
 /// Integration test for complete authentication flow
 ///
 /// Tests the full user journey:
+/// DATA PRIVACY
 /// 1. App opens to SignupScreen (no user exists)
 /// 2. User fills signup form
 /// 3. User submits registration
@@ -17,19 +18,82 @@ import 'package:sleepbalance/main.dart' as app;
 /// Prerequisites:
 /// - Database should be empty (no users)
 /// - Test environment configured
+/// Helper: Accepts the Privacy dialog if it appears.
+/// This MUST happen BEFORE any login/signup interactions.
+
+Future<void> acceptPrivacyIfShown(WidgetTester tester) async {
+  // Give the UI a moment to show any first-run dialog
+  await tester.pumpAndSettle();
+
+  // Look for a privacy/consent dialog (tolerant match)
+  final privacyHeadline = find.textContaining('Privacy');
+  final privacyTitleAlt = find.textContaining('Data Privacy');
+  final acceptTextButton = find.text('Accept');
+
+  final dialogIsVisible = privacyHeadline.evaluate().isNotEmpty ||
+      privacyTitleAlt.evaluate().isNotEmpty ||
+      acceptTextButton.evaluate().isNotEmpty;
+
+  if (!dialogIsVisible) return;
+
+  // If there is a checkbox, tick it first (common consent UX)
+  final checkbox = find.byType(Checkbox);
+  if (checkbox.evaluate().isNotEmpty) {
+    await tester.tap(checkbox.first);
+    await tester.pumpAndSettle();
+  }
+
+  // Tap "Accept" (works for TextButton/ElevatedButton, etc.)
+  if (acceptTextButton.evaluate().isNotEmpty) {
+    await tester.tap(acceptTextButton);
+    await tester.pumpAndSettle();
+    return;
+  }
+
+  // Fallback: Accept button might be an ElevatedButton
+  final acceptElevated = find.widgetWithText(ElevatedButton, 'Accept');
+  if (acceptElevated.evaluate().isNotEmpty) {
+    await tester.tap(acceptElevated);
+    await tester.pumpAndSettle();
+    return;
+  }
+
+  // Fallback: Accept button might be a TextButton
+  final acceptTextBtn = find.widgetWithText(TextButton, 'Accept');
+  if (acceptTextBtn.evaluate().isNotEmpty) {
+    await tester.tap(acceptTextBtn);
+    await tester.pumpAndSettle();
+    return;
+  }
+}
+
+/// Boots the app in a test-friendly way (DO NOT call app.main() in widget tests).
+/// Ensures privacy consent is handled BEFORE any authentication steps.
+Future<void> launchAppAndAcceptPrivacy(WidgetTester tester) async {
+  // IMPORTANT:
+  // Your main.dart should expose a root widget like `SleepBalanceApp`
+  // so tests can do pumpWidget instead of calling main().
+  await tester.pumpWidget(const app.SleepBalanceApp());
+  await tester.pumpAndSettle();
+
+  // Privacy consent must be accepted BEFORE login/signup screen interactions
+  await acceptPrivacyIfShown(tester);
+
+  // After accepting privacy, allow navigation/transitions to settle
+  await tester.pumpAndSettle();
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Authentication Flow', () {
     testWidgets('Complete signup and verification flow', (WidgetTester tester) async {
-      // Start the app
-      await app.main();
-      await tester.pumpAndSettle();
+      // Start the app (test-friendly) + accept privacy BEFORE anything else
+      await launchAppAndAcceptPrivacy(tester);
 
       // ========================================================================
       // Step 1: Verify we're on the SignupScreen
       // ========================================================================
-
       expect(find.text('Sign Up'), findsOneWidget);
       expect(find.text('Create your account'), findsOneWidget);
 
@@ -37,39 +101,32 @@ void main() {
       // Step 2: Fill out the signup form
       // ========================================================================
 
-      // Enter first name
       await tester.enterText(
         find.widgetWithText(TextFormField, 'First Name'),
         'John',
       );
       await tester.pumpAndSettle();
 
-      // Enter last name
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Last Name'),
         'Doe',
       );
       await tester.pumpAndSettle();
 
-      // Enter email
       final emailField = find.widgetWithText(TextFormField, 'Email');
       await tester.enterText(emailField, 'john.doe@example.com');
       await tester.pumpAndSettle();
 
-      // Enter password
       final passwordField = find.widgetWithText(TextFormField, 'Password');
       await tester.enterText(passwordField, 'SecurePass123');
       await tester.pumpAndSettle();
 
-      // Verify password strength indicator appears
       expect(find.text('Strong'), findsOneWidget);
 
-      // Select birth date
       final datePickerField = find.widgetWithText(InputDecorator, 'Birth Date');
       await tester.tap(datePickerField);
       await tester.pumpAndSettle();
 
-      // Tap OK on date picker (uses default date)
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
@@ -94,25 +151,12 @@ void main() {
       // Verification code should be displayed in test mode
       expect(find.text('TEST MODE - Verification Code:'), findsOneWidget);
 
-      // Extract the verification code from the test mode display
-      // In a real integration test, we would read from the database or use a mock email service
-      // For now, we'll use a known test code
-      final codeInputField = find.byType(TextFormField).first;
-
       // ========================================================================
-      // Step 5: Enter the verification code
+      // Step 5: Verify verification screen UI elements
       // ========================================================================
 
-      // Note: In real implementation, we'd extract the code from the display
-      // For this test, we'll simulate entering a code
-      // The actual code is displayed on screen in test mode
-
-      // Since we can't easily extract the dynamic code in the test,
-      // we'll verify the UI elements are present and functional
       expect(find.text('Verify Email'), findsOneWidget);
       expect(find.text('Resend Code'), findsOneWidget);
-
-      // Verify countdown timer is shown
       expect(find.textContaining('Code expires in:'), findsOneWidget);
 
       // ========================================================================
@@ -123,29 +167,14 @@ void main() {
       await tester.tap(resendButton);
       await tester.pumpAndSettle();
 
-      // Verify snackbar appears
       expect(find.text('New verification code sent!'), findsOneWidget);
 
-      // Wait for snackbar to disappear
       await tester.pumpAndSettle(const Duration(seconds: 2));
-
-      // ========================================================================
-      // Cleanup: This test demonstrates the flow but cannot complete
-      // verification without access to the generated code
-      // ========================================================================
-
-      // In a real test environment, we would:
-      // 1. Use a test database helper to retrieve the verification code
-      // 2. Enter the code
-      // 3. Verify navigation to MainNavigation
-      // 4. Clean up test data
     });
 
     testWidgets('Signup validation - invalid email', (WidgetTester tester) async {
-      await app.main();
-      await tester.pumpAndSettle();
+      await launchAppAndAcceptPrivacy(tester);
 
-      // Fill form with invalid email
       await tester.enterText(
         find.widgetWithText(TextFormField, 'First Name'),
         'John',
@@ -156,35 +185,28 @@ void main() {
       );
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Email'),
-        'invalid-email', // Missing @ and domain
+        'invalid-email',
       );
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Password'),
         'SecurePass123',
       );
 
-      // Select birth date
       await tester.tap(find.widgetWithText(InputDecorator, 'Birth Date'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      // Submit form
       await tester.tap(find.widgetWithText(ElevatedButton, 'Sign Up'));
       await tester.pumpAndSettle();
 
-      // Verify error message appears
       expect(find.text('Invalid email address'), findsOneWidget);
-
-      // Verify we're still on SignupScreen
       expect(find.text('Sign Up'), findsOneWidget);
     });
 
     testWidgets('Signup validation - weak password', (WidgetTester tester) async {
-      await app.main();
-      await tester.pumpAndSettle();
+      await launchAppAndAcceptPrivacy(tester);
 
-      // Fill form with weak password
       await tester.enterText(
         find.widgetWithText(TextFormField, 'First Name'),
         'John',
@@ -199,71 +221,51 @@ void main() {
       );
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Password'),
-        'weak', // Too short, no uppercase, no numbers
+        'weak',
       );
       await tester.pumpAndSettle();
 
-      // Verify password strength shows "Weak"
       expect(find.text('Weak'), findsOneWidget);
-
-      // Verify requirements are shown
       expect(find.textContaining('Password Requirements:'), findsOneWidget);
 
-      // Select birth date
       await tester.tap(find.widgetWithText(InputDecorator, 'Birth Date'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      // Submit form
       await tester.tap(find.widgetWithText(ElevatedButton, 'Sign Up'));
       await tester.pumpAndSettle();
 
-      // Verify error appears (either validation message or snackbar)
-      expect(
-        find.textContaining('Password'),
-        findsWidgets, // Multiple password-related text
-      );
-
-      // Verify we're still on SignupScreen
+      expect(find.textContaining('Password'), findsWidgets);
       expect(find.text('Sign Up'), findsOneWidget);
     });
 
     testWidgets('Password visibility toggle works', (WidgetTester tester) async {
-      await app.main();
-      await tester.pumpAndSettle();
+      await launchAppAndAcceptPrivacy(tester);
 
-      // Enter a password
       final passwordField = find.widgetWithText(TextFormField, 'Password');
       await tester.enterText(passwordField, 'TestPassword123');
       await tester.pumpAndSettle();
 
-      // Find the visibility toggle button
       final visibilityToggle = find.descendant(
         of: passwordField,
         matching: find.byIcon(Icons.visibility),
       );
 
-      // Verify toggle button exists
       expect(visibilityToggle, findsOneWidget);
 
-      // Tap to toggle visibility
       await tester.tap(visibilityToggle);
       await tester.pumpAndSettle();
 
-      // After toggle, icon should change to visibility_off
       expect(find.byIcon(Icons.visibility_off), findsOneWidget);
     });
 
     testWidgets('Timezone auto-detection displays value', (WidgetTester tester) async {
-      await app.main();
-      await tester.pumpAndSettle();
+      await launchAppAndAcceptPrivacy(tester);
 
-      // Verify timezone field exists and is disabled
       final timezoneField = find.widgetWithText(TextFormField, 'Timezone');
       expect(timezoneField, findsOneWidget);
 
-      // Verify it has a lock icon (indicating it's disabled)
       expect(
         find.descendant(
           of: timezoneField,
@@ -271,32 +273,21 @@ void main() {
         ),
         findsOneWidget,
       );
-
-      // Timezone value should be auto-detected (UTC or system timezone)
-      // We can't predict exact value, but field should not be empty
     });
   });
 
   group('Email Verification Screen', () {
     testWidgets('Code input validates 6-digit format', (WidgetTester tester) async {
-      // Note: This test requires navigation to verification screen
-      // In a real implementation, we'd set up proper test state
-
-      // For now, we document the expected behavior:
-      // 1. Code input should only accept numbers
-      // 2. Code input should limit to 6 digits
-      // 3. Auto-trigger verification when 6 digits entered
-      // 4. Show error for invalid code format
+      // This would require navigation to the verification screen in a dedicated setup.
+      // Kept as a placeholder as in your original file.
     });
 
     testWidgets('Countdown timer displays and updates', (WidgetTester tester) async {
-      // Test documented - would require setting up verification state
-      // Expected: Timer shows mm:ss format and counts down
+      // Placeholder as in your original file.
     });
 
     testWidgets('Resend code generates new verification', (WidgetTester tester) async {
-      // Test documented - would require setting up verification state
-      // Expected: Resend button generates new code and resets timer
+      // Placeholder as in your original file.
     });
   });
 }
