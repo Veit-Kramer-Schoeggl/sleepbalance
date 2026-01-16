@@ -34,8 +34,21 @@ class HabitsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final settingsViewModel = context.read<SettingsViewModel>();
-    final userId = settingsViewModel.currentUser!.id;
+    final settingsViewModel = context.watch<SettingsViewModel>();
+    final user = settingsViewModel.currentUser;
+
+    if (user == null) {
+      return BackgroundWrapper(
+        imagePath: 'assets/images/main_background.png',
+        overlayOpacity: 0.3,
+        child: const Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    final userId = user.id;
 
     final repository = context.read<ModuleConfigRepository>();
 
