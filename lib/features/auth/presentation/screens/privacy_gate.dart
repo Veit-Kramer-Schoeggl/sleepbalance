@@ -10,6 +10,7 @@ class PrivacyGate extends StatefulWidget {
   final Widget child;
   const PrivacyGate({super.key, required this.child});
 
+
   @override
   State<PrivacyGate> createState() => _PrivacyGateState();
 }
