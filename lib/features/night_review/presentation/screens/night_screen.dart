@@ -158,7 +158,7 @@ class _NightScreenState extends State<NightScreen> {
     }
 
     if (sleepRecord == null) {
-      return Text("No Data available...");
+      return Text("No Data available...", style: TextStyle(color: Colors.white));
     }
 
     final dateLabel = DateFormat('EEE, MMM d').format(_currentDate);
