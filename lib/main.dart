@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sleepbalance/features/night_review/presentation/viewmodels/night_review_viewmodel.dart';
+import 'package:sleepbalance/modules/meditation/domain/meditation_module.dart';
 import 'package:sleepbalance/modules/sport/domain/sport_module.dart';
 import 'core/config/wearable_config.dart';
 import 'core/database/database_helper.dart';
@@ -66,8 +67,8 @@ void main() async {
 
   ModuleRegistry.register(LightModule());
   ModuleRegistry.register(SportModule());
+  ModuleRegistry.register(MeditationModule());
   // TODO: Register other modules as they're implemented
-  // ModuleRegistry.register(MeditationModule());
 
   // Initialize database (runs migrations if needed)
   final database = await DatabaseHelper.instance.database;

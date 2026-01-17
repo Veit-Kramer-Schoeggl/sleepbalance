@@ -78,7 +78,7 @@ const Map<String, ModuleMetadata> moduleMetadata = {
         'thoughts. Diverse techniques from multiple teachers and traditions.',
     icon: Icons.spa,
     primaryColor: Color(0xFF9C27B0), // Purple
-    isAvailable: false,
+    isAvailable: true, // Basic implementation (MVP) available
   ),
 
   'temperature': ModuleMetadata(
