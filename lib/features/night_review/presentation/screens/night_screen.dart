@@ -145,6 +145,7 @@ class _NightScreenState extends State<NightScreen> {
     );
   }
 
+  /// Builds the main content area with sleep record details or loading/empty state.
   Widget mainContent(
     SleepRecord? sleepRecord,
     Map<DateTime, String?>? previousRatings,
@@ -380,6 +381,7 @@ class _SleepStageTimeline extends StatelessWidget {
 }
 
 class _SleepTimelinePainter extends CustomPainter {
+  /// Initializes painter and converts sleep phases into normalized timeline segments.
   _SleepTimelinePainter({
     required this.sleepRecord,
     required List<SleepRecordSleepPhase> sleepRecordSleepPhases,
@@ -410,6 +412,7 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
+  /// Converts sleep phase ID to the corresponding stage type for visualization.
   static _SleepStageType getStageType(SleepRecordSleepPhase p) => switch (p.sleepPhaseId) {
     SLEEP_PHASE_DEEP => _SleepStageType.deep,
     SLEEP_PHASE_LIGHT => _SleepStageType.light,
@@ -422,6 +425,7 @@ class _SleepTimelinePainter extends CustomPainter {
   final List<SleepRecordSleepPhase> sleepRecordSleepPhases;
   late final List<_SleepSegment> _segments;
 
+  /// Returns the display color for a given sleep stage type.
   Color _colorForStage(_SleepStageType type) {
     switch (type) {
       case _SleepStageType.awake:
@@ -435,6 +439,7 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
+  /// Returns the vertical center position for a given sleep stage type in the timeline.
   double _centerYForStage(_SleepStageType type, double height) {
     switch (type) {
       case _SleepStageType.awake:
@@ -448,6 +453,7 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
+  /// Paints the sleep stage timeline with grid lines and colored stage blocks.
   @override
   void paint(Canvas canvas, Size size) {
     final backgroundPaint = Paint()
@@ -488,6 +494,7 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
+  /// Determines if repainting is needed when painter is updated.
   @override
   bool shouldRepaint(covariant _SleepTimelinePainter old) {
     // important: repaint when new record/phases are provided
@@ -496,6 +503,7 @@ class _SleepTimelinePainter extends CustomPainter {
   }
 }
 
+/// Displays hourly time labels along the bottom of the sleep timeline.
 class SleepHourlyAxis extends StatelessWidget {
   const SleepHourlyAxis({
     super.key,
@@ -529,6 +537,7 @@ class SleepHourlyAxis extends StatelessWidget {
     );
   }
 
+  /// Generates evenly-spaced hourly time ticks between start and end, respecting maxLabels limit.
   static List<DateTime> _hourTicks(DateTime start, DateTime end, int maxLabels) {
     if (!end.isAfter(start)) return [start, end];
 
@@ -569,6 +578,7 @@ class SleepHourlyAxis extends StatelessWidget {
   }
 
 
+  /// Formats a DateTime to HH:mm string format.
   static String _fmtHHmm(DateTime t) {
     final h = t.hour.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
@@ -615,6 +625,7 @@ class _LegendDot extends StatelessWidget {
 /// ------------------------------------------------------------
 /// SMALL STAGE CARDS: Awake / REM / Deep
 /// ------------------------------------------------------------
+/// Row displaying summary cards for Awake, REM, and Deep sleep durations.
 class _SleepStageSummaryRow extends StatelessWidget {
   const _SleepStageSummaryRow({ required this.sleepRecord });
 
@@ -653,6 +664,7 @@ class _SleepStageSummaryRow extends StatelessWidget {
   }
 }
 
+/// Individual sleep stage stat card displaying title and formatted time value.
 class _StageStat extends StatelessWidget {
   final String title;
   final String value;
@@ -699,6 +711,7 @@ class _StageStat extends StatelessWidget {
 /// ------------------------------------------------------------
 /// HEART RATE SUMMARY CARD (UI only, fake data)
 /// ------------------------------------------------------------
+/// Heart rate summary card with fake chart and min/average/max values.
 class _HeartRateSummaryCard extends StatelessWidget {
   const _HeartRateSummaryCard();
 
@@ -766,6 +779,7 @@ class _HeartRateSummaryCard extends StatelessWidget {
   }
 }
 
+/// Displays a single heart rate metric with label and value.
 class _HeartRateValue extends StatelessWidget {
   final String label;
   final String value;
@@ -803,7 +817,9 @@ class _HeartRateValue extends StatelessWidget {
 }
 
 /// Very simple fake line chart for heart rate.
+/// Very simple fake line chart for heart rate.
 class _FakeHeartRatePainter extends CustomPainter {
+  /// Paints a simple line path with predefined points for visual effect.
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -834,6 +850,7 @@ class _FakeHeartRatePainter extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
+  /// Always returns false as fake chart data never changes.
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
@@ -841,6 +858,7 @@ class _FakeHeartRatePainter extends CustomPainter {
 /// ------------------------------------------------------------
 /// SUBJECTIVE RATING: Bad / Average / Good
 /// ------------------------------------------------------------
+/// Section for selecting subjective sleep quality rating (Bad/Average/Good).
 class _RatingSection extends StatelessWidget {
   const _RatingSection({
     required this.selectedRating,
@@ -910,6 +928,7 @@ class _RatingSection extends StatelessWidget {
   }
 }
 
+/// Animated button for selecting a sleep quality rating with emoji indicator.
 class _RatingButton extends StatelessWidget {
   const _RatingButton({
     required this.label,
@@ -971,6 +990,7 @@ class _RatingButton extends StatelessWidget {
 /// ------------------------------------------------------------
 /// COMPARISON TO YOUR AVERAGE – rolling 7-day window + mini line chart.
 /// ------------------------------------------------------------
+/// Comparison card showing how current night's rating compares to 7-day rolling average.
 class _ComparisonCard extends StatelessWidget {
   const _ComparisonCard({
     required this.currentDate,
@@ -982,6 +1002,7 @@ class _ComparisonCard extends StatelessWidget {
   final String? currentRating;
   final Map<DateTime, String?> ratingsByDate;
 
+  /// Converts string rating to numeric score (bad=0, average=1, good=2).
   int? _ratingToScore(String? rating) {
     switch (rating) {
       case 'bad':
@@ -994,6 +1015,7 @@ class _ComparisonCard extends StatelessWidget {
     return null;
   }
 
+  /// Converts numeric score to human-readable label.
   String _scoreToLabel(int score) {
     switch (score) {
       case 0:
@@ -1124,7 +1146,9 @@ class _WeekRatingChart extends StatelessWidget {
   }
 }
 
+/// Renders a weekly rating line chart with grid lines, points, and weekday labels.
 class _WeekRatingPainter extends CustomPainter {
+  /// Initializes painter with week days, rating history, and current date for highlighting.
   _WeekRatingPainter({
     required this.weekDays,
     required this.ratingsByDate,
@@ -1135,6 +1159,7 @@ class _WeekRatingPainter extends CustomPainter {
   final Map<DateTime, String?> ratingsByDate;
   final DateTime currentDate;
 
+  /// Converts string rating to numeric score (bad=0, average=1, good=2).
   int? _ratingToScore(String? rating) {
     switch (rating) {
       case 'bad':
@@ -1147,6 +1172,7 @@ class _WeekRatingPainter extends CustomPainter {
     return null;
   }
 
+  /// Paints the weekly chart with grid lines, rating points, connecting lines, and labels.
   @override
   void paint(Canvas canvas, Size size) {
     const paddingLeft = 40.0;
@@ -1291,6 +1317,7 @@ class _WeekRatingPainter extends CustomPainter {
     }
   }
 
+  /// Determines if repainting is needed when week data or current date changes.
   @override
   bool shouldRepaint(covariant _WeekRatingPainter oldDelegate) =>
       oldDelegate.weekDays != weekDays ||
@@ -1298,6 +1325,7 @@ class _WeekRatingPainter extends CustomPainter {
           oldDelegate.currentDate != currentDate;
 }
 
+/// Formats time in minutes to human-readable string (e.g. "7h 30m").
 String formatTime(int? timeInMinutes) {
   if (timeInMinutes == null) {
     return "0m";

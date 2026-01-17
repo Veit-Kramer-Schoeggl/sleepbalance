@@ -118,5 +118,11 @@ abstract class SleepRecordRepository {
     String metricName,
   );
 
+  /// Retrieves all sleep phases for a given sleep record.
+  ///
+  /// Parameters:
+  /// - [sleepRecordId]: The ID of the sleep record.
+  ///
+  /// Returns a list of [SleepRecordSleepPhase] objects.
   Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId);
 }

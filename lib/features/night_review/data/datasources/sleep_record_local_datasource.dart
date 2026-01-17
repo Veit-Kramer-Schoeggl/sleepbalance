@@ -17,6 +17,9 @@ import '../../domain/models/sleep_record.dart';
 class SleepRecordLocalDataSource {
   final Database database;
 
+  /// Creates a new instance of [SleepRecordLocalDataSource].
+  ///
+  /// Requires a [Database] instance to perform SQLite operations.
   SleepRecordLocalDataSource({required this.database});
 
   /// Gets sleep record by date
@@ -73,6 +76,7 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  /// Inserts a single sleep phase record.
   Future<void> insertSleepPhase(SleepRecordSleepPhase sleepPhase) async {
     await database.insert(
       TABLE_SLEEP_RECORD_SLEEP_PHASES,
@@ -81,6 +85,7 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  /// Deletes all sleep phases for a given record.
   Future<void> clearPhasesForRecord(String sleepRecordId) async {
     await database.delete(
       TABLE_SLEEP_RECORD_SLEEP_PHASES,
@@ -89,6 +94,7 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  /// Retrieves all sleep phases for a specific sleep record.
   Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId) async {
     final data = await database.query(
       TABLE_SLEEP_RECORD_SLEEP_PHASES,
@@ -143,6 +149,7 @@ class SleepRecordLocalDataSource {
     );
   }
 
+  /// Retrieves quality ratings for a given date range.
   Future<Map<DateTime, String?>> getQualityForRange(
       String userId,
       DateTime from,
@@ -169,7 +176,7 @@ class SleepRecordLocalDataSource {
 
   /// Gets baselines by type
   ///
-  /// Queries user_sleep_baselines table for all metrics of a specific baseline type.
+  /// Queries user_sleep_baslines table for all metrics of a specific baseline type.
   Future<List<SleepBaseline>> getBaselinesByType(
     String userId,
     String baselineType,

@@ -1,6 +1,7 @@
 import 'package:fitbitter/fitbitter.dart';
 import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
 import 'package:uuid/uuid.dart';
+
 import '../../../../core/config/wearable_config.dart';
 import '../../../../features/night_review/data/datasources/sleep_record_local_datasource.dart';
 import '../../../../features/night_review/domain/models/sleep_record.dart';
@@ -41,6 +42,20 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
       Duration(minutes: 5); // Refresh if expires within 5 min
 
   @override
+
+  /// Starts the synchronization of sleep data for a given wearable provider.
+  ///
+  /// This method orchestrates the entire sync process, including:
+  /// 1. Creating an initial sync record in the local database.
+  /// 2. Verifying active credentials for the specified provider.
+  /// 3. Refreshing the access token if it's about to expire.
+  /// 4. Fetching sleep data from the provider's API for the given date range.
+  /// 5. Transforming the fetched data into the application's domain models.
+  /// 6. Saving the transformed data to the local database, with conflict resolution.
+  /// 7. Updating the sync record with the final status (success, partial, or failed).
+  ///
+  /// Throws a [WearableException] for authentication errors, unimplemented providers,
+  /// or any other failure during the sync process.
   Future<WearableSyncRecord> syncSleepData({
     required WearableProvider provider,
     required String userId,
@@ -146,6 +161,11 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
   }
 
   @override
+
+  /// Retrieves a list of past synchronization records for a user.
+  ///
+  /// Allows filtering by a specific [WearableProvider] and limiting the
+  /// number of records returned.
   Future<List<WearableSyncRecord>> getSyncHistory({
     required String userId,
     WearableProvider? provider,
@@ -159,6 +179,8 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
   }
 
   @override
+
+  /// Retrieves the most recent synchronization record for a specific provider.
   Future<WearableSyncRecord?> getLastSync({
     required String userId,
     required WearableProvider provider,
@@ -258,6 +280,8 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
   ///
   /// Fetches data for date range, transforms to SleepRecords, and saves with
   /// smart conflict resolution.
+  ///
+  /// Returns the updated sync record with final counts.
   Future<WearableSyncRecord> _syncFitbitSleepData({
     required WearableCredentials credentials,
     required DateTime startDate,
@@ -401,6 +425,11 @@ class WearableDataSyncRepositoryImpl implements WearableDataSyncRepository {
     return (true, updatedRecord.id);
   }
 
+  /// Deletes all existing sleep phases for a given record and inserts the new ones.
+  ///
+  /// This ensures that every sync provides a completely fresh and up-to-date
+  /// set of sleep phase data, preventing data duplication or conflicts from
+  /// previous syncs.
   Future _saveSleepPhases(
     List<SleepRecordSleepPhase> phases,
     String sleepRecordId

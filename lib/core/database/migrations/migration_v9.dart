@@ -4,9 +4,10 @@ import '../../../shared/constants/database_constants.dart';
 
 /// Migration V9: Sleep Phases
 ///
-/// Adds sleep phases table
-/// Adds sleep record phases table
-///
+/// Adds `sleep_phases` table to define sleep stage types (deep, light, REM, wake).
+/// Adds `sleep_record_sleep_phases` table to store detailed sleep stage segments for each sleep record.
+/// Seeds the `sleep_phases` table with default values.
+/// Adds indexes for performance.
 
 const String MIGRATION_V9_CREATE_PHASES_TABLE = '''
 CREATE TABLE IF NOT EXISTS $TABLE_SLEEP_PHASES (
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS $TABLE_SLEEP_RECORD_SLEEP_PHASES (
   $SLEEP_RECORD_SLEEP_PHASES_DURATION INT NOT NULL,
   $SLEEP_RECORD_SLEEP_PHASES_SLEEP_PHASE_ID INT NOT NULL,
   $SLEEP_RECORD_SLEEP_PHASES_RECORD_ID TEXT NOT NULL,
-  FOREIGN KEY ($SLEEP_RECORD_SLEEP_PHASES_SLEEP_PHASE_ID) REFERENCES $TABLE_SLEEP_PHASES($SLEEP_PHASES_ID) ON DELETE CASCADE
+  FOREIGN KEY ($SLEEP_RECORD_SLEEP_PHASES_SLEEP_PHASE_ID) REFERENCES $TABLE_SLEEP_PHASES($SLEEP_PHASES_ID) ON DELETE CASCADE,
   FOREIGN KEY ($SLEEP_RECORD_SLEEP_PHASES_RECORD_ID) REFERENCES $TABLE_SLEEP_RECORDS($SLEEP_RECORDS_ID) ON DELETE CASCADE
 );
 ''';

@@ -2,13 +2,22 @@ import 'package:sleepbalance/core/utils/database_date_utils.dart';
 
 import '../../../../shared/constants/database_constants.dart';
 
+/// Represents a single, continuous phase of sleep within a larger sleep record.
+///
+/// Each sleep record is composed of multiple sequential phases (e.g., deep, light, REM, wake).
 class SleepRecordSleepPhase {
+  /// Unique identifier for this sleep phase segment.
   final String id;
+  /// Foreign key linking to the parent sleep record.
   final String sleepRecordId;
+  /// Foreign key linking to the sleep phase type (e.g., deep, light, REM, wake).
   final int sleepPhaseId;
+  /// The exact time this sleep phase began.
   final DateTime startedAt;
+  /// The duration of this phase in seconds.
   final int duration;
 
+  /// Creates a new instance of [SleepRecordSleepPhase].
   const SleepRecordSleepPhase({
     required this.id,
     required this.sleepRecordId,
@@ -17,6 +26,7 @@ class SleepRecordSleepPhase {
     required this.duration
   });
 
+  /// Converts this [SleepRecordSleepPhase] object into a map for database storage.
   Map<String, dynamic> toDatabase() {
     return {
       SLEEP_RECORD_SLEEP_PHASES_ID: id,
@@ -27,6 +37,7 @@ class SleepRecordSleepPhase {
     };
   }
 
+  /// Creates a [SleepRecordSleepPhase] instance from a database row map.
   static SleepRecordSleepPhase fromDatabase(Map<String, dynamic> data) {
     final id = data[SLEEP_RECORD_SLEEP_PHASES_ID] as String;
     final sleepRecordId = data[SLEEP_RECORD_SLEEP_PHASES_RECORD_ID] as String;

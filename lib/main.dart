@@ -45,6 +45,10 @@ import 'shared/screens/app/splash_screen.dart';
 import 'features/auth/presentation/screens/privacy_gate.dart';
 
 
+/// The main entry point for the SleepBalance application.
+///
+/// This function initializes essential services like configuration, database,
+/// and dependency injection before running the app.
 void main() async {
   // Ensure Flutter binding is initialized before async operations
   WidgetsFlutterBinding.ensureInitialized();
@@ -314,6 +318,9 @@ void main() async {
   );
 }
 
+/// The root widget of the SleepBalance application.
+///
+/// Sets up the [MaterialApp], theme, and initial screen.
 class SleepBalanceApp extends StatelessWidget {
   const SleepBalanceApp({super.key});
 

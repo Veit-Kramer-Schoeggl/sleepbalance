@@ -168,6 +168,13 @@ class FitbitSleepTransformer {
     return stageData['minutes'] as int?;
   }
 
+  /// Transforms the detailed sleep phase data from the Fitbit API response.
+  ///
+  /// Extracts the `levels.data` array from the main sleep entry, which contains
+  /// a granular timeline of sleep stages (deep, light, rem, wake). Each segment
+  /// in the timeline is then transformed into a [SleepRecordSleepPhase] object.
+  ///
+  /// Returns an empty list if no main sleep or no level data is found.
   static List<SleepRecordSleepPhase> transformSleepPhases(
       Map<String, dynamic> fitbitData,
       String sleepRecordId
@@ -196,6 +203,12 @@ class FitbitSleepTransformer {
     return sleepPhases;
   }
 
+  /// Extracts a single sleep phase from a Fitbit data segment.
+  ///
+  /// Maps the Fitbit `level` string (e.g., 'deep') to a local `sleepPhaseId`
+  /// and creates a time-sortable UUID v7 for the record ID.
+  ///
+  /// Returns null if any of the required fields (`seconds`, `dateTime`, `level`) are missing.
   static SleepRecordSleepPhase? _extractSleepPhase(
     Map<String, dynamic> data,
     String sleepRecordId
