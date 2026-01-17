@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sleepbalance/features/night_review/presentation/viewmodels/night_review_viewmodel.dart';
 import 'core/config/wearable_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/wearables/data/datasources/fitbit_api_datasource.dart';
@@ -41,7 +42,13 @@ import 'modules/shared/domain/repositories/module_config_repository.dart';
 import 'modules/shared/domain/services/module_registry.dart';
 import 'shared/constants/database_constants.dart';
 import 'shared/screens/app/splash_screen.dart';
+import 'features/auth/presentation/screens/privacy_gate.dart';
 
+
+/// The main entry point for the SleepBalance application.
+///
+/// This function initializes essential services like configuration, database,
+/// and dependency injection before running the app.
 void main() async {
   // Ensure Flutter binding is initialized before async operations
   WidgetsFlutterBinding.ensureInitialized();
@@ -251,6 +258,13 @@ void main() async {
           ),
         ),
 
+        ChangeNotifierProvider(
+          create: (context) => NightReviewViewmodel(
+            repository: context.read<SleepRecordRepository>(),
+            userRepository: context.read<UserRepository>(),
+          ),
+        ),
+
         // Light Module ViewModel - manages light module state
         // Important: Registered AFTER LightRepository (its dependency)
         ChangeNotifierProvider<LightModuleViewModel>(
@@ -304,6 +318,9 @@ void main() async {
   );
 }
 
+/// The root widget of the SleepBalance application.
+///
+/// Sets up the [MaterialApp], theme, and initial screen.
 class SleepBalanceApp extends StatelessWidget {
   const SleepBalanceApp({super.key});
 
@@ -315,7 +332,9 @@ class SleepBalanceApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const SplashScreen(),
+      home: PrivacyGate(
+        child: const SplashScreen(),
+      ),
       routes: {
         '/wearable-test': (context) => const WearableConnectionTestScreen(),
         // TODO: Move to proper settings screen when implementing full wearables UI

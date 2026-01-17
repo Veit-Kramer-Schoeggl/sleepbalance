@@ -1,10 +1,15 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:sleepbalance/features/night_review/domain/models/sleep_record_sleep_phase.dart';
+import 'package:sleepbalance/features/night_review/presentation/viewmodels/night_review_viewmodel.dart';
+import 'package:sleepbalance/shared/constants/database_constants.dart';
 
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/expandable_calendar.dart';
+import '../../domain/models/sleep_record.dart';
 
 /// Night Review screen for reviewing a specific night's sleep (UI + simple in-memory logic only).
 class NightScreen extends StatefulWidget {
@@ -21,50 +26,49 @@ class _NightScreenState extends State<NightScreen> {
   /// Whether the calendar is expanded or collapsed.
   bool _isCalendarExpanded = false;
 
-  /// Subjective rating for the currently selected date ("bad", "average", "good").
-  String? _selectedRating;
-
-  /// In-memory store of ratings by calendar day (normalized date → rating).
-  final Map<DateTime, String> _ratingsByDate = {};
-
   @override
   void initState() {
     super.initState();
     _currentDate = _normalizeDate(_currentDate);
-    _loadRatingForCurrentDate();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NightReviewViewmodel>().setDateAndFetchRecord(_currentDate);
+    });
   }
 
   /// Strip time component so only year/month/day are kept.
   DateTime _normalizeDate(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 
-  /// Load rating for _currentDate from the map into _selectedRating.
-  void _loadRatingForCurrentDate() {
-    final normalized = _normalizeDate(_currentDate);
-    setState(() {
-      _currentDate = normalized;
-      _selectedRating = _ratingsByDate[normalized];
-    });
-  }
-
   /// Centralized handler when the user changes the date (via nav or calendar).
   void _onDateChanged(DateTime newDate) {
-    _currentDate = _normalizeDate(newDate);
-    _loadRatingForCurrentDate();
+    final normalized = _normalizeDate(newDate);
+
+    setState(() {
+      _currentDate = normalized;
+    });
+
+    context.read<NightReviewViewmodel>().setDateAndFetchRecord(normalized);
   }
 
   /// Save a rating for the current date and update the UI.
   void _onRatingSelected(String rating) {
     final normalized = _normalizeDate(_currentDate);
+    final viewModel = context.read<NightReviewViewmodel>();
+
     setState(() {
-      _selectedRating = rating;
-      _ratingsByDate[normalized] = rating;
+      viewModel.updateRating(rating);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = DateFormat('EEE, MMM d').format(_currentDate);
+    final viewModel = context.watch<NightReviewViewmodel>();
+    final currentRecord = viewModel.currentRecord;
+    final previousRatings = viewModel.previousRatings;
+    final sleepRecordSleepPhases = viewModel.currentRecordSleepPhases;
+    final targetSleepTime = viewModel.sleepTarget;
+    final loading = viewModel.isLoading;
 
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
@@ -127,50 +131,85 @@ class _NightScreenState extends State<NightScreen> {
               const SizedBox(height: 8),
 
               // --- Main content ---
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _NightSummaryCard(dateLabel: dateLabel),
-
-                      const SizedBox(height: 24),
-
-                      const _SleepStageSummaryRow(),
-
-                      const SizedBox(height: 16),
-
-                      const _HeartRateSummaryCard(),
-
-                      const SizedBox(height: 24),
-
-                      _RatingSection(
-                        selectedRating: _selectedRating,
-                        onRatingSelected: _onRatingSelected,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Comparison is intentionally at the very bottom
-                      _ComparisonCard(
-                        currentDate: _currentDate,
-                        currentRating: _selectedRating,
-                        ratingsByDate: _ratingsByDate,
-                      ),
-
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              ),
+              mainContent(
+                currentRecord,
+                previousRatings,
+                sleepRecordSleepPhases,
+                targetSleepTime,
+                loading
+              )
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Builds the main content area with sleep record details or loading/empty state.
+  Widget mainContent(
+    SleepRecord? sleepRecord,
+    Map<DateTime, String?>? previousRatings,
+    List<SleepRecordSleepPhase>? sleepRecordSleepPhases,
+    int? targetSleepTime,
+    bool loading
+  ) {
+    if (loading) {
+      return CircularProgressIndicator();
+    }
+
+    if (sleepRecord == null) {
+      return Text("No Data available...");
+    }
+
+    final dateLabel = DateFormat('EEE, MMM d').format(_currentDate);
+
+    previousRatings ??= {};
+
+    return
+      Expanded(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _NightSummaryCard(
+                dateLabel: dateLabel,
+                sleepRecord: sleepRecord,
+                sleepRecordSleepPhases: sleepRecordSleepPhases,
+                targetSleeptime: targetSleepTime,
+              ),
+
+              const SizedBox(height: 24),
+
+              _SleepStageSummaryRow(sleepRecord: sleepRecord),
+
+              const SizedBox(height: 16),
+
+              const _HeartRateSummaryCard(),
+
+              const SizedBox(height: 24),
+
+              _RatingSection(
+                selectedRating: sleepRecord.qualityRating,
+                onRatingSelected: _onRatingSelected,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Comparison is intentionally at the very bottom
+              _ComparisonCard(
+                currentDate: _currentDate,
+                currentRating: sleepRecord.qualityRating,
+                ratingsByDate: previousRatings,
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      );
   }
 }
 
@@ -178,12 +217,34 @@ class _NightScreenState extends State<NightScreen> {
 /// NIGHT SUMMARY CARD – total duration, timeline-style stages, legend
 /// ------------------------------------------------------------
 class _NightSummaryCard extends StatelessWidget {
-  const _NightSummaryCard({required this.dateLabel});
+  const _NightSummaryCard({
+    required this.dateLabel,
+    required this.sleepRecord,
+    required this.sleepRecordSleepPhases,
+    required this.targetSleeptime
+  });
 
   final String dateLabel;
+  final SleepRecord sleepRecord;
+  final List<SleepRecordSleepPhase>? sleepRecordSleepPhases;
+  final int? targetSleeptime;
 
   @override
   Widget build(BuildContext context) {
+    final sleepDuration = formatTime(sleepRecord.totalSleepTime);
+    final difference = targetSleeptime != null && sleepRecord.totalSleepTime != null
+        ? targetSleeptime! - sleepRecord.totalSleepTime!
+        : 0;
+
+    final differenceText = Text(
+      '${difference > 0 ? "-" : '+'}${formatTime(difference.abs())}',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: difference > 0 ? Colors.red : Colors.green,
+      ),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.06),
@@ -201,13 +262,26 @@ class _NightSummaryCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '7h 45m', // Placeholder total sleep duration
+                  Text(
+                    sleepDuration,
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                          'Zielschlaf-Differenz: ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                      ),
+                      differenceText,
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -238,46 +312,18 @@ class _NightSummaryCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Timeline-style sleep stages (no vertical bars)
-          const SizedBox(
+          SizedBox(
             height: 140,
-            child: _SleepStageTimeline(),
+            child: _SleepStageTimeline(sleepRecord: sleepRecord, sleepRecordSleepPhases: sleepRecordSleepPhases)
           ),
 
           const SizedBox(height: 8),
 
           // Time labels at the bottom of the chart
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '22:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                '02:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                '06:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-              Text(
-                '08:00',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
-                ),
-              ),
-            ],
+          SleepHourlyAxis(
+            start: sleepRecord.sleepStartTime!,
+            end: sleepRecord.sleepEndTime!,
+            maxLabels: 4,
           ),
 
           const SizedBox(height: 16),
@@ -316,33 +362,70 @@ class _SleepSegment {
 
 /// Timeline widget that uses a CustomPainter to draw stage blocks.
 class _SleepStageTimeline extends StatelessWidget {
-  const _SleepStageTimeline();
+  const _SleepStageTimeline({ required this.sleepRecord, required this.sleepRecordSleepPhases });
+
+  final SleepRecord sleepRecord;
+  final List<SleepRecordSleepPhase>? sleepRecordSleepPhases;
 
   @override
   Widget build(BuildContext context) {
+    if (sleepRecordSleepPhases == null) {
+      return Text("Not Available");
+    }
+
     return CustomPaint(
-      painter: _SleepTimelinePainter(),
+      painter: _SleepTimelinePainter(sleepRecord: sleepRecord, sleepRecordSleepPhases: sleepRecordSleepPhases!),
       child: const SizedBox.expand(),
     );
   }
 }
 
-/// Painter that draws horizontal blocks for each sleep stage – similar to your reference screenshot.
 class _SleepTimelinePainter extends CustomPainter {
-  // Fake segments spanning the night (fractions of total width).
-  static const List<_SleepSegment> _segments = [
-    _SleepSegment(start: 0.00, end: 0.10, type: _SleepStageType.light),
-    _SleepSegment(start: 0.10, end: 0.18, type: _SleepStageType.deep),
-    _SleepSegment(start: 0.18, end: 0.25, type: _SleepStageType.rem),
-    _SleepSegment(start: 0.25, end: 0.40, type: _SleepStageType.light),
-    _SleepSegment(start: 0.40, end: 0.50, type: _SleepStageType.deep),
-    _SleepSegment(start: 0.50, end: 0.60, type: _SleepStageType.light),
-    _SleepSegment(start: 0.60, end: 0.70, type: _SleepStageType.rem),
-    _SleepSegment(start: 0.70, end: 0.80, type: _SleepStageType.light),
-    _SleepSegment(start: 0.80, end: 0.90, type: _SleepStageType.deep),
-    _SleepSegment(start: 0.90, end: 1.00, type: _SleepStageType.awake),
-  ];
+  /// Initializes painter and converts sleep phases into normalized timeline segments.
+  _SleepTimelinePainter({
+    required this.sleepRecord,
+    required List<SleepRecordSleepPhase> sleepRecordSleepPhases,
+  }) : sleepRecordSleepPhases = List.of(sleepRecordSleepPhases) {
+    final sleepStart = sleepRecord.sleepStartTime!;
+    final totalSeconds = sleepRecord.totalSleepTime! * 60; // minutes -> seconds
+    final step = 1.0 / totalSeconds;
 
+    // Ensure correct order (prevents overlaps / weird rendering)
+    this.sleepRecordSleepPhases.sort((a, b) => a.startedAt.compareTo(b.startedAt));
+
+    _segments = <_SleepSegment>[];
+    for (final srsp in this.sleepRecordSleepPhases) {
+      final startSeconds = srsp.startedAt.difference(sleepStart).inSeconds;
+      final durationSeconds = srsp.duration; // already seconds
+
+      var start = (startSeconds * step).clamp(0.0, 1.0);
+      var end = ((startSeconds + durationSeconds) * step).clamp(0.0, 1.0);
+
+      // Skip invalid/empty segments
+      if (end <= start) continue;
+
+      _segments.add(_SleepSegment(
+        start: start,
+        end: end,
+        type: getStageType(srsp),
+      ));
+    }
+  }
+
+  /// Converts sleep phase ID to the corresponding stage type for visualization.
+  static _SleepStageType getStageType(SleepRecordSleepPhase p) => switch (p.sleepPhaseId) {
+    SLEEP_PHASE_DEEP => _SleepStageType.deep,
+    SLEEP_PHASE_LIGHT => _SleepStageType.light,
+    SLEEP_PHASE_REM => _SleepStageType.rem,
+    SLEEP_PHASE_WAKE => _SleepStageType.awake,
+    _ => throw Exception("Sleep Stage Type not implemented"),
+  };
+
+  final SleepRecord sleepRecord;
+  final List<SleepRecordSleepPhase> sleepRecordSleepPhases;
+  late final List<_SleepSegment> _segments;
+
+  /// Returns the display color for a given sleep stage type.
   Color _colorForStage(_SleepStageType type) {
     switch (type) {
       case _SleepStageType.awake:
@@ -356,7 +439,7 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
-  /// Each stage is drawn on a slightly different vertical level (like steps).
+  /// Returns the vertical center position for a given sleep stage type in the timeline.
   double _centerYForStage(_SleepStageType type, double height) {
     switch (type) {
       case _SleepStageType.awake:
@@ -370,6 +453,7 @@ class _SleepTimelinePainter extends CustomPainter {
     }
   }
 
+  /// Paints the sleep stage timeline with grid lines and colored stage blocks.
   @override
   void paint(Canvas canvas, Size size) {
     final backgroundPaint = Paint()
@@ -377,39 +461,129 @@ class _SleepTimelinePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
-    // Draw subtle horizontal grid lines.
     const gridLines = 4;
     for (int i = 0; i <= gridLines; i++) {
       final dy = size.height * (i / gridLines);
       canvas.drawLine(Offset(0, dy), Offset(size.width, dy), backgroundPaint);
     }
 
-    // Draw each sleep segment as a rounded horizontal block.
     for (final segment in _segments) {
-      final paint = Paint()
-        ..color = _colorForStage(segment.type)
-        ..style = PaintingStyle.fill;
-
       final x1 = segment.start * size.width;
       final x2 = segment.end * size.width;
+
+      // Make tiny segments still visible (optional but helps)
+      final width = (x2 - x1).clamp(1.0, size.width);
+
       final centerY = _centerYForStage(segment.type, size.height);
       final blockHeight = size.height * 0.18;
 
       final rect = RRect.fromRectAndRadius(
         Rect.fromCenter(
-          center: Offset((x1 + x2) / 2, centerY),
-          width: (x2 - x1),
+          center: Offset(x1 + width / 2, centerY),
+          width: width,
           height: blockHeight,
         ),
         const Radius.circular(6),
       );
 
+      final paint = Paint()
+        ..color = _colorForStage(segment.type)
+        ..style = PaintingStyle.fill;
+
       canvas.drawRRect(rect, paint);
     }
   }
 
+  /// Determines if repainting is needed when painter is updated.
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SleepTimelinePainter old) {
+    // important: repaint when new record/phases are provided
+    return old.sleepRecord != sleepRecord ||
+        old.sleepRecordSleepPhases.length != sleepRecordSleepPhases.length;
+  }
+}
+
+/// Displays hourly time labels along the bottom of the sleep timeline.
+class SleepHourlyAxis extends StatelessWidget {
+  const SleepHourlyAxis({
+    super.key,
+    required this.start,
+    required this.end,
+    this.maxLabels = 6,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final int maxLabels;
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = _hourTicks(start, end, maxLabels);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: labels
+          .map(
+            (t) => Text(
+          _fmtHHmm(t),
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withOpacity(0.6),
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+      )
+          .toList(),
+    );
+  }
+
+  /// Generates evenly-spaced hourly time ticks between start and end, respecting maxLabels limit.
+  static List<DateTime> _hourTicks(DateTime start, DateTime end, int maxLabels) {
+    if (!end.isAfter(start)) return [start, end];
+
+    final ticks = <DateTime>[start];
+
+    final firstFullHour = DateTime(start.year, start.month, start.day, start.hour)
+        .add(const Duration(hours: 1));
+
+    for (var t = firstFullHour; t.isBefore(end); t = t.add(const Duration(hours: 1))) {
+      ticks.add(t);
+    }
+
+    ticks.add(end);
+
+    if (ticks.length <= maxLabels) return ticks;
+
+    final desiredMiddle = maxLabels - 2;
+    if (desiredMiddle <= 0) return [start, end];
+
+    final middle = ticks.sublist(1, ticks.length - 1);
+
+    final sampled = <DateTime>[start];
+    for (int i = 0; i < desiredMiddle; i++) {
+      final idx = ((i + 1) * (middle.length) / (desiredMiddle + 1)).round() - 1;
+      final clamped = idx.clamp(0, middle.length - 1);
+      final candidate = middle[clamped];
+
+      if (sampled.last != candidate) sampled.add(candidate);
+    }
+
+    if (sampled.last != end) sampled.add(end);
+
+    final result = <DateTime>[];
+    for (final t in sampled) {
+      if (result.isEmpty || result.last != t) result.add(t);
+    }
+    return result;
+  }
+
+
+  /// Formats a DateTime to HH:mm string format.
+  static String _fmtHHmm(DateTime t) {
+    final h = t.hour.toString().padLeft(2, '0');
+    final m = t.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 }
 
 /// Legend dot + label for the chart.
@@ -451,31 +625,38 @@ class _LegendDot extends StatelessWidget {
 /// ------------------------------------------------------------
 /// SMALL STAGE CARDS: Awake / REM / Deep
 /// ------------------------------------------------------------
+/// Row displaying summary cards for Awake, REM, and Deep sleep durations.
 class _SleepStageSummaryRow extends StatelessWidget {
-  const _SleepStageSummaryRow();
+  const _SleepStageSummaryRow({ required this.sleepRecord });
+
+  final SleepRecord sleepRecord;
 
   @override
   Widget build(BuildContext context) {
+    final awake = formatTime(sleepRecord.awakeDuration);
+    final rem = formatTime(sleepRecord.remSleepDuration);
+    final deep = formatTime(sleepRecord.deepSleepDuration);
+
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: _StageStat(
             title: 'Awake',
-            value: '45m',
+            value: awake,
           ),
         ),
         SizedBox(width: 12),
         Expanded(
           child: _StageStat(
             title: 'REM',
-            value: '1h 30m',
+            value: rem,
           ),
         ),
         SizedBox(width: 12),
         Expanded(
           child: _StageStat(
             title: 'Deep',
-            value: '3h 10m',
+            value: deep,
           ),
         ),
       ],
@@ -483,6 +664,7 @@ class _SleepStageSummaryRow extends StatelessWidget {
   }
 }
 
+/// Individual sleep stage stat card displaying title and formatted time value.
 class _StageStat extends StatelessWidget {
   final String title;
   final String value;
@@ -529,6 +711,8 @@ class _StageStat extends StatelessWidget {
 /// ------------------------------------------------------------
 /// HEART RATE SUMMARY CARD (UI only, fake data)
 /// ------------------------------------------------------------
+/// Heart rate summary card with fake chart and min/average/max values.
+/// Todo: implement real data.
 class _HeartRateSummaryCard extends StatelessWidget {
   const _HeartRateSummaryCard();
 
@@ -596,6 +780,7 @@ class _HeartRateSummaryCard extends StatelessWidget {
   }
 }
 
+/// Displays a single heart rate metric with label and value.
 class _HeartRateValue extends StatelessWidget {
   final String label;
   final String value;
@@ -633,7 +818,9 @@ class _HeartRateValue extends StatelessWidget {
 }
 
 /// Very simple fake line chart for heart rate.
+/// Very simple fake line chart for heart rate.
 class _FakeHeartRatePainter extends CustomPainter {
+  /// Paints a simple line path with predefined points for visual effect.
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -664,6 +851,7 @@ class _FakeHeartRatePainter extends CustomPainter {
     canvas.drawPath(path, paint);
   }
 
+  /// Always returns false as fake chart data never changes.
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
@@ -671,6 +859,7 @@ class _FakeHeartRatePainter extends CustomPainter {
 /// ------------------------------------------------------------
 /// SUBJECTIVE RATING: Bad / Average / Good
 /// ------------------------------------------------------------
+/// Section for selecting subjective sleep quality rating (Bad/Average/Good).
 class _RatingSection extends StatelessWidget {
   const _RatingSection({
     required this.selectedRating,
@@ -740,6 +929,7 @@ class _RatingSection extends StatelessWidget {
   }
 }
 
+/// Animated button for selecting a sleep quality rating with emoji indicator.
 class _RatingButton extends StatelessWidget {
   const _RatingButton({
     required this.label,
@@ -801,6 +991,7 @@ class _RatingButton extends StatelessWidget {
 /// ------------------------------------------------------------
 /// COMPARISON TO YOUR AVERAGE – rolling 7-day window + mini line chart.
 /// ------------------------------------------------------------
+/// Comparison card showing how current night's rating compares to 7-day rolling average.
 class _ComparisonCard extends StatelessWidget {
   const _ComparisonCard({
     required this.currentDate,
@@ -810,8 +1001,9 @@ class _ComparisonCard extends StatelessWidget {
 
   final DateTime currentDate;
   final String? currentRating;
-  final Map<DateTime, String> ratingsByDate;
+  final Map<DateTime, String?> ratingsByDate;
 
+  /// Converts string rating to numeric score (bad=0, average=1, good=2).
   int? _ratingToScore(String? rating) {
     switch (rating) {
       case 'bad':
@@ -824,6 +1016,7 @@ class _ComparisonCard extends StatelessWidget {
     return null;
   }
 
+  /// Converts numeric score to human-readable label.
   String _scoreToLabel(int score) {
     switch (score) {
       case 0:
@@ -935,7 +1128,7 @@ class _WeekRatingChart extends StatelessWidget {
   });
 
   final List<DateTime> weekDays; // length == 7, chronological
-  final Map<DateTime, String> ratingsByDate;
+  final Map<DateTime, String?> ratingsByDate;
   final DateTime currentDate;
 
   @override
@@ -954,7 +1147,9 @@ class _WeekRatingChart extends StatelessWidget {
   }
 }
 
+/// Renders a weekly rating line chart with grid lines, points, and weekday labels.
 class _WeekRatingPainter extends CustomPainter {
+  /// Initializes painter with week days, rating history, and current date for highlighting.
   _WeekRatingPainter({
     required this.weekDays,
     required this.ratingsByDate,
@@ -962,9 +1157,10 @@ class _WeekRatingPainter extends CustomPainter {
   });
 
   final List<DateTime> weekDays;
-  final Map<DateTime, String> ratingsByDate;
+  final Map<DateTime, String?> ratingsByDate;
   final DateTime currentDate;
 
+  /// Converts string rating to numeric score (bad=0, average=1, good=2).
   int? _ratingToScore(String? rating) {
     switch (rating) {
       case 'bad':
@@ -977,6 +1173,7 @@ class _WeekRatingPainter extends CustomPainter {
     return null;
   }
 
+  /// Paints the weekly chart with grid lines, rating points, connecting lines, and labels.
   @override
   void paint(Canvas canvas, Size size) {
     const paddingLeft = 40.0;
@@ -1121,9 +1318,26 @@ class _WeekRatingPainter extends CustomPainter {
     }
   }
 
+  /// Determines if repainting is needed when week data or current date changes.
   @override
   bool shouldRepaint(covariant _WeekRatingPainter oldDelegate) =>
       oldDelegate.weekDays != weekDays ||
           oldDelegate.ratingsByDate != ratingsByDate ||
           oldDelegate.currentDate != currentDate;
+}
+
+/// Formats time in minutes to human-readable string (e.g. "7h 30m").
+String formatTime(int? timeInMinutes) {
+  if (timeInMinutes == null) {
+    return "0m";
+  }
+
+  final hours = (timeInMinutes / 60).floor();
+  final minutes = timeInMinutes % 60;
+
+  if (hours == 0) {
+    return "${minutes}m";
+  }
+
+  return "${hours}h ${minutes}m";
 }

@@ -342,42 +342,77 @@ class DatabaseSeedService {
   /// Seeds 7 days of sleep records
   static Future<void> _seedSleepRecords(String userId) async {
     final db = await DatabaseHelper.instance.database;
-    final now = DateTime.now();
 
-    final qualityRatings = ['good', 'good', 'average', 'good', 'bad', 'average', 'good'];
+    // Normalize to date-only so "sleep_date" matches your date queries
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final qualityRatings = [
+      'good', 'good', 'average', 'good', 'bad', 'average', 'good'
+    ];
+
+    DateTime _timeOnDay(DateTime day, String hhmm) {
+      final parts = hhmm.split(':');
+      final h = int.parse(parts[0]);
+      final m = int.parse(parts[1]);
+      return DateTime(day.year, day.month, day.day, h, m);
+    }
 
     for (int i = 0; i < 7; i++) {
-      final date = now.subtract(Duration(days: i));
-      final sleepDate = _formatDate(date);
+      // sleep_date is the WAKE date (e.g. 2026-01-10)
+      final wakeDay = today.subtract(Duration(days: i));
+      final sleepDate = _formatDate(wakeDay);
+
+      // Bed/start happen the evening BEFORE the wake day (e.g. 2026-01-09)
+      final bedDay = wakeDay.subtract(const Duration(days: 1));
+
+      final bedTime = _timeOnDay(bedDay, '22:30');
+      final sleepStart = _timeOnDay(bedDay, '23:00');
+
+      // End/wake are on the wake day morning
+      final sleepEnd = _timeOnDay(wakeDay, '06:00');
+      final wakeTime = _timeOnDay(wakeDay, '06:30');
+
+      // Timestamps (whatever you prefer; here: created/updated on wakeDay noon)
+      final createdAt = wakeDay.add(const Duration(hours: 12));
+      final updatedAt = createdAt;
 
       await db.insert(TABLE_SLEEP_RECORDS, {
         SLEEP_RECORDS_ID: _uuid.v4(),
         SLEEP_RECORDS_USER_ID: userId,
+
+        // IMPORTANT: this is now the WAKE day date-only string
         SLEEP_RECORDS_SLEEP_DATE: sleepDate,
-        SLEEP_RECORDS_BED_TIME: '22:30',
-        SLEEP_RECORDS_SLEEP_START_TIME: '23:00',
-        SLEEP_RECORDS_SLEEP_END_TIME: '06:00',
-        SLEEP_RECORDS_WAKE_TIME: '06:30',
+
+        // IMPORTANT: full ISO strings so your fromDatabase parsing works
+        SLEEP_RECORDS_BED_TIME: bedTime.toIso8601String(),
+        SLEEP_RECORDS_SLEEP_START_TIME: sleepStart.toIso8601String(),
+        SLEEP_RECORDS_SLEEP_END_TIME: sleepEnd.toIso8601String(),
+        SLEEP_RECORDS_WAKE_TIME: wakeTime.toIso8601String(),
+
         SLEEP_RECORDS_TOTAL_SLEEP_TIME: 420,
         SLEEP_RECORDS_DEEP_SLEEP_DURATION: 100,
         SLEEP_RECORDS_REM_SLEEP_DURATION: 90,
         SLEEP_RECORDS_LIGHT_SLEEP_DURATION: 200,
         SLEEP_RECORDS_AWAKE_DURATION: 30,
+
         SLEEP_RECORDS_AVG_HEART_RATE: 60.0,
         SLEEP_RECORDS_MIN_HEART_RATE: 50.0,
         SLEEP_RECORDS_MAX_HEART_RATE: 75.0,
         SLEEP_RECORDS_AVG_HRV: 50.0,
         SLEEP_RECORDS_AVG_BREATHING_RATE: 14.0,
+
         SLEEP_RECORDS_QUALITY_RATING: qualityRatings[i],
         SLEEP_RECORDS_DATA_SOURCE: 'manual',
-        SLEEP_RECORDS_CREATED_AT: date.toIso8601String(),
-        SLEEP_RECORDS_UPDATED_AT: date.toIso8601String(),
+        SLEEP_RECORDS_CREATED_AT: createdAt.toIso8601String(),
+        SLEEP_RECORDS_UPDATED_AT: updatedAt.toIso8601String(),
         SLEEP_RECORDS_IS_DELETED: 0,
       });
     }
 
-    debugPrint('DatabaseSeedService: Seeded 7 sleep records');
+    debugPrint('DatabaseSeedService: Seeded 7 sleep records (sleep_date = wake date)');
   }
+
 
   /// Seeds user sleep baselines (7-day, 30-day, all-time)
   static Future<void> _seedUserSleepBaselines(String userId) async {

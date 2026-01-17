@@ -1,5 +1,6 @@
 import '../models/sleep_baseline.dart';
 import '../models/sleep_record.dart';
+import '../models/sleep_record_sleep_phase.dart';
 
 /// Sleep Record Repository Interface
 ///
@@ -78,6 +79,18 @@ abstract class SleepRecordRepository {
     String? notes,
   );
 
+  /// Loads the previous 6 quality ratings
+  ///
+  /// Parameters:
+  /// - [upUntil]: The end Date (excluded)
+  ///
+  /// This is a convenience method for fetching just the quality fields
+  /// of the previous week
+  Future<Map<DateTime, String?>> getPreviousQualityRatings(
+    String userId,
+    DateTime upUntil
+  );
+
   /// Gets all baselines for a user by baseline type
   ///
   /// Parameters:
@@ -104,4 +117,12 @@ abstract class SleepRecordRepository {
     String baselineType,
     String metricName,
   );
+
+  /// Retrieves all sleep phases for a given sleep record.
+  ///
+  /// Parameters:
+  /// - [sleepRecordId]: The ID of the sleep record.
+  ///
+  /// Returns a list of [SleepRecordSleepPhase] objects.
+  Future<List<SleepRecordSleepPhase>> getSleepPhasesForRecord(String sleepRecordId);
 }

@@ -14,6 +14,9 @@ import '../../domain/repositories/user_repository.dart';
 /// - Manage language and unit system preferences
 /// - Handle loading and error states
 /// - Notify UI of state changes
+///
+/// Todo: Implement Languages
+/// Todo: Implement Unit System
 class SettingsViewModel extends ChangeNotifier {
   final UserRepository _repository;
 

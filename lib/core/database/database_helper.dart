@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:sleepbalance/core/database/migrations/migration_v9.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../shared/constants/database_constants.dart';
@@ -66,7 +67,7 @@ class DatabaseHelper {
   /// Called when database is created for the first time.
   /// Executes all migrations up to the current version.
   ///
-  /// For fresh installs at V8:
+  /// For fresh installs at V9:
   /// - Executes MIGRATION_V1 (base schema)
   /// - Executes MIGRATION_V2 (daily_actions table)
   /// - Executes MIGRATION_V3 (sleep_records and user_sleep_baselines tables)
@@ -74,6 +75,10 @@ class DatabaseHelper {
   /// - Executes MIGRATION_V5 (user_module_configurations table)
   /// - Executes MIGRATION_V7 (wearable_connections and wearable_sync_history tables)
   /// - Executes MIGRATION_V8 (email_verification_tokens table and email_verified column)
+  /// - Executes MIGRATION_V9 (sleep_phases and sleep_record_sleep_phases tables)
+  ///
+  /// [db] The database.
+  /// [version] The new database version.
   Future<void> _onCreate(Database db, int version) async {
     debugPrint('DatabaseHelper: Creating database version $version');
 
@@ -121,6 +126,15 @@ class DatabaseHelper {
       await db.execute(MIGRATION_V8_ALTER_USERS);
       debugPrint('DatabaseHelper: MIGRATION_V8 completed ✓');
     }
+    if (version >= 9) {
+      debugPrint('DatabaseHelper: Executing MIGRATION_V9...');
+      await db.execute(MIGRATION_V9_CREATE_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_CREATE_RECORD_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_PHASES);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_RECORD_PHASES);
+      await db.execute(MIGRATION_V9_INSERT_SLEEP_PHASES);
+      debugPrint('DatabaseHelper: MIGRATION_V9 completed ✓');
+    }
 
     // Insert default user only for versions before V8
     // V8+ uses proper authentication with signup/email verification
@@ -135,6 +149,8 @@ class DatabaseHelper {
   ///
   /// Inserts a default user for first-time app setup.
   /// This user will be used until proper authentication is implemented.
+  ///
+  /// [db] The database to insert the user into.
   Future<void> _createDefaultUser(Database db) async {
     final defaultUserId = UuidGenerator.generate();
     final now = DateTime.now();
@@ -170,6 +186,10 @@ class DatabaseHelper {
   /// - Then execute migration v2→v3
   /// - Then execute migration v3→v4
   /// - Then execute migration v4→v5
+  ///
+  /// [db] The database.
+  /// [oldVersion] The old database version.
+  /// [newVersion] The new database version.
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     debugPrint('DatabaseHelper: Upgrading database from v$oldVersion to v$newVersion');
 
@@ -210,6 +230,15 @@ class DatabaseHelper {
       await db.execute(MIGRATION_V8_INDEX_EXPIRES);
       await db.execute(MIGRATION_V8_ALTER_USERS);
       debugPrint('DatabaseHelper: MIGRATION_V8 completed ✓');
+    }
+    if (oldVersion < 9) {
+      debugPrint('DatabaseHelper: Executing MIGRATION_V9...');
+      await db.execute(MIGRATION_V9_CREATE_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_CREATE_RECORD_PHASES_TABLE);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_PHASES);
+      await db.execute(MIGRATION_V9_INDEX_SLEEP_RECORD_PHASES);
+      await db.execute(MIGRATION_V9_INSERT_SLEEP_PHASES);
+      debugPrint('DatabaseHelper: MIGRATION_V9 completed ✓');
     }
 
     debugPrint('DatabaseHelper: Database upgrade completed successfully!');
@@ -254,12 +283,15 @@ class DatabaseHelper {
   /// - Empty statements
   /// - Comment-only lines
   /// - Whitespace-only lines
+  ///
+  /// [db] The database to execute the statements on.
+  /// [sql] The SQL string containing multiple statements.
   static Future<void> _executeMultiStatement(Database db, String sql) async {
     // First, remove all comment lines (lines starting with --)
-    final lines = sql.split('\n');
+    final lines = sql.split('');
     final sqlWithoutComments = lines
         .where((line) => !line.trim().startsWith('--'))
-        .join('\n');
+        .join('');
 
     // Split by semicolon and filter out empty statements
     final statements = sqlWithoutComments
