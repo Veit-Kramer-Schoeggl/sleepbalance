@@ -142,14 +142,29 @@ class _ExpandableCalendarState extends State<ExpandableCalendar>
                 sizeFactor: _expandAnimation,
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  child: CalendarDatePicker(
-                    initialDate: widget.selectedDate,
-                    firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                    onDateChanged: (date) {
-                      widget.onDateSelected(date);
-                      widget.onToggleExpansion(); // Auto-collapse after selection
-                    },
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: Theme.of(context).colorScheme.copyWith(
+                        primary: Colors.blue,
+                        onPrimary: Colors.white,
+                        onSurface: Colors.white,
+                      ),
+                      textTheme: Theme.of(context).textTheme.copyWith(
+                        bodySmall: const TextStyle(color: Colors.green), // weekday labels
+                      ),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      child: CalendarDatePicker(
+                        initialDate: widget.selectedDate,
+                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                        onDateChanged: (date) {
+                          widget.onDateSelected(date);
+                          widget.onToggleExpansion();
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
