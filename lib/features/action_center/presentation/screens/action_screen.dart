@@ -149,6 +149,13 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
                                     color: Colors.white70, fontSize: 16),
                               ),
                               const SizedBox(height: 16),
+                              // TODO: Rework Action Center module configuration
+                              // - Support multiple modules (not only Light)
+                              // - Avoid hardcoded navigation to LightConfigStandardScreen
+                              // - Show config options only for active/configurable modules
+                              //
+                              // Temporarily disabled for MVP delivery.
+                              /*
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(
@@ -161,6 +168,7 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
                                 },
                                 child: const Text('Configure Light Module'),
                               ),
+                              */
                             ],
                           ),
                         )
