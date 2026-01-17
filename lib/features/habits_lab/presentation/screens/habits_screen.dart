@@ -8,11 +8,10 @@ import 'package:sleepbalance/features/habits_lab/presentation/viewmodels/habits_
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/acceptance_button.dart';
 
+import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+
 // TODO: Remove fitbit_test import - file has been removed from version control
 // import 'package:sleepbalance/fitbit_test.dart';
-
-// TODO: Import module metadata when implementing proper architecture
-// import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 
 // TODO: Import ViewModel and Provider when implementing MVVM pattern
 // import 'package:provider/provider.dart';
@@ -355,36 +354,9 @@ class _ModulesList extends StatelessWidget {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: isImplemented
-                          ? () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            backgroundColor: const Color(0xFF2B2F3A),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            title: Text(
-                              '${module.displayName} – Info',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            content: Text(
-                              'Info about "${module.displayName}".\n\n(Replace later with real text.)',
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text(
-                                  'OK',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                          : null, // 👈 QUI è la chiave
-                      child: _InfoButton(),
+                          ? () => _showModuleInfoDialog(context, module)
+                          : null,
+                      child: const _InfoButton(),
                     ),
                   ),
 
@@ -439,6 +411,68 @@ void _showComingSoonDialog(BuildContext context, String moduleName) {
     ),
   );
 }
+
+void _showModuleInfoDialog(BuildContext context, ModuleMetadata module) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF2B2F3A),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+      title: Row(
+        children: [
+          Icon(module.icon, color: Colors.white),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '${module.displayName} – Info',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // shortDescription
+            if (module.shortDescription.trim().isNotEmpty) ...[
+              Text(
+                module.shortDescription,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // longDescription
+            if (module.longDescription.trim().isNotEmpty)
+              Text(
+                module.longDescription,
+                style: const TextStyle(color: Colors.white70),
+              )
+            else
+              const Text(
+                'This module is implemented as a basic prototype (MVP).',
+                style: TextStyle(color: Colors.white70),
+              ),
+          ],
+        ),
+      ),
+
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('OK', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
+
 
 // Small "settings" button with pill look
 class _GearButton extends StatelessWidget {
