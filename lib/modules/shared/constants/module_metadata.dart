@@ -156,3 +156,8 @@ List<ModuleMetadata> getAvailableModules() {
 List<ModuleMetadata> getPlannedModules() {
   return moduleMetadata.values.where((m) => !m.isAvailable).toList();
 }
+
+/// Get all modules (implemented + planned)
+List<ModuleMetadata> getAllModules() {
+  return moduleMetadata.values.toList();
+}

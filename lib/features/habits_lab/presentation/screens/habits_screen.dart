@@ -179,7 +179,8 @@ class _ModulesList extends StatelessWidget {
 
     // Loading state
     if (viewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator()
+      );
     }
 
     // Error state
@@ -230,55 +231,78 @@ class _ModulesList extends StatelessWidget {
           final module = modules[index];
           final isOn = viewModel.isModuleActive(module.id);
 
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
-            ),
+          final bool isImplemented = module.isAvailable;
+
+          return InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              if (!isImplemented) {
+                _showComingSoonDialog(context, module.displayName);
+              }
+            },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.12)),
+                ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
                 children: [
                   // Left icon (from metadata)
-                  Icon(
-                    module.icon,
-                    size: 22,
-                    color: Colors.white,
+                  Opacity(
+                    opacity: isImplemented ? 1.0 : 0.45,
+                    child: Icon(
+                      module.icon,
+                      size: 22,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
 
                   // Title (from metadata)
                   Expanded(
-                    child: Text(
-                      module.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Opacity(
+                      opacity: isImplemented ? 1.0 : 0.45,
+                        child: Text(
+                          module.displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                     ),
                   ),
 
                   // Checkbox – state from ViewModel
-                  Transform.scale(
-                    scale: 1.2,
-                    child: Checkbox(
-                      value: isOn,
-                      onChanged: (_) {
-                        viewModel.toggleModule(userId, module.id);
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                      checkColor: Colors.white,
-                      side: BorderSide(
-                        color: Colors.white.withOpacity(0.7),
-                        width: 2,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+                  Opacity(
+                    opacity: isImplemented ? 1.0 : 0.45,
+                    child: Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        value: isOn,
+                        onChanged: (_) {
+                          if (!isImplemented) {
+                            _showComingSoonDialog(context, module.displayName);
+                            return;
+                          }
+                          viewModel.toggleModule(userId, module.id);
+                        },
+                        activeColor: Theme.of(context).colorScheme.primary,
+                        checkColor: Colors.white,
+                        side: BorderSide(
+                          color: Colors.white.withOpacity(0.7),
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                     ),
                   ),
+
 
                   const SizedBox(width: 8),
 
@@ -286,42 +310,128 @@ class _ModulesList extends StatelessWidget {
                   // TODO: Navigate to module-specific config screen
                   // Should call: viewModel.openModuleConfig(context, userId, moduleId)
 
-                  _GearButton(onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        backgroundColor: const Color(0xFF2B2F3A),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        title: const Text(
-                          'Settings',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        content: Text(
-                          '"${module.displayName}" settings are coming soon.',
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              'OK',
+                  Opacity(
+                    opacity: isImplemented ? 1.0 : 0.45,
+                    child: _GearButton(
+                      onTap: () {
+                        if (!isImplemented) {
+                          _showComingSoonDialog(context, module.displayName);
+                          return;
+                        }
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            backgroundColor: const Color(0xFF2B2F3A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            title: const Text(
+                              'Settings',
                               style: TextStyle(color: Colors.white),
                             ),
+                            content: Text(
+                              '"${module.displayName}" settings are coming soon.',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  'OK',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  }),
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          backgroundColor: const Color(0xFF2B2F3A),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          title: Text(
+                            '${module.displayName} – Info',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          content: Text(
+                            'Info about "${module.displayName}".\n\n(Replace later with real text.)',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text(
+                                'OK',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: _InfoButton(),
+                  ),
+
+
                 ],
               ),
             ),
+          ),
           );
         },
       ),
     );
   }
+}
+
+class _InfoButton extends StatelessWidget {
+  const _InfoButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: const Icon(Icons.info_outline, size: 18, color: Colors.white70),
+    );
+  }
+}
+
+
+void _showComingSoonDialog(BuildContext context, String moduleName) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF2B2F3A),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Text('Coming soon', style: TextStyle(color: Colors.white)),
+      content: Text(
+        '"$moduleName" is coming soon.',
+        style: const TextStyle(color: Colors.white70),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('OK', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
 }
 
 // Small "settings" button with pill look

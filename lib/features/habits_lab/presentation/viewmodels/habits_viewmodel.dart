@@ -34,7 +34,7 @@ class HabitsViewModel extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      _availableModules = getAvailableModules();
+      _availableModules = getAllModules();
 
       _userConfigs = await repository.getAllModuleConfigs(userId);
 
@@ -93,6 +93,8 @@ class HabitsViewModel extends ChangeNotifier {
       _errorMessage = null;
 
       for (final module in _availableModules) {
+        if (!module.isAvailable) continue;
+
         final isActive = isModuleActive(module.id);
 
         // Persist selection
