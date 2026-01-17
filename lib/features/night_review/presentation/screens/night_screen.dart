@@ -712,6 +712,7 @@ class _StageStat extends StatelessWidget {
 /// HEART RATE SUMMARY CARD (UI only, fake data)
 /// ------------------------------------------------------------
 /// Heart rate summary card with fake chart and min/average/max values.
+/// Todo: implement real data.
 class _HeartRateSummaryCard extends StatelessWidget {
   const _HeartRateSummaryCard();
 
