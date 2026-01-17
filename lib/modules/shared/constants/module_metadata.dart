@@ -66,7 +66,7 @@ const Map<String, ModuleMetadata> moduleMetadata = {
         'optimal exercise schedule.',
     icon: Icons.directions_run,
     primaryColor: Color(0xFF66BB6A), // Green
-    isAvailable: false, // Not yet implemented
+    isAvailable: true, // Basic implementation (MVP) available
   ),
 
   'meditation': ModuleMetadata(

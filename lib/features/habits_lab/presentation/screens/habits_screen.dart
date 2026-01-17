@@ -350,38 +350,44 @@ class _ModulesList extends StatelessWidget {
 
                   const SizedBox(width: 8),
 
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          backgroundColor: const Color(0xFF2B2F3A),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          title: Text(
-                            '${module.displayName} – Info',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          content: Text(
-                            'Info about "${module.displayName}".\n\n(Replace later with real text.)',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text(
-                                'OK',
-                                style: TextStyle(color: Colors.white),
-                              ),
+                  Opacity(
+                    opacity: isImplemented ? 1.0 : 0.45,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: isImplemented
+                          ? () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            backgroundColor: const Color(0xFF2B2F3A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                    child: _InfoButton(),
+                            title: Text(
+                              '${module.displayName} – Info',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            content: Text(
+                              'Info about "${module.displayName}".\n\n(Replace later with real text.)',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  'OK',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                          : null, // 👈 QUI è la chiave
+                      child: _InfoButton(),
+                    ),
                   ),
+
 
 
                 ],
