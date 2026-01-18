@@ -4,6 +4,10 @@ import '../../shared/domain/models/user_module_config.dart';
 import '../../shared/constants/module_metadata.dart';
 import '../presentation/screens/meditation_config_standard_screen.dart';
 
+/// Meditation Module
+///
+/// Placeholder implementation of ModuleInterface (MVP).
+/// Configuration and validation will be expanded in future iterations.
 class MeditationModule implements ModuleInterface {
   @override
   String get moduleId => 'meditation';
@@ -28,8 +32,7 @@ class MeditationModule implements ModuleInterface {
     TimeOfDay? userBedTime,
   }) {
     return {
-      'enabled': true,
-      'info': 'Meditation module placeholder',
+      'info': 'Meditation module placeholder (MVP)',
     };
   }
 

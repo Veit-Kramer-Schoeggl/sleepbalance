@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sleepbalance/features/action_center/domain/repositories/action_repository.dart';
 import '../../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
-import '../../../../modules/light/presentation/screens/light_config_standard_screen.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/checkbox_button.dart';
@@ -53,7 +53,7 @@ class ActionScreen extends StatelessWidget {
     // Create ActionViewModel with current user ID
     return ChangeNotifierProvider(
       create: (_) => ActionViewModel(
-        repository: context.read(), // Reads ActionRepository from parent MultiProvider
+        repository: context.read<ActionRepository>(),
         moduleConfigRepository: context.read<ModuleConfigRepository>(),
         userId: currentUserId, // Use actual user ID from SettingsViewModel
       )..loadActions(),
@@ -179,7 +179,7 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
                             itemBuilder: (context, index) {
                               final action = viewModel.actions[index];
 
-                              //get module metadata to keep UI consistent with Habits
+                              //Get module metadata to keep UI consistent with Habits.
                               final meta = getModuleMetadata(action.iconName);
 
                               return Padding(

@@ -65,16 +65,16 @@ class ActionViewModel extends ChangeNotifier {
     try {
       final loaded = await _repository.getActionsForDate(userId, _currentDate);
 
-// Get currently active module ids for this user
+      // Get currently active module ids for this user
       final activeModuleIds = await _moduleConfigRepository.getActiveModuleIds(userId);
       final activeSet = activeModuleIds.toSet();
 
       final date = _dateOnly(_currentDate);
 
-// Ensure there is one module action per active module for this date
+      // Ensure there is one module action per active module for this date
       for (final moduleId in activeSet) {
-        final exists = loaded.any((a) =>
-        a.iconName == moduleId && _dateOnly(a.actionDate) == date);
+        final exists = loaded.any(
+                (a) => a.iconName == moduleId && _dateOnly(a.actionDate) == date);
 
         if (!exists) {
           final meta = getModuleMetadata(moduleId);
@@ -95,9 +95,9 @@ class ActionViewModel extends ChangeNotifier {
         }
       }
 
-// Show:
-// - non-module actions always
-// - module actions only if the module is currently active
+      // Show:
+      // - non-module actions always
+      // - module actions only if the module is currently active
       _actions = loaded.where((a) {
         final meta = getModuleMetadata(a.iconName);
         final isModuleAction = meta.id != 'unknown';

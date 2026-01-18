@@ -4,6 +4,10 @@ import '../../shared/domain/models/user_module_config.dart';
 import '../../shared/constants/module_metadata.dart';
 import '../presentation/screens/sport_config_standard_screen.dart';
 
+/// Sport Module
+///
+/// Placeholder implementation of ModuleInterface (MVP).
+/// Configuration and validation will be expanded in future iterations.
 class SportModule implements ModuleInterface {
   @override
   String get moduleId => 'sport';
@@ -28,14 +32,13 @@ class SportModule implements ModuleInterface {
     TimeOfDay? userBedTime,
   }) {
     return {
-      'enabled': true,
-      'info': 'Sport module placeholder',
+      'info': 'Sport module placeholder (MVP)',
     };
   }
 
   @override
   String? validateConfiguration(Map<String, dynamic> config) {
-    return null; // (placeholder)
+    return null; // Placeholder
   }
 
   @override

@@ -1,35 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
 
-import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
 import 'package:sleepbalance/features/habits_lab/presentation/viewmodels/habits_viewmodel.dart';
-
-import '../../../../shared/widgets/ui/background_wrapper.dart';
-import '../../../../shared/widgets/ui/acceptance_button.dart';
-
+import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
 
-// TODO: Remove fitbit_test import - file has been removed from version control
-// import 'package:sleepbalance/fitbit_test.dart';
+import '../../../../shared/widgets/ui/acceptance_button.dart';
+import '../../../../shared/widgets/ui/background_wrapper.dart';
 
-// TODO: Import ViewModel and Provider when implementing MVVM pattern
-// import 'package:provider/provider.dart';
-// import '../viewmodels/habits_viewmodel.dart';
-
-/// Habits Lab screen for sleep habit tracking and experimentation
+/// Habits Lab screen for sleep habit tracking and experimentation.
 ///
-/// TODO: Refactor to use MVVM pattern with Provider (see REPORT.md)
-/// Current implementation uses local state - needs to be connected to:
-/// - HabitsViewModel (to be created)
-/// - ModuleConfigRepository (for database persistence)
-/// - ModuleMetadata (for centralized module information)
+/// Uses MVVM with Provider (HabitsViewModel) and persists module configs
+/// via ModuleConfigRepository. Module UI labels/icons/descriptions come
+/// from centralized ModuleMetadata.
 class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-
     final settingsViewModel = context.watch<SettingsViewModel>();
     final user = settingsViewModel.currentUser;
 
@@ -174,7 +163,6 @@ class _ModulesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<HabitsViewModel>();
-    final controller = ScrollController();
 
     // Loading state
     if (viewModel.isLoading) {
@@ -216,12 +204,10 @@ class _ModulesList extends StatelessWidget {
     }
 
     return Scrollbar(
-      controller: controller,
       thumbVisibility: true,
       radius: const Radius.circular(10),
       thickness: 6,
       child: ListView.separated(
-        controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(top: 4, bottom: 8),
         itemCount: modules.length,
@@ -239,13 +225,13 @@ class _ModulesList extends StatelessWidget {
                 _showComingSoonDialog(context, module.displayName);
               }
             },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
-                ),
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.12)),
+              ),
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
                 children: [
@@ -304,11 +290,7 @@ class _ModulesList extends StatelessWidget {
 
 
                   const SizedBox(width: 8),
-
-                  // Settings button – placeholder for future config screens
-                  // TODO: Navigate to module-specific config screen
-                  // Should call: viewModel.openModuleConfig(context, userId, moduleId)
-
+                  // Placeholder for module-specific configuration screens (not part of MVP).
                   Opacity(
                     opacity: isImplemented ? 1.0 : 0.45,
                     child: _GearButton(

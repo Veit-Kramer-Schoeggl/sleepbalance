@@ -4,16 +4,11 @@ import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 import 'package:sleepbalance/modules/shared/domain/models/user_module_config.dart';
 import 'package:sleepbalance/shared/notifiers/action_refresh_notifier.dart';
 
-import 'package:sleepbalance/features/action_center/domain/repositories/action_repository.dart';
-
 
 class HabitsViewModel extends ChangeNotifier {
   final ModuleConfigRepository repository;
 
-
-  HabitsViewModel({
-    required this.repository
-  });
+  HabitsViewModel({required this.repository});
 
   List<ModuleMetadata> _availableModules = [];
   List<UserModuleConfig> _userConfigs = [];
@@ -25,23 +20,22 @@ class HabitsViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   bool isModuleActive(String moduleId) {
-    return _userConfigs.any((config) =>
-    config.moduleId == moduleId && config.isEnabled == true);
+    return _userConfigs.any(
+          (config) => config.moduleId == moduleId && config.isEnabled,
+    );
   }
 
   Future<void> loadModules(String userId) async {
+    _errorMessage = null;
+    _isLoading = true;
+    notifyListeners();
+
     try {
-      _isLoading = true;
-      notifyListeners();
-
       _availableModules = getAllModules();
-
       _userConfigs = await repository.getAllModuleConfigs(userId);
-
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -105,7 +99,7 @@ class HabitsViewModel extends ChangeNotifier {
 
       }
 
-      //Trigger Action Center reload after saving habits
+      // Trigger Action Center reload after saving habits.
       triggerActionRefresh();
 
       notifyListeners();
@@ -114,6 +108,5 @@ class HabitsViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 
 }

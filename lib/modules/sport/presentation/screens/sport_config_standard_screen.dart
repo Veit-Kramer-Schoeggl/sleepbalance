@@ -6,7 +6,9 @@ class SportConfigStandardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Physical Activity')),
+      appBar: AppBar(
+          title: const Text('Physical Activity'),
+          centerTitle: true,),
       body: const Padding(
         padding: EdgeInsets.all(16),
         child: Text(

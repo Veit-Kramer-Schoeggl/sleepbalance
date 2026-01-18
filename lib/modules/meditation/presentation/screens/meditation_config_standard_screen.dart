@@ -6,13 +6,15 @@ class MeditationConfigStandardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Meditation & Relaxation')),
+      appBar: AppBar(
+          title: const Text('Meditation & Relaxation'),
+          centerTitle: true,
+          ),
       body: const Padding(
         padding: EdgeInsets.all(16),
         child: Text(
-          'This module is implemented as a basic prototype.\n\n'
-              'Core structure and activation logic are in place. '
-              'Advanced meditation features will be added in future versions.',
+            'This module is a prototype.\n\n'
+                'Future versions will include guided meditation and relaxation features.',
         ),
       ),
     );
