@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// Screen for configuring the Meditation module.
+///
+/// Currently a placeholder (MVP) that displays a prototype message.
 class MeditationConfigStandardScreen extends StatelessWidget {
+  /// Creates a [MeditationConfigStandardScreen].
   const MeditationConfigStandardScreen({super.key});
 
   @override

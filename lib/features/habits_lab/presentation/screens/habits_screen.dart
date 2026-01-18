@@ -19,9 +19,11 @@ class HabitsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Access settings to get current user data
     final settingsViewModel = context.watch<SettingsViewModel>();
     final user = settingsViewModel.currentUser;
 
+    // Show loading state if user is not yet available
     if (user == null) {
       return BackgroundWrapper(
         imagePath: 'assets/images/main_background.png',
@@ -35,6 +37,7 @@ class HabitsScreen extends StatelessWidget {
 
     final userId = user.id;
 
+    // Provide HabitsViewModel to the screen content
     final repository = context.read<ModuleConfigRepository>();
 
     return ChangeNotifierProvider(
@@ -46,6 +49,7 @@ class HabitsScreen extends StatelessWidget {
   }
 }
 
+/// Main layout for the Habits Lab screen.
 class _HabitsScreenContent extends StatelessWidget {
   final String userId;
 
@@ -53,7 +57,6 @@ class _HabitsScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<HabitsViewModel>();
 
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
@@ -71,6 +74,7 @@ class _HabitsScreenContent extends StatelessWidget {
         ),
         body: Column(
           children: [
+            // Header section with icon and title
             const Padding(
               padding: EdgeInsets.only(top: 24),
               child: Center(
@@ -109,7 +113,7 @@ class _HabitsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Main content area
+            // Main content area: Scrollable list of modules
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -117,6 +121,7 @@ class _HabitsScreenContent extends StatelessWidget {
               ),
             ),
 
+            // Bottom action section
             Padding(
               padding: const EdgeInsets.all(24),
               child: AcceptanceButton(
@@ -138,6 +143,7 @@ class _HabitsScreenContent extends StatelessWidget {
               ),
             ),
 
+            // Debug/Test button for wearable integration
             // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
             ElevatedButton(
               onPressed: () {
@@ -203,6 +209,7 @@ class _ModulesList extends StatelessWidget {
       );
     }
 
+    // Display modules in a scrollable list
     return Scrollbar(
       thumbVisibility: true,
       radius: const Radius.circular(10),
@@ -227,9 +234,9 @@ class _ModulesList extends StatelessWidget {
             },
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.12)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
               ),
               child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -278,7 +285,7 @@ class _ModulesList extends StatelessWidget {
                         activeColor: Theme.of(context).colorScheme.primary,
                         checkColor: Colors.white,
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           width: 2,
                         ),
                         shape: RoundedRectangleBorder(
@@ -290,7 +297,7 @@ class _ModulesList extends StatelessWidget {
 
 
                   const SizedBox(width: 8),
-                  // Placeholder for module-specific configuration screens (not part of MVP).
+                  // // Placeholder for module-specific configuration (not part of MVP).
                   Opacity(
                     opacity: isImplemented ? 1.0 : 0.45,
                     child: _GearButton(
@@ -331,6 +338,7 @@ class _ModulesList extends StatelessWidget {
 
                   const SizedBox(width: 8),
 
+                  // Information button to see module details
                   Opacity(
                     opacity: isImplemented ? 1.0 : 0.45,
                     child: GestureDetector(
@@ -355,6 +363,7 @@ class _ModulesList extends StatelessWidget {
   }
 }
 
+/// Small icon button used to open the module info dialog.
 class _InfoButton extends StatelessWidget {
   const _InfoButton({super.key});
 
@@ -363,16 +372,16 @@ class _InfoButton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
       child: const Icon(Icons.info_outline, size: 18, color: Colors.white70),
     );
   }
 }
 
-
+/// Shows a dialog for modules that are not yet implemented.
 void _showComingSoonDialog(BuildContext context, String moduleName) {
   showDialog(
     context: context,
@@ -394,6 +403,7 @@ void _showComingSoonDialog(BuildContext context, String moduleName) {
   );
 }
 
+/// Shows a dialog with detailed information about a module.
 void _showModuleInfoDialog(BuildContext context, ModuleMetadata module) {
   showDialog(
     context: context,
@@ -456,7 +466,7 @@ void _showModuleInfoDialog(BuildContext context, ModuleMetadata module) {
 }
 
 
-// Small "settings" button with pill look
+/// Small "settings" button with pill look.
 class _GearButton extends StatelessWidget {
   final VoidCallback onTap;
   const _GearButton({required this.onTap});
@@ -469,9 +479,9 @@ class _GearButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.18)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         ),
         child: const Icon(Icons.settings, size: 18, color: Colors.white70),
       ),

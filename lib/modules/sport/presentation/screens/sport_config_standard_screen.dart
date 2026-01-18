@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// Screen for configuring the Sport module.
+/// 
+/// Currently a placeholder (MVP) that displays a prototype message.
 class SportConfigStandardScreen extends StatelessWidget {
+  /// Creates a [SportConfigStandardScreen].
   const SportConfigStandardScreen({super.key});
 
   @override

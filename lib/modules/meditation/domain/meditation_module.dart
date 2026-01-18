@@ -9,14 +9,17 @@ import '../presentation/screens/meditation_config_standard_screen.dart';
 /// Placeholder implementation of ModuleInterface (MVP).
 /// Configuration and validation will be expanded in future iterations.
 class MeditationModule implements ModuleInterface {
+  /// Unique identifier for the meditation module.
   @override
   String get moduleId => 'meditation';
 
+  /// Retrieves metadata for the meditation module, including name and icon.
   @override
   ModuleMetadata getMetadata() {
     return moduleMetadata['meditation']!;
   }
 
+  /// Returns the configuration screen for the meditation module.
   @override
   Widget getConfigurationScreen({
     required String userId,
@@ -25,6 +28,7 @@ class MeditationModule implements ModuleInterface {
     return const MeditationConfigStandardScreen();
   }
 
+  /// Returns the default configuration for the meditation module (MVP placeholder).
   @override
   Map<String, dynamic> getDefaultConfiguration({
     required String userId,
@@ -36,22 +40,26 @@ class MeditationModule implements ModuleInterface {
     };
   }
 
+  /// Validates the meditation module's configuration.
   @override
   String? validateConfiguration(Map<String, dynamic> config) {
-    return null;
+    return null; // Placeholder
   }
 
+  /// Lifecycle hook called when the meditation module is activated.
   @override
   Future<void> onModuleActivated({
     required String userId,
     required Map<String, dynamic> config,
   }) async {}
 
+  /// Lifecycle hook called when the meditation module is deactivated.
   @override
   Future<void> onModuleDeactivated({
     required String userId,
   }) async {}
 
+  /// Lifecycle hook called when the user's sleep schedule changes.
   @override
   Future<void> onSleepScheduleChanged({
     required String userId,

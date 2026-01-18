@@ -4,27 +4,38 @@ import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
 import 'package:sleepbalance/modules/shared/domain/models/user_module_config.dart';
 import 'package:sleepbalance/shared/notifiers/action_refresh_notifier.dart';
 
-
+/// ViewModel for the Habits Lab, managing available modules and user configurations.
 class HabitsViewModel extends ChangeNotifier {
+  /// Repository for module configuration data.
   final ModuleConfigRepository repository;
 
+  /// Creates a [HabitsViewModel] with the required repository.
   HabitsViewModel({required this.repository});
 
+  /// List of modules available to the user.
   List<ModuleMetadata> _availableModules = [];
+  /// List of current user module configurations.
   List<UserModuleConfig> _userConfigs = [];
+  /// Whether the data is currently being loaded.
   bool _isLoading = false;
+  /// Error message if loading or saving failed.
   String? _errorMessage;
 
+  /// Returns the list of available modules.
   List<ModuleMetadata> get availableModules => _availableModules;
+  /// Returns whether data is currently loading.
   bool get isLoading => _isLoading;
+  /// Returns the current error message, if any.
   String? get errorMessage => _errorMessage;
 
+  /// Checks if a module with the given [moduleId] is active.
   bool isModuleActive(String moduleId) {
     return _userConfigs.any(
           (config) => config.moduleId == moduleId && config.isEnabled,
     );
   }
 
+  /// Loads available modules and user configurations for [userId].
   Future<void> loadModules(String userId) async {
     _errorMessage = null;
     _isLoading = true;
@@ -41,6 +52,7 @@ class HabitsViewModel extends ChangeNotifier {
     }
   }
 
+  /// Toggles the activation state of a module locally.
   Future<void> toggleModule(String userId, String moduleId) async {
     try {
       _errorMessage = null;
@@ -82,6 +94,7 @@ class HabitsViewModel extends ChangeNotifier {
   }
 
 
+  /// Persists all local module configurations to the repository for [userId].
   Future<void> saveModuleConfigs(String userId) async {
     try {
       _errorMessage = null;
