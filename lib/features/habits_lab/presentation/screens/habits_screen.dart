@@ -1,38 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
 
-import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
 import 'package:sleepbalance/features/habits_lab/presentation/viewmodels/habits_viewmodel.dart';
-
-import '../../../../shared/widgets/ui/background_wrapper.dart';
-import '../../../../shared/widgets/ui/acceptance_button.dart';
-
+import 'package:sleepbalance/features/settings/presentation/viewmodels/settings_viewmodel.dart';
 import 'package:sleepbalance/modules/shared/constants/module_metadata.dart';
+import 'package:sleepbalance/modules/shared/domain/repositories/module_config_repository.dart';
 
-// TODO: Remove fitbit_test import - file has been removed from version control
-// import 'package:sleepbalance/fitbit_test.dart';
+import '../../../../shared/widgets/ui/acceptance_button.dart';
+import '../../../../shared/widgets/ui/background_wrapper.dart';
 
-// TODO: Import ViewModel and Provider when implementing MVVM pattern
-// import 'package:provider/provider.dart';
-// import '../viewmodels/habits_viewmodel.dart';
-
-/// Habits Lab screen for sleep habit tracking and experimentation
+/// Habits Lab screen for sleep habit tracking and experimentation.
 ///
-/// TODO: Refactor to use MVVM pattern with Provider (see REPORT.md)
-/// Current implementation uses local state - needs to be connected to:
-/// - HabitsViewModel (to be created)
-/// - ModuleConfigRepository (for database persistence)
-/// - ModuleMetadata (for centralized module information)
+/// Uses MVVM with Provider (HabitsViewModel) and persists module configs
+/// via ModuleConfigRepository. Module UI labels/icons/descriptions come
+/// from centralized ModuleMetadata.
 class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-
+    // Access settings to get current user data
     final settingsViewModel = context.watch<SettingsViewModel>();
     final user = settingsViewModel.currentUser;
 
+    // Show loading state if user is not yet available
     if (user == null) {
       return BackgroundWrapper(
         imagePath: 'assets/images/main_background.png',
@@ -46,6 +37,7 @@ class HabitsScreen extends StatelessWidget {
 
     final userId = user.id;
 
+    // Provide HabitsViewModel to the screen content
     final repository = context.read<ModuleConfigRepository>();
 
     return ChangeNotifierProvider(
@@ -57,6 +49,7 @@ class HabitsScreen extends StatelessWidget {
   }
 }
 
+/// Main layout for the Habits Lab screen.
 class _HabitsScreenContent extends StatelessWidget {
   final String userId;
 
@@ -64,7 +57,6 @@ class _HabitsScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<HabitsViewModel>();
 
     return BackgroundWrapper(
       imagePath: 'assets/images/main_background.png',
@@ -82,6 +74,7 @@ class _HabitsScreenContent extends StatelessWidget {
         ),
         body: Column(
           children: [
+            // Header section with icon and title
             const Padding(
               padding: EdgeInsets.only(top: 24),
               child: Center(
@@ -120,7 +113,7 @@ class _HabitsScreenContent extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Main content area
+            // Main content area: Scrollable list of modules
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -128,6 +121,7 @@ class _HabitsScreenContent extends StatelessWidget {
               ),
             ),
 
+            // Bottom action section
             Padding(
               padding: const EdgeInsets.all(24),
               child: AcceptanceButton(
@@ -149,6 +143,7 @@ class _HabitsScreenContent extends StatelessWidget {
               ),
             ),
 
+            // Debug/Test button for wearable integration
             // See: WEARABLES_INTEGRATION_REPORT.md for implementation plan
             ElevatedButton(
               onPressed: () {
@@ -174,7 +169,6 @@ class _ModulesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<HabitsViewModel>();
-    final controller = ScrollController();
 
     // Loading state
     if (viewModel.isLoading) {
@@ -215,13 +209,12 @@ class _ModulesList extends StatelessWidget {
       );
     }
 
+    // Display modules in a scrollable list
     return Scrollbar(
-      controller: controller,
       thumbVisibility: true,
       radius: const Radius.circular(10),
       thickness: 6,
       child: ListView.separated(
-        controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(top: 4, bottom: 8),
         itemCount: modules.length,
@@ -239,13 +232,13 @@ class _ModulesList extends StatelessWidget {
                 _showComingSoonDialog(context, module.displayName);
               }
             },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.12)),
-                ),
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              ),
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               child: Row(
                 children: [
@@ -292,7 +285,7 @@ class _ModulesList extends StatelessWidget {
                         activeColor: Theme.of(context).colorScheme.primary,
                         checkColor: Colors.white,
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           width: 2,
                         ),
                         shape: RoundedRectangleBorder(
@@ -304,11 +297,7 @@ class _ModulesList extends StatelessWidget {
 
 
                   const SizedBox(width: 8),
-
-                  // Settings button – placeholder for future config screens
-                  // TODO: Navigate to module-specific config screen
-                  // Should call: viewModel.openModuleConfig(context, userId, moduleId)
-
+                  // // Placeholder for module-specific configuration (not part of MVP).
                   Opacity(
                     opacity: isImplemented ? 1.0 : 0.45,
                     child: _GearButton(
@@ -349,6 +338,7 @@ class _ModulesList extends StatelessWidget {
 
                   const SizedBox(width: 8),
 
+                  // Information button to see module details
                   Opacity(
                     opacity: isImplemented ? 1.0 : 0.45,
                     child: GestureDetector(
@@ -373,6 +363,7 @@ class _ModulesList extends StatelessWidget {
   }
 }
 
+/// Small icon button used to open the module info dialog.
 class _InfoButton extends StatelessWidget {
   const _InfoButton({super.key});
 
@@ -381,16 +372,16 @@ class _InfoButton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
       child: const Icon(Icons.info_outline, size: 18, color: Colors.white70),
     );
   }
 }
 
-
+/// Shows a dialog for modules that are not yet implemented.
 void _showComingSoonDialog(BuildContext context, String moduleName) {
   showDialog(
     context: context,
@@ -412,6 +403,7 @@ void _showComingSoonDialog(BuildContext context, String moduleName) {
   );
 }
 
+/// Shows a dialog with detailed information about a module.
 void _showModuleInfoDialog(BuildContext context, ModuleMetadata module) {
   showDialog(
     context: context,
@@ -474,7 +466,7 @@ void _showModuleInfoDialog(BuildContext context, ModuleMetadata module) {
 }
 
 
-// Small "settings" button with pill look
+/// Small "settings" button with pill look.
 class _GearButton extends StatelessWidget {
   final VoidCallback onTap;
   const _GearButton({required this.onTap});
@@ -487,9 +479,9 @@ class _GearButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withOpacity(0.18)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         ),
         child: const Icon(Icons.settings, size: 18, color: Colors.white70),
       ),

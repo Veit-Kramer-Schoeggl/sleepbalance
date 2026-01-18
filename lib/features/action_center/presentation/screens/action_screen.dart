@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sleepbalance/features/action_center/domain/repositories/action_repository.dart';
 import '../../../../features/settings/presentation/viewmodels/settings_viewmodel.dart';
-import '../../../../modules/light/presentation/screens/light_config_standard_screen.dart';
 import '../../../../shared/widgets/ui/background_wrapper.dart';
 import '../../../../shared/widgets/ui/date_navigation_header.dart';
 import '../../../../shared/widgets/ui/checkbox_button.dart';
@@ -26,7 +26,7 @@ class ActionScreen extends StatelessWidget {
     final settingsViewModel = context.watch<SettingsViewModel>();
     final currentUserId = settingsViewModel.currentUser?.id;
 
-    // Handle case where user is not loaded
+    // Handle case where no current user is available (not logged in yet).
     if (currentUserId == null) {
       return BackgroundWrapper(
         imagePath: 'assets/images/main_background.png',
@@ -53,7 +53,7 @@ class ActionScreen extends StatelessWidget {
     // Create ActionViewModel with current user ID
     return ChangeNotifierProvider(
       create: (_) => ActionViewModel(
-        repository: context.read(), // Reads ActionRepository from parent MultiProvider
+        repository: context.read<ActionRepository>(),
         moduleConfigRepository: context.read<ModuleConfigRepository>(),
         userId: currentUserId, // Use actual user ID from SettingsViewModel
       )..loadActions(),
@@ -72,7 +72,9 @@ class _ActionScreenContent extends StatefulWidget {
   State<_ActionScreenContent> createState() => _ActionScreenContentState();
 }
 
+/// State for [_ActionScreenContent] that listens for action refresh requests.
 class _ActionScreenContentState extends State<_ActionScreenContent> {
+  /// Initializes listeners for action refresh notifications.
   @override
   void initState() {
     super.initState();
@@ -81,16 +83,19 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
     actionRefreshTick.addListener(_onRefresh);
   }
 
+  /// Callback triggered when a refresh is requested.
   void _onRefresh() {
     if (!mounted) return;
     context.read<ActionViewModel>().loadActions();
   }
 
+  /// Removes listeners before the widget is destroyed.
   @override
   void dispose() {
     actionRefreshTick.removeListener(_onRefresh);
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ActionViewModel>();
@@ -149,6 +154,13 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
                                     color: Colors.white70, fontSize: 16),
                               ),
                               const SizedBox(height: 16),
+                              // TODO: Rework Action Center module configuration
+                              // - Support multiple modules (not only Light)
+                              // - Avoid hardcoded navigation to LightConfigStandardScreen
+                              // - Show config options only for active/configurable modules
+                              //
+                              // Temporarily disabled for MVP delivery.
+                              /*
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(
@@ -161,6 +173,7 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
                                 },
                                 child: const Text('Configure Light Module'),
                               ),
+                              */
                             ],
                           ),
                         )
@@ -171,7 +184,7 @@ class _ActionScreenContentState extends State<_ActionScreenContent> {
                             itemBuilder: (context, index) {
                               final action = viewModel.actions[index];
 
-                              //get module metadata to keep UI consistent with Habits
+                              // Get module metadata to keep UI consistent with Habits.
                               final meta = getModuleMetadata(action.iconName);
 
                               return Padding(

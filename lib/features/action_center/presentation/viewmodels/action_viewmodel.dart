@@ -15,16 +15,21 @@ import '../../domain/repositories/action_repository.dart';
 ///
 /// Responsibilities:
 /// - Load actions from repository
-/// - Handle user interactions (toggle, add, delete)
+/// - Handle user interactions (toggle, add)
 /// - Manage loading and error states
 /// - Notify UI of state changes
 class ActionViewModel extends ChangeNotifier {
+  /// Repository for daily actions.
   final ActionRepository _repository;
+  /// Repository for module configurations.
   final ModuleConfigRepository _moduleConfigRepository;
+  /// The current user ID.
   final String userId;
 
+  /// Returns a [DateTime] with only the year, month, and day.
   DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  /// Generates a string key for a date in the format YYYYMMDD.
   String _dateKey(DateTime d) {
     final dd = _dateOnly(d);
     final y = dd.year.toString().padLeft(4, '0');
@@ -33,6 +38,7 @@ class ActionViewModel extends ChangeNotifier {
     return '$y$m$day';
   }
 
+  /// Creates an [ActionViewModel] with the required repositories and user ID.
   ActionViewModel({
     required ActionRepository repository,
     required ModuleConfigRepository moduleConfigRepository,
@@ -40,17 +46,24 @@ class ActionViewModel extends ChangeNotifier {
   }) : _repository = repository,
         _moduleConfigRepository = moduleConfigRepository;
 
-  // State
+  /// List of daily actions for the current date.
   List<DailyAction> _actions = [];
+  /// Whether the data is currently being loaded.
   bool _isLoading = false;
+  /// Error message if loading or performing an operation failed.
   String? _errorMessage;
+  /// The currently selected date in the Action Center.
   DateTime _currentDate = DateTime.now();
 
-  // Getters - expose state to UI
+  /// Returns the list of actions for the current date.
   List<DailyAction> get actions => _actions;
+  /// Returns whether data is currently loading.
   bool get isLoading => _isLoading;
+  /// Returns the current error message, if any.
   String? get errorMessage => _errorMessage;
+  /// Returns the currently selected date.
   DateTime get currentDate => _currentDate;
+  /// Returns the number of completed actions.
   int get completedCount => _actions.where((a) => a.isCompleted).length;
 
   /// Loads actions for the current date
@@ -65,16 +78,16 @@ class ActionViewModel extends ChangeNotifier {
     try {
       final loaded = await _repository.getActionsForDate(userId, _currentDate);
 
-// Get currently active module ids for this user
+      // Get currently active module IDs for this user.
       final activeModuleIds = await _moduleConfigRepository.getActiveModuleIds(userId);
       final activeSet = activeModuleIds.toSet();
 
       final date = _dateOnly(_currentDate);
 
-// Ensure there is one module action per active module for this date
+      // Ensure there is one module action per active module for this date
       for (final moduleId in activeSet) {
-        final exists = loaded.any((a) =>
-        a.iconName == moduleId && _dateOnly(a.actionDate) == date);
+        final exists = loaded.any(
+                (a) => a.iconName == moduleId && _dateOnly(a.actionDate) == date);
 
         if (!exists) {
           final meta = getModuleMetadata(moduleId);
@@ -95,9 +108,9 @@ class ActionViewModel extends ChangeNotifier {
         }
       }
 
-// Show:
-// - non-module actions always
-// - module actions only if the module is currently active
+      // Show:
+      // - non-module actions always
+      // - module actions only if the module is currently active
       _actions = loaded.where((a) {
         final meta = getModuleMetadata(a.iconName);
         final isModuleAction = meta.id != 'unknown';

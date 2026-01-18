@@ -66,7 +66,7 @@ const Map<String, ModuleMetadata> moduleMetadata = {
         'optimal exercise schedule.',
     icon: Icons.directions_run,
     primaryColor: Color(0xFF66BB6A), // Green
-    isAvailable: true, // Basic implementation (MVP) available
+    isAvailable: true, // Available in MVP (basic UI and logic, no advanced features yet)
   ),
 
   'meditation': ModuleMetadata(
@@ -78,7 +78,7 @@ const Map<String, ModuleMetadata> moduleMetadata = {
         'thoughts. Diverse techniques from multiple teachers and traditions.',
     icon: Icons.spa,
     primaryColor: Color(0xFF9C27B0), // Purple
-    isAvailable: true, // Basic implementation (MVP) available
+    isAvailable: true, // Available in MVP (basic UI and logic, no advanced features yet)
   ),
 
   'temperature': ModuleMetadata(
